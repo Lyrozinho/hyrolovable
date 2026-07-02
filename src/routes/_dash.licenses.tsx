@@ -35,7 +35,9 @@ import {
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { generateLicenseKey } from "@/lib/license-key";
-import { sha256Hex } from "@/lib/auth";
+import { sha256Hex, useAuth } from "@/lib/auth";
+
+const OWNER_EMAIL = "adminpainel@gmail.com";
 import { toast } from "sonner";
 
 
@@ -845,7 +847,9 @@ function TestLicenseDialog({
 }) {
   const qc = useQueryClient();
   const [name, setName] = useState("");
-  const [minutes, setMinutes] = useState<3 | 30>(30);
+  const { session } = useAuth();
+  const isOwner = session?.user.email?.toLowerCase() === OWNER_EMAIL;
+  const [minutes, setMinutes] = useState<3 | 30 | 60>(30);
   const [submitting, setSubmitting] = useState(false);
   const [previewKey, setPreviewKey] = useState<string>(generateTestKey());
 
@@ -987,28 +991,31 @@ function TestLicenseDialog({
             <Label className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">
               Duração
             </Label>
-            <div className="grid grid-cols-2 gap-2">
-              {[3, 30].map((m) => (
-                <button
-                  key={m}
-                  type="button"
-                  onClick={() => setMinutes(m as 3 | 30)}
-                  className={[
-                    "rounded-md border px-3 py-2.5 text-left transition-colors",
-                    minutes === m
-                      ? "border-foreground bg-foreground/5"
-                      : "border-border hover:bg-muted/40",
-                  ].join(" ")}
-                >
-                  <div className="flex items-center gap-2 text-[13px] font-medium">
-                    <Timer className="h-3.5 w-3.5" />
-                    {m} minutos
-                  </div>
-                  <div className="text-[11px] text-muted-foreground mt-0.5">
-                    {m === 3 ? "Teste rápido" : "Teste estendido"}
-                  </div>
-                </button>
-              ))}
+            <div className={isOwner ? "grid grid-cols-3 gap-2" : "grid grid-cols-2 gap-2"}>
+              {([3, 30, ...(isOwner ? [60] : [])] as const).map((m) => {
+                const label = m === 60 ? "1 hora" : `${m} min`;
+                const sub =
+                  m === 3 ? "Teste rápido" : m === 30 ? "Teste estendido" : "Teste estendido (owner)";
+                return (
+                  <button
+                    key={m}
+                    type="button"
+                    onClick={() => setMinutes(m as 3 | 30 | 60)}
+                    className={[
+                      "rounded-md border px-3 py-2.5 text-left transition-colors",
+                      minutes === m
+                        ? "border-foreground bg-foreground/5"
+                        : "border-border hover:bg-muted/40",
+                    ].join(" ")}
+                  >
+                    <div className="flex items-center gap-2 text-[13px] font-medium">
+                      <Timer className="h-3.5 w-3.5" />
+                      {label}
+                    </div>
+                    <div className="text-[11px] text-muted-foreground mt-0.5">{sub}</div>
+                  </button>
+                );
+              })}
             </div>
           </div>
         </div>
