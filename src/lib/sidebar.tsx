@@ -1,10 +1,18 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 
-type Ctx = { collapsed: boolean; toggle: () => void; setCollapsed: (v: boolean) => void };
+type Ctx = {
+  collapsed: boolean;
+  toggle: () => void;
+  setCollapsed: (v: boolean) => void;
+  mobileOpen: boolean;
+  setMobileOpen: (v: boolean) => void;
+  toggleMobile: () => void;
+};
 const SidebarCtx = createContext<Ctx | null>(null);
 
 export function SidebarProvider({ children }: { children: ReactNode }) {
   const [collapsed, setCollapsed] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   useEffect(() => {
     const stored = localStorage.getItem("hyro_sidebar_collapsed");
@@ -16,7 +24,16 @@ export function SidebarProvider({ children }: { children: ReactNode }) {
   }, [collapsed]);
 
   return (
-    <SidebarCtx.Provider value={{ collapsed, toggle: () => setCollapsed((c) => !c), setCollapsed }}>
+    <SidebarCtx.Provider
+      value={{
+        collapsed,
+        toggle: () => setCollapsed((c) => !c),
+        setCollapsed,
+        mobileOpen,
+        setMobileOpen,
+        toggleMobile: () => setMobileOpen(!mobileOpen),
+      }}
+    >
       {children}
     </SidebarCtx.Provider>
   );
