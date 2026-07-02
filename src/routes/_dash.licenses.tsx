@@ -213,14 +213,14 @@ function LicensesPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-end justify-between flex-wrap gap-3">
-        <div>
-          <h1 className="text-[22px] font-semibold tracking-tight leading-tight">Licenças</h1>
-          <p className="text-[13px] text-muted-foreground mt-1">
+      <div className="flex items-start md:items-end justify-between flex-wrap gap-3">
+        <div className="min-w-0">
+          <h1 className="text-[20px] md:text-[22px] font-semibold tracking-tight leading-tight">Licenças</h1>
+          <p className="text-[12.5px] md:text-[13px] text-muted-foreground mt-1">
             Gerencie chaves de licença associadas aos usuários da extensão.
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <Button
             variant="outline"
             size="sm"
@@ -228,8 +228,8 @@ function LicensesPage() {
             className="h-9"
             title={revealAll ? "Ocultar todas as chaves" : "Revelar todas as chaves"}
           >
-            {revealAll ? <EyeOff className="h-3.5 w-3.5 mr-1.5" /> : <Eye className="h-3.5 w-3.5 mr-1.5" />}
-            {revealAll ? "Ocultar chaves" : "Revelar chaves"}
+            {revealAll ? <EyeOff className="h-3.5 w-3.5 md:mr-1.5" /> : <Eye className="h-3.5 w-3.5 md:mr-1.5" />}
+            <span className="hidden md:inline">{revealAll ? "Ocultar chaves" : "Revelar chaves"}</span>
           </Button>
           <Button
             variant="outline"
@@ -238,8 +238,8 @@ function LicensesPage() {
             disabled={isFetching}
             className="h-9"
           >
-            <RefreshCw className={`h-3.5 w-3.5 mr-1.5 ${isFetching ? "animate-spin" : ""}`} />
-            Atualizar
+            <RefreshCw className={`h-3.5 w-3.5 md:mr-1.5 ${isFetching ? "animate-spin" : ""}`} />
+            <span className="hidden md:inline">Atualizar</span>
           </Button>
           <Button
             variant="outline"
@@ -247,7 +247,8 @@ function LicensesPage() {
             className="h-9"
             onClick={() => setTestOpen(true)}
           >
-            <FlaskConical className="h-3.5 w-3.5 mr-1.5" /> Gerar teste
+            <FlaskConical className="h-3.5 w-3.5 md:mr-1.5" />
+            <span className="hidden md:inline">Gerar teste</span>
           </Button>
           <Button size="sm" className="h-9" onClick={() => setCreateOpen(true)}>
             <Plus className="h-3.5 w-3.5 mr-1.5" /> Nova licença
@@ -257,7 +258,7 @@ function LicensesPage() {
 
       {/* Filters */}
       <div className="rounded-lg border border-border bg-card p-3 flex flex-wrap gap-2 items-center">
-        <div className="relative flex-1 min-w-[240px]">
+        <div className="relative flex-1 min-w-[200px]">
           <Search className="h-3.5 w-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder="Buscar por chave ou e-mail..."
@@ -269,6 +270,7 @@ function LicensesPage() {
             className="pl-9 h-9 bg-background border-border text-[13px]"
           />
         </div>
+
         <Select
           value={status}
           onValueChange={(v) => {
