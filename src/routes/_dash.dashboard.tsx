@@ -101,7 +101,7 @@ function StatCard({
 }
 
 function DashboardPage() {
-  const { data, isLoading } = useQuery({ queryKey: ["dash-stats"], queryFn: fetchStats });
+  const { data, isLoading } = useQuery({ queryKey: ["dash-stats"], queryFn: fetchStats, staleTime: 60_000 });
 
   const total30 = data?.chart.reduce((a, b) => a + b.count, 0) ?? 0;
   const total15 = data?.chart.slice(-15).reduce((a, b) => a + b.count, 0) ?? 0;
