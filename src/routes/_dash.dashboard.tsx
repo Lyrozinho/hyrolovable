@@ -68,31 +68,33 @@ async function fetchStats(): Promise<Stats> {
 function StatCard({
   label,
   value,
-  icon: Icon,
   hint,
+  delta,
   loading,
 }: {
   label: string;
   value: number;
-  icon: typeof KeyRound;
+  icon?: typeof KeyRound;
   hint?: string;
+  delta?: number;
   loading?: boolean;
 }) {
+  const positive = typeof delta === "number" ? delta >= 0 : undefined;
   return (
-    <div className="group relative rounded-lg border border-border bg-card p-5 transition-all hover:border-foreground/15 hover:shadow-sm">
-      <div className="flex items-center justify-between">
-        <span className="text-[11.5px] font-medium text-muted-foreground uppercase tracking-wider">{label}</span>
-        <div className="h-7 w-7 rounded-md bg-muted/70 border border-border/60 flex items-center justify-center">
-          <Icon className="h-3.5 w-3.5 text-muted-foreground" strokeWidth={1.75} />
-        </div>
+    <div className="bg-card p-6 rounded-xl border border-border shadow-xs">
+      <div className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+        {label}
       </div>
-      <div className="mt-5 flex items-baseline gap-2">
-        <span className="text-[30px] font-semibold tracking-tight tabular-nums leading-none text-foreground">
-          {loading ? "—" : value.toLocaleString("pt-BR")}
-        </span>
-        {hint && !loading && (
-          <span className="text-[11.5px] text-muted-foreground">{hint}</span>
-        )}
+      <div className="text-[26px] font-bold tracking-tight leading-none tabular-nums font-mono">
+        {loading ? "—" : value.toLocaleString("pt-BR")}
+      </div>
+      <div className="mt-3 flex items-center gap-1.5 text-[11.5px] font-medium">
+        {typeof delta === "number" ? (
+          <span className={positive ? "text-success" : "text-destructive"}>
+            {positive ? "▲" : "▼"} {Math.abs(delta).toFixed(1)}%
+          </span>
+        ) : null}
+        {hint && <span className="text-muted-foreground">{hint}</span>}
       </div>
     </div>
   );
