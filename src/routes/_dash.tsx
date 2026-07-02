@@ -3,7 +3,7 @@ import { useEffect } from "react";
 import { useAuth } from "@/lib/auth";
 import { AppSidebar } from "@/components/app-sidebar";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { Search } from "lucide-react";
+import { Menu, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { SidebarProvider, useSidebar } from "@/lib/sidebar";
 
@@ -31,7 +31,7 @@ function DashInner() {
   const { session, loading } = useAuth();
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (r) => r.location.pathname });
-  const { collapsed } = useSidebar();
+  const { collapsed, toggleMobile } = useSidebar();
 
   useEffect(() => {
     if (!loading && !session) navigate({ to: "/login", replace: true });
@@ -45,14 +45,11 @@ function DashInner() {
         navigate({ to: "/subscription", replace: true });
       }
     }
-    // admin has full access — no gating
   }, [session, pathname, navigate]);
 
   if (loading || !session) {
     return <div className="min-h-screen bg-background" />;
   }
-
-
 
   const title = titles[pathname] ?? "Painel";
 
@@ -60,10 +57,18 @@ function DashInner() {
     <div className="min-h-screen bg-background">
       <AppSidebar />
       <div className={collapsed ? "md:pl-[72px] transition-[padding] duration-200" : "md:pl-64 transition-[padding] duration-200"}>
-        <header className="h-16 sticky top-0 z-30 border-b border-border bg-card flex items-center px-6 gap-4">
+        <header className="h-14 md:h-16 sticky top-0 z-30 border-b border-border bg-card flex items-center px-3 md:px-6 gap-2 md:gap-4">
+          <button
+            type="button"
+            onClick={toggleMobile}
+            className="md:hidden h-9 w-9 rounded-md flex items-center justify-center text-foreground/70 hover:text-foreground hover:bg-muted"
+            aria-label="Abrir menu"
+          >
+            <Menu className="h-4.5 w-4.5" />
+          </button>
           <div className="flex items-center gap-3 text-[13px] min-w-0">
-            <span className="text-muted-foreground">Console</span>
-            <span className="text-border">/</span>
+            <span className="hidden sm:inline text-muted-foreground">Console</span>
+            <span className="hidden sm:inline text-border">/</span>
             <span className="text-foreground font-medium truncate">{title}</span>
           </div>
           <div className="ml-auto flex items-center gap-2">
@@ -80,10 +85,11 @@ function DashInner() {
             <ThemeToggle />
           </div>
         </header>
-        <main className="px-6 py-6">
+        <main className="px-4 md:px-6 py-5 md:py-6">
           <Outlet />
         </main>
       </div>
     </div>
   );
 }
+

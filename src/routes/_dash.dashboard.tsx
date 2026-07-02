@@ -101,7 +101,7 @@ function StatCard({
 }
 
 function DashboardPage() {
-  const { data, isLoading } = useQuery({ queryKey: ["dash-stats"], queryFn: fetchStats });
+  const { data, isLoading } = useQuery({ queryKey: ["dash-stats"], queryFn: fetchStats, staleTime: 60_000 });
 
   const total30 = data?.chart.reduce((a, b) => a + b.count, 0) ?? 0;
   const total15 = data?.chart.slice(-15).reduce((a, b) => a + b.count, 0) ?? 0;
@@ -176,7 +176,7 @@ function DashboardPage() {
             </a>
           </div>
         </div>
-        <div className="h-[320px] w-full px-3 pt-4 pb-2">
+        <div className="h-[240px] md:h-[320px] w-full px-3 pt-4 pb-2">
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={data?.chart ?? []} margin={{ left: 4, right: 12, top: 8, bottom: 4 }}>
               <defs>
