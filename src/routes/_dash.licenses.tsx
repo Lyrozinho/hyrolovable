@@ -60,29 +60,60 @@ function LicensesPage() {
   const [editing, setEditing] = useState<License | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
-  const { data, isLoading, refetch, isFetching } = useQuery({
+  const { data, isLoading, refetch, isFetching, error } = useQuery({
     queryKey: ["licenses", search, status, page],
     queryFn: async () => {
+      const term = search.trim();
+      let matchedUserIds: string[] | null = null;
+
+      // If searching, also try matching by user email
+      if (term) {
+        const { data: matchedUsers, error: mErr } = await supabase
+          .from("hyro_extension_users")
+          .select("id")
+          .ilike("email", `%${term}%`);
+        if (mErr) throw mErr;
+        matchedUserIds = (matchedUsers ?? []).map((u: any) => u.id);
+      }
+
       let query = supabase
         .from("hyro_extension_licenses")
-        .select("id, user_id, status, expires_at, created_at, hyro_extension_users(email)", {
-          count: "exact",
-        })
+        .select("id, user_id, status, expires_at, created_at", { count: "exact" })
         .order("created_at", { ascending: false })
         .range(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE - 1);
 
       if (status !== "all") query = query.eq("status", status);
-      if (search.trim()) query = query.ilike("id", `%${search.trim()}%`);
+      if (term) {
+        const ors = [`id.ilike.%${term}%`];
+        if (matchedUserIds && matchedUserIds.length) {
+          ors.push(`user_id.in.(${matchedUserIds.join(",")})`);
+        }
+        query = query.or(ors.join(","));
+      }
 
-      const { data, error, count } = await query;
-      if (error) throw error;
-      const rows: License[] = (data ?? []).map((r: any) => ({
+      const { data: lics, error: lerr, count } = await query;
+      if (lerr) throw lerr;
+
+      const userIds = Array.from(
+        new Set((lics ?? []).map((r: any) => r.user_id).filter(Boolean))
+      );
+      let emailMap: Record<string, string> = {};
+      if (userIds.length) {
+        const { data: users, error: uerr } = await supabase
+          .from("hyro_extension_users")
+          .select("id, email")
+          .in("id", userIds);
+        if (uerr) throw uerr;
+        emailMap = Object.fromEntries((users ?? []).map((u: any) => [u.id, u.email]));
+      }
+
+      const rows: License[] = (lics ?? []).map((r: any) => ({
         id: r.id,
         user_id: r.user_id,
         status: r.status,
         expires_at: r.expires_at,
         created_at: r.created_at,
-        user_email: r.hyro_extension_users?.email ?? null,
+        user_email: r.user_id ? emailMap[r.user_id] ?? null : null,
       }));
       return { rows, count: count ?? 0 };
     },
@@ -196,6 +227,12 @@ function LicensesPage() {
               <TableRow>
                 <TableCell colSpan={6} className="text-center py-14 text-muted-foreground text-sm">
                   <Loader2 className="h-4 w-4 animate-spin inline mr-2" /> Carregando...
+                </TableCell>
+              </TableRow>
+            ) : error ? (
+              <TableRow>
+                <TableCell colSpan={6} className="text-center py-14 text-destructive text-sm">
+                  Erro ao carregar: {(error as any)?.message ?? "desconhecido"}
                 </TableCell>
               </TableRow>
             ) : rows.length === 0 ? (
