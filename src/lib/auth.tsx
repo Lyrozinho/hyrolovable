@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
-import { supabase, type AdminUser } from "./supabase";
+import { supabase as cloud } from "@/integrations/supabase/client";
+import type { AdminUser } from "./supabase";
 
 type Session = { token: string; user: AdminUser };
 
@@ -11,52 +12,44 @@ type AuthCtx = {
 };
 
 const Ctx = createContext<AuthCtx | null>(null);
-const STORAGE_KEY = "hyro_admin_session";
+
+function toSession(s: { access_token: string; user: { id: string; email?: string | null; user_metadata?: Record<string, unknown> } } | null): Session | null {
+  if (!s?.user) return null;
+  const meta = s.user.user_metadata ?? {};
+  return {
+    token: s.access_token,
+    user: {
+      id: s.user.id,
+      email: s.user.email ?? "",
+      name: (meta.name as string) ?? (meta.full_name as string) ?? null,
+      role: (meta.role as string) ?? "admin",
+    },
+  };
+}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) setSession(JSON.parse(raw));
-    } catch {}
-    setLoading(false);
+    const { data: sub } = cloud.auth.onAuthStateChange((_ev, s) => {
+      setSession(toSession(s as any));
+    });
+    cloud.auth.getSession().then(({ data }) => {
+      setSession(toSession(data.session as any));
+      setLoading(false);
+    });
+    return () => sub.subscription.unsubscribe();
   }, []);
 
   const signIn: AuthCtx["signIn"] = async (email, password) => {
-    const { data, error } = await supabase.rpc("admin_login", {
-      p_email: email,
-      p_password: password,
-    });
-    if (error) return { error: error.message };
-    if (!data || (Array.isArray(data) && data.length === 0)) {
-      return { error: "Credenciais inválidas" };
-    }
-    const row = Array.isArray(data) ? data[0] : data;
-    if (!row?.token) return { error: "Credenciais inválidas" };
-    const s: Session = {
-      token: row.token,
-      user: {
-        id: row.user_id,
-        email: row.email,
-        name: row.name,
-        role: row.role,
-      },
-    };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(s));
-    setSession(s);
+    const { error } = await cloud.auth.signInWithPassword({ email, password });
+    if (error) return { error: error.message === "Invalid login credentials" ? "Credenciais inválidas" : error.message };
     return {};
   };
 
   const signOut = async () => {
-    if (session?.token) {
-      try {
-        await supabase.from("hyro_extension_sessions").delete().eq("token", session.token);
-      } catch {}
-    }
-    localStorage.removeItem(STORAGE_KEY);
+    await cloud.auth.signOut();
     setSession(null);
   };
 
