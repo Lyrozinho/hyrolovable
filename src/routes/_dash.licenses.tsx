@@ -229,6 +229,12 @@ function LicensesPage() {
                   <Loader2 className="h-4 w-4 animate-spin inline mr-2" /> Carregando...
                 </TableCell>
               </TableRow>
+            ) : error ? (
+              <TableRow>
+                <TableCell colSpan={6} className="text-center py-14 text-destructive text-sm">
+                  Erro ao carregar: {(error as any)?.message ?? "desconhecido"}
+                </TableCell>
+              </TableRow>
             ) : rows.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={6} className="text-center py-16">
