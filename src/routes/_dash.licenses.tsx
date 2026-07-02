@@ -51,6 +51,39 @@ type License = {
 };
 
 const PAGE_SIZE = 15;
+const TEST_EMAIL_DOMAIN = "teste.local";
+const TEST_KEY_PREFIX = "TST";
+
+function generateTestKey(): string {
+  const base = generateLicenseKey().split("-").slice(1).join("-");
+  return `${TEST_KEY_PREFIX}-${base}`;
+}
+
+function generateTestEmail(): string {
+  const rnd = Math.random().toString(36).slice(2, 10);
+  const ts = Date.now().toString(36);
+  return `teste-${ts}${rnd}@${TEST_EMAIL_DOMAIN}`;
+}
+
+async function sweepExpiredTestLicenses() {
+  const nowIso = new Date().toISOString();
+  const { data: expired } = await supabase
+    .from("hyro_extension_licenses")
+    .select("id, user_id")
+    .ilike("id", `${TEST_KEY_PREFIX}-%`)
+    .lt("expires_at", nowIso);
+  if (!expired || expired.length === 0) return;
+  const ids = expired.map((r: any) => r.id);
+  const userIds = Array.from(new Set(expired.map((r: any) => r.user_id).filter(Boolean)));
+  await supabase.from("hyro_extension_licenses").delete().in("id", ids);
+  if (userIds.length) {
+    await supabase
+      .from("hyro_extension_users")
+      .delete()
+      .in("id", userIds)
+      .ilike("email", `%@${TEST_EMAIL_DOMAIN}`);
+  }
+}
 
 function LicensesPage() {
   const qc = useQueryClient();
@@ -58,6 +91,7 @@ function LicensesPage() {
   const [status, setStatus] = useState<string>("all");
   const [page, setPage] = useState(0);
   const [createOpen, setCreateOpen] = useState(false);
+  const [testOpen, setTestOpen] = useState(false);
   const [editing, setEditing] = useState<License | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
