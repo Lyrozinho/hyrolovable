@@ -195,14 +195,19 @@ function LicensesPage() {
 
   // Periodic sweep to auto-remove expired test licenses in near real-time.
   useEffect(() => {
+    // run once on mount
+    sweepExpiredTestLicenses().then(() => {
+      qc.invalidateQueries({ queryKey: ["licenses"] });
+    });
     const t = setInterval(() => {
       sweepExpiredTestLicenses().then(() => {
         qc.invalidateQueries({ queryKey: ["licenses"] });
         qc.invalidateQueries({ queryKey: ["dash-stats"] });
       });
-    }, 30_000);
+    }, 60_000);
     return () => clearInterval(t);
   }, [qc]);
+
 
 
   return (
