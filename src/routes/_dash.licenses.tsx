@@ -102,6 +102,8 @@ function LicensesPage() {
       await sweepExpiredTestLicenses();
 
       const term = search.trim();
+      let matchedUserIds: string[] | null = null;
+
 
       // If searching, also try matching by user email
       if (term) {
