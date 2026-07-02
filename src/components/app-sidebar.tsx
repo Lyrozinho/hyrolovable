@@ -1,5 +1,6 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { LayoutDashboard, KeyRound, Users, LogOut, Sparkles, ChevronsLeft, ChevronsRight } from "lucide-react";
+import { useEffect } from "react";
 import { useAuth } from "@/lib/auth";
 import { useSidebar } from "@/lib/sidebar";
 
@@ -20,7 +21,7 @@ const items: NavItem[] = [
 export function AppSidebar() {
   const pathname = useRouterState({ select: (r) => r.location.pathname });
   const { session, signOut } = useAuth();
-  const { collapsed, toggle } = useSidebar();
+  const { collapsed, toggle, mobileOpen, setMobileOpen } = useSidebar();
 
   const role = (session?.user.role === "client" ? "client" : "admin") as "admin" | "client";
   const visible = items.filter((i) => i.roles.includes(role));
@@ -31,18 +32,40 @@ export function AppSidebar() {
     "A"
   ).toUpperCase();
 
+  // Close mobile drawer when route changes
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [pathname, setMobileOpen]);
+
+  // On mobile, force expanded look (never collapsed) while drawer is open
+  const isCollapsed = collapsed;
+
   return (
-    <aside
-      className={[
-        "hidden md:flex fixed left-0 top-0 h-screen flex-col border-r transition-[width] duration-200 ease-out z-40",
-        collapsed ? "w-[72px]" : "w-64",
-      ].join(" ")}
-      style={{
-        backgroundColor: "oklch(0.115 0.003 250)",
-        color: "oklch(0.88 0.003 250)",
-        borderRightColor: "rgba(255,255,255,0.06)",
-      }}
-    >
+    <>
+      {/* Mobile backdrop */}
+      {mobileOpen && (
+        <button
+          type="button"
+          aria-label="Fechar menu"
+          onClick={() => setMobileOpen(false)}
+          className="md:hidden fixed inset-0 z-40 bg-black/50 backdrop-blur-[2px]"
+        />
+      )}
+      <aside
+        className={[
+          "fixed left-0 top-0 h-screen flex flex-col border-r transition-[width,transform] duration-200 ease-out z-50",
+          // desktop width
+          isCollapsed ? "md:w-[72px]" : "md:w-64",
+          // mobile: fixed 260px wide drawer, slide in/out
+          "w-[260px]",
+          mobileOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0",
+        ].join(" ")}
+        style={{
+          backgroundColor: "oklch(0.115 0.003 250)",
+          color: "oklch(0.88 0.003 250)",
+          borderRightColor: "rgba(255,255,255,0.06)",
+        }}
+      >
       {/* Brand */}
       <div
         className={[
