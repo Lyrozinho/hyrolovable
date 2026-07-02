@@ -44,12 +44,8 @@ function DashInner() {
       if (pathname === "/dashboard" || pathname === "/licenses" || pathname === "/") {
         navigate({ to: "/subscription", replace: true });
       }
-    } else {
-      // admin should not access client-only routes
-      if (pathname === "/resellers" || pathname === "/subscription") {
-        navigate({ to: "/dashboard", replace: true });
-      }
     }
+    // admin has full access — no gating
   }, [session, pathname, navigate]);
 
   if (loading || !session) {
