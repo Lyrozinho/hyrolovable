@@ -292,7 +292,9 @@ function LicensesPage() {
 
       {/* Table */}
       <div className="rounded-lg border border-border bg-card overflow-hidden">
-        <Table>
+        <div className="overflow-x-auto">
+        <Table className="min-w-[720px]">
+
           <TableHeader>
             <TableRow className="bg-muted/40 hover:bg-muted/40 border-border">
               <TableHead className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">Chave</TableHead>
