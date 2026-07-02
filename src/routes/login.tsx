@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { ShieldCheck, Loader2, ArrowRight, Mail, Lock } from "lucide-react";
+import { Loader2, ArrowRight, Mail, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -38,50 +38,40 @@ function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background relative flex items-center justify-center px-4 overflow-hidden">
-      {/* Ambient background */}
-      <div className="pointer-events-none absolute inset-0 bg-grid opacity-[0.04]" />
-      <div
-        className="pointer-events-none absolute -top-40 left-1/2 -translate-x-1/2 h-[500px] w-[900px] rounded-full blur-3xl opacity-30"
-        style={{ background: "var(--gradient-brand)" }}
-      />
-      <div
-        className="pointer-events-none absolute -bottom-40 right-0 h-[400px] w-[600px] rounded-full blur-3xl opacity-20"
-        style={{ background: "oklch(0.7 0.18 260)" }}
-      />
-
-      <div className="absolute top-4 right-4 z-10">
-        <ThemeToggle />
-      </div>
-
-      <div className="relative z-10 w-full max-w-[400px]">
-        {/* Brand */}
-        <div className="flex flex-col items-center mb-8">
-          <div className="h-14 w-14 rounded-2xl bg-gradient-brand flex items-center justify-center shadow-glow ring-1 ring-white/10 mb-4">
-            <ShieldCheck className="h-7 w-7 text-white" />
+    <div className="min-h-screen bg-background flex flex-col">
+      {/* Top bar */}
+      <header className="h-14 border-b border-border/70 flex items-center px-6">
+        <div className="flex items-center gap-2">
+          <div className="h-6 w-6 rounded-md bg-foreground flex items-center justify-center">
+            <span className="text-[10px] font-bold text-background tracking-tight">H</span>
           </div>
-          <h1 className="text-[22px] font-semibold tracking-tight">Hyro Admin</h1>
-          <p className="text-xs text-muted-foreground mt-1">
-            License management platform
-          </p>
+          <span className="text-sm font-semibold tracking-tight">Hyro</span>
+          <span className="text-xs text-muted-foreground ml-1">Admin Console</span>
         </div>
+        <div className="ml-auto">
+          <ThemeToggle />
+        </div>
+      </header>
 
-        {/* Card */}
-        <div className="rounded-2xl border border-border/60 bg-card/70 backdrop-blur-xl shadow-elegant p-7">
-          <div className="mb-6">
-            <h2 className="text-lg font-semibold tracking-tight">Entrar na conta</h2>
-            <p className="text-[13px] text-muted-foreground mt-1">
-              Acesso restrito a administradores autorizados.
+      {/* Body */}
+      <div className="flex-1 flex items-center justify-center px-4 py-16">
+        <div className="w-full max-w-[380px]">
+          <div className="mb-8">
+            <h1 className="text-[22px] font-semibold tracking-tight text-foreground">
+              Entrar no console
+            </h1>
+            <p className="text-sm text-muted-foreground mt-1.5">
+              Utilize suas credenciais de administrador para continuar.
             </p>
           </div>
 
-          <form onSubmit={onSubmit} className="space-y-4">
-            <div className="space-y-1.5">
-              <Label htmlFor="email" className="text-xs font-medium text-muted-foreground">
+          <form onSubmit={onSubmit} className="space-y-5">
+            <div className="space-y-2">
+              <Label htmlFor="email" className="text-[13px] font-medium">
                 E-mail
               </Label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/70" />
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
                 <Input
                   id="email"
                   type="email"
@@ -89,17 +79,20 @@ function LoginPage() {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="admin@exemplo.com"
-                  className="h-11 pl-9"
+                  placeholder="voce@empresa.com"
+                  className="h-10 pl-9 text-sm"
                 />
               </div>
             </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="password" className="text-xs font-medium text-muted-foreground">
-                Senha
-              </Label>
+
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="password" className="text-[13px] font-medium">
+                  Senha
+                </Label>
+              </div>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/70" />
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
                 <Input
                   id="password"
                   type="password"
@@ -108,30 +101,37 @@ function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••••"
-                  className="h-11 pl-9"
+                  className="h-10 pl-9 text-sm"
                 />
               </div>
             </div>
+
             <Button
               type="submit"
-              className="w-full h-11 bg-gradient-brand hover:opacity-95 text-white shadow-glow gap-2 mt-2"
+              className="w-full h-10 text-sm font-medium gap-2"
               disabled={submitting}
             >
               {submitting ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
                 <>
-                  Entrar <ArrowRight className="h-4 w-4" />
+                  Entrar <ArrowRight className="h-3.5 w-3.5" />
                 </>
               )}
             </Button>
           </form>
-        </div>
 
-        <p className="mt-6 text-[11px] text-muted-foreground text-center">
-          Sistema protegido. Todas as ações são registradas.
-        </p>
+          <p className="mt-8 text-[11px] text-muted-foreground/80 leading-relaxed">
+            Acesso restrito e monitorado. Todas as ações realizadas neste console
+            são registradas em auditoria.
+          </p>
+        </div>
       </div>
+
+      <footer className="h-12 border-t border-border/70 flex items-center justify-between px-6 text-[11px] text-muted-foreground">
+        <span>© {new Date().getFullYear()} Hyro</span>
+        <span className="font-mono">v1.0</span>
+      </footer>
     </div>
   );
 }

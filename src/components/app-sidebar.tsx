@@ -1,10 +1,9 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { LayoutDashboard, KeyRound, Users, LogOut, ShieldCheck, ChevronsUpDown } from "lucide-react";
+import { LayoutDashboard, KeyRound, Users, LogOut } from "lucide-react";
 import { useAuth } from "@/lib/auth";
-import { Button } from "@/components/ui/button";
 
 const items = [
-  { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
+  { title: "Visão geral", url: "/dashboard", icon: LayoutDashboard },
   { title: "Licenças", url: "/licenses", icon: KeyRound },
   { title: "Revendedores", url: "/resellers", icon: Users },
 ];
@@ -13,71 +12,85 @@ export function AppSidebar() {
   const pathname = useRouterState({ select: (r) => r.location.pathname });
   const { session, signOut } = useAuth();
 
+  const initial = (
+    session?.user.name?.[0] ??
+    session?.user.email[0] ??
+    "A"
+  ).toUpperCase();
+
   return (
-    <aside className="hidden md:flex fixed left-0 top-0 h-screen w-64 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground">
+    <aside className="hidden md:flex fixed left-0 top-0 h-screen w-60 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground">
       {/* Brand */}
-      <div className="flex items-center gap-2.5 px-5 h-16 border-b border-sidebar-border">
-        <div className="h-9 w-9 rounded-lg bg-gradient-brand flex items-center justify-center shadow-glow">
-          <ShieldCheck className="h-4.5 w-4.5 text-white" strokeWidth={2.25} />
+      <div className="flex items-center gap-2.5 px-5 h-14 border-b border-sidebar-border">
+        <div className="h-6 w-6 rounded-md bg-foreground flex items-center justify-center">
+          <span className="text-[10px] font-bold text-background tracking-tight">H</span>
         </div>
-        <div className="flex flex-col leading-tight">
-          <span className="text-sm font-semibold tracking-tight">Hyro Admin</span>
-          <span className="text-[10.5px] text-muted-foreground uppercase tracking-wider">
-            Console
-          </span>
+        <div className="flex items-baseline gap-1.5 leading-none">
+          <span className="text-[13px] font-semibold tracking-tight">Hyro</span>
+          <span className="text-[10.5px] text-muted-foreground">Admin</span>
         </div>
       </div>
 
       {/* Nav */}
-      <div className="flex-1 overflow-y-auto px-3 py-5">
-        <div className="px-3 text-[10.5px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">
-          Geral
+      <nav className="flex-1 overflow-y-auto px-3 py-4">
+        <div className="px-2.5 mb-1.5 text-[10.5px] font-medium text-muted-foreground/80 uppercase tracking-[0.08em]">
+          Console
         </div>
-        <nav className="space-y-0.5">
+        <ul className="space-y-0.5">
           {items.map((item) => {
-            const active = pathname === item.url || pathname.startsWith(item.url + "/");
+            const active =
+              pathname === item.url || pathname.startsWith(item.url + "/");
             return (
-              <Link
-                key={item.url}
-                to={item.url}
-                className={[
-                  "group relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all",
-                  active
-                    ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
-                    : "text-muted-foreground hover:bg-sidebar-accent/50 hover:text-foreground",
-                ].join(" ")}
-              >
-                {active && (
-                  <span className="absolute left-0 top-1.5 bottom-1.5 w-0.5 rounded-r-full bg-primary" />
-                )}
-                <item.icon className="h-4 w-4 shrink-0" />
-                <span>{item.title}</span>
-              </Link>
+              <li key={item.url}>
+                <Link
+                  to={item.url}
+                  className={[
+                    "group flex items-center gap-2.5 rounded-md px-2.5 h-8 text-[13px] transition-colors",
+                    active
+                      ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                      : "text-muted-foreground hover:bg-sidebar-accent/60 hover:text-foreground",
+                  ].join(" ")}
+                >
+                  <item.icon
+                    className={[
+                      "h-4 w-4 shrink-0",
+                      active
+                        ? "text-foreground"
+                        : "text-muted-foreground/80 group-hover:text-foreground",
+                    ].join(" ")}
+                    strokeWidth={active ? 2.2 : 1.75}
+                  />
+                  <span>{item.title}</span>
+                </Link>
+              </li>
             );
           })}
-        </nav>
-      </div>
+        </ul>
+      </nav>
 
       {/* User */}
       <div className="border-t border-sidebar-border p-3">
-        <div className="flex items-center gap-3 rounded-lg px-2.5 py-2 hover:bg-sidebar-accent/50 transition-colors">
-          <div className="h-9 w-9 rounded-lg bg-gradient-brand flex items-center justify-center text-xs font-semibold text-white shrink-0">
-            {(session?.user.name?.[0] ?? session?.user.email[0] ?? "A").toUpperCase()}
+        <div className="flex items-center gap-2.5 px-1.5 py-1.5">
+          <div className="h-7 w-7 rounded-md bg-secondary border border-border flex items-center justify-center text-[11px] font-semibold text-foreground shrink-0">
+            {initial}
           </div>
           <div className="flex-1 min-w-0">
-            <div className="text-xs font-medium truncate">{session?.user.name ?? "Admin"}</div>
-            <div className="text-[11px] text-muted-foreground truncate">{session?.user.email}</div>
+            <div className="text-[12.5px] font-medium truncate leading-tight">
+              {session?.user.name ?? "Administrador"}
+            </div>
+            <div className="text-[11px] text-muted-foreground truncate leading-tight mt-0.5">
+              {session?.user.email}
+            </div>
           </div>
-          <ChevronsUpDown className="h-3.5 w-3.5 text-muted-foreground" />
+          <button
+            onClick={() => signOut()}
+            className="h-7 w-7 rounded-md text-muted-foreground hover:text-foreground hover:bg-sidebar-accent flex items-center justify-center transition-colors"
+            aria-label="Sair"
+            title="Sair"
+          >
+            <LogOut className="h-3.5 w-3.5" />
+          </button>
         </div>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="w-full justify-start gap-2 mt-1 text-muted-foreground hover:text-destructive"
-          onClick={() => signOut()}
-        >
-          <LogOut className="h-4 w-4" /> Sair
-        </Button>
       </div>
     </aside>
   );

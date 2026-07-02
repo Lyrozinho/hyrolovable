@@ -1,8 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Card } from "@/components/ui/card";
 import { supabase } from "@/lib/supabase";
-import { KeyRound, Users, Activity, TrendingUp } from "lucide-react";
+import { KeyRound, Users, Activity, TrendingUp, ArrowUpRight } from "lucide-react";
 import {
   ResponsiveContainer,
   AreaChart,
@@ -66,142 +65,179 @@ async function fetchStats(): Promise<Stats> {
   };
 }
 
+function StatCard({
+  label,
+  value,
+  icon: Icon,
+  hint,
+  loading,
+}: {
+  label: string;
+  value: number;
+  icon: typeof KeyRound;
+  hint?: string;
+  loading?: boolean;
+}) {
+  return (
+    <div className="group relative rounded-lg border border-border bg-card p-5 transition-colors hover:border-foreground/20">
+      <div className="flex items-center justify-between">
+        <span className="text-[12px] font-medium text-muted-foreground">{label}</span>
+        <Icon className="h-4 w-4 text-muted-foreground/70" strokeWidth={1.75} />
+      </div>
+      <div className="mt-4 flex items-baseline gap-2">
+        <span className="text-[28px] font-semibold tracking-tight tabular-nums leading-none">
+          {loading ? "—" : value.toLocaleString("pt-BR")}
+        </span>
+        {hint && !loading && (
+          <span className="text-[11px] text-muted-foreground">{hint}</span>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function DashboardPage() {
   const { data, isLoading } = useQuery({ queryKey: ["dash-stats"], queryFn: fetchStats });
 
-  const cards = [
-    {
-      label: "Licenças Ativas",
-      value: data?.activeLicenses ?? 0,
-      icon: KeyRound,
-      accent: "from-violet-500/20 to-violet-500/0",
-      iconClass: "text-violet-500 bg-violet-500/10",
-    },
-    {
-      label: "Usuários Online",
-      value: data?.onlineSessions ?? 0,
-      icon: Activity,
-      accent: "from-emerald-500/20 to-emerald-500/0",
-      iconClass: "text-emerald-500 bg-emerald-500/10",
-    },
-    {
-      label: "Revendedores Ativos",
-      value: data?.activeResellers ?? 0,
-      icon: Users,
-      accent: "from-amber-500/20 to-amber-500/0",
-      iconClass: "text-amber-500 bg-amber-500/10",
-    },
-    {
-      label: "Ativações (30d)",
-      value: data?.chart.reduce((a, b) => a + b.count, 0) ?? 0,
-      icon: TrendingUp,
-      accent: "from-sky-500/20 to-sky-500/0",
-      iconClass: "text-sky-500 bg-sky-500/10",
-    },
-  ];
+  const total30 = data?.chart.reduce((a, b) => a + b.count, 0) ?? 0;
+  const total15 = data?.chart.slice(-15).reduce((a, b) => a + b.count, 0) ?? 0;
+  const prev15 = data?.chart.slice(0, 15).reduce((a, b) => a + b.count, 0) ?? 0;
+  const delta = prev15 === 0 ? (total15 > 0 ? 100 : 0) : ((total15 - prev15) / prev15) * 100;
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
+      {/* Header */}
       <div className="flex items-end justify-between flex-wrap gap-4">
         <div>
-          <h1 className="text-3xl font-semibold tracking-tight">Visão Geral</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Métricas principais e crescimento de ativações em tempo real.
+          <h1 className="text-[22px] font-semibold tracking-tight leading-tight">
+            Visão geral
+          </h1>
+          <p className="text-[13px] text-muted-foreground mt-1">
+            Indicadores em tempo real do ambiente de licenças.
           </p>
         </div>
-        <div className="text-xs text-muted-foreground bg-muted/50 border border-border/60 rounded-lg px-3 py-1.5">
-          Atualizado agora · {new Date().toLocaleTimeString("pt-BR")}
+        <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
+          <span className="h-1.5 w-1.5 rounded-full bg-success animate-pulse" />
+          Sincronizado · {new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
         </div>
       </div>
 
+      {/* Stats */}
       <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 xl:grid-cols-4">
-        {cards.map((c) => (
-          <Card
-            key={c.label}
-            className="relative p-5 border-border/60 overflow-hidden shadow-elegant"
-          >
-            <div
-              className={`absolute inset-0 bg-gradient-to-br ${c.accent} pointer-events-none opacity-60`}
-            />
-            <div className="relative flex items-start justify-between">
-              <div>
-                <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                  {c.label}
-                </div>
-                <div className="text-3xl font-semibold mt-2 tracking-tight">
-                  {isLoading ? "—" : c.value.toLocaleString("pt-BR")}
-                </div>
-              </div>
-              <div
-                className={`h-10 w-10 rounded-xl flex items-center justify-center ${c.iconClass}`}
-              >
-                <c.icon className="h-5 w-5" />
-              </div>
-            </div>
-          </Card>
-        ))}
+        <StatCard
+          label="Licenças ativas"
+          value={data?.activeLicenses ?? 0}
+          icon={KeyRound}
+          loading={isLoading}
+        />
+        <StatCard
+          label="Sessões online"
+          value={data?.onlineSessions ?? 0}
+          icon={Activity}
+          hint="agora"
+          loading={isLoading}
+        />
+        <StatCard
+          label="Revendedores"
+          value={data?.activeResellers ?? 0}
+          icon={Users}
+          hint="ativos"
+          loading={isLoading}
+        />
+        <StatCard
+          label="Ativações · 30d"
+          value={total30}
+          icon={TrendingUp}
+          hint={
+            delta === 0
+              ? "estável"
+              : `${delta > 0 ? "+" : ""}${delta.toFixed(1)}% vs. período anterior`
+          }
+          loading={isLoading}
+        />
       </div>
 
-      <Card className="p-6 border-border/60 shadow-elegant">
-        <div className="mb-6 flex items-end justify-between flex-wrap gap-3">
+      {/* Chart */}
+      <div className="rounded-lg border border-border bg-card">
+        <div className="flex items-end justify-between flex-wrap gap-3 px-6 py-5 border-b border-border">
           <div>
-            <h2 className="text-base font-semibold">Ativações (últimos 30 dias)</h2>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              Novas licenças criadas por dia
+            <h2 className="text-[14px] font-semibold leading-tight">Ativações por dia</h2>
+            <p className="text-[12px] text-muted-foreground mt-0.5">
+              Novas licenças criadas nos últimos 30 dias
             </p>
           </div>
-          <div className="flex items-center gap-2 text-xs">
-            <span className="flex items-center gap-1.5 text-muted-foreground">
-              <span className="h-2 w-2 rounded-full bg-primary" /> Ativações
+          <div className="flex items-center gap-4 text-[11.5px] text-muted-foreground">
+            <span className="flex items-center gap-1.5">
+              <span className="h-2 w-2 rounded-[2px] bg-foreground" /> Ativações
             </span>
+            <a
+              href="#"
+              className="inline-flex items-center gap-1 text-foreground hover:opacity-70"
+            >
+              Ver relatório <ArrowUpRight className="h-3 w-3" />
+            </a>
           </div>
         </div>
-        <div className="h-80 w-full">
+        <div className="h-[320px] w-full px-3 pt-4 pb-2">
           <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={data?.chart ?? []} margin={{ left: -10, right: 8, top: 4, bottom: 0 }}>
+            <AreaChart data={data?.chart ?? []} margin={{ left: 4, right: 12, top: 8, bottom: 4 }}>
               <defs>
                 <linearGradient id="cGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="var(--color-primary)" stopOpacity={0.35} />
-                  <stop offset="100%" stopColor="var(--color-primary)" stopOpacity={0} />
+                  <stop offset="0%" stopColor="var(--color-foreground)" stopOpacity={0.14} />
+                  <stop offset="100%" stopColor="var(--color-foreground)" stopOpacity={0} />
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" vertical={false} />
+              <CartesianGrid
+                strokeDasharray="2 4"
+                stroke="var(--color-border)"
+                vertical={false}
+              />
               <XAxis
                 dataKey="date"
                 stroke="var(--color-muted-foreground)"
-                fontSize={11}
+                fontSize={10.5}
                 tickLine={false}
                 axisLine={false}
-                tickFormatter={(d) => d.slice(5)}
+                tickMargin={8}
+                tickFormatter={(d) => {
+                  const [, m, day] = d.split("-");
+                  return `${day}/${m}`;
+                }}
+                minTickGap={24}
               />
               <YAxis
                 stroke="var(--color-muted-foreground)"
-                fontSize={11}
+                fontSize={10.5}
                 tickLine={false}
                 axisLine={false}
                 allowDecimals={false}
+                width={28}
               />
               <Tooltip
+                cursor={{ stroke: "var(--color-border)", strokeWidth: 1 }}
                 contentStyle={{
                   background: "var(--color-popover)",
                   border: "1px solid var(--color-border)",
-                  borderRadius: 10,
+                  borderRadius: 8,
                   fontSize: 12,
-                  boxShadow: "var(--shadow-elegant)",
+                  padding: "6px 10px",
+                  boxShadow: "var(--shadow-md)",
                 }}
-                labelStyle={{ color: "var(--color-muted-foreground)", fontSize: 11 }}
+                labelStyle={{ color: "var(--color-muted-foreground)", fontSize: 11, marginBottom: 2 }}
               />
               <Area
                 type="monotone"
                 dataKey="count"
-                stroke="var(--color-primary)"
-                strokeWidth={2.5}
+                stroke="var(--color-foreground)"
+                strokeWidth={1.5}
                 fill="url(#cGrad)"
+                dot={false}
+                activeDot={{ r: 3, strokeWidth: 0, fill: "var(--color-foreground)" }}
               />
             </AreaChart>
           </ResponsiveContainer>
         </div>
-      </Card>
+      </div>
     </div>
   );
 }

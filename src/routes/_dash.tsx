@@ -3,9 +3,8 @@ import { useEffect } from "react";
 import { useAuth } from "@/lib/auth";
 import { AppSidebar } from "@/components/app-sidebar";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { Bell, Search } from "lucide-react";
+import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/_dash")({
   ssr: false,
@@ -13,7 +12,7 @@ export const Route = createFileRoute("/_dash")({
 });
 
 const titles: Record<string, string> = {
-  "/dashboard": "Dashboard",
+  "/dashboard": "Visão geral",
   "/licenses": "Licenças",
   "/resellers": "Revendedores",
 };
@@ -36,10 +35,10 @@ function DashLayout() {
   return (
     <div className="min-h-screen bg-background">
       <AppSidebar />
-      <div className="md:pl-64">
-        <header className="h-16 sticky top-0 z-30 border-b border-border/60 bg-background/80 backdrop-blur-xl flex items-center px-6 gap-3">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <span>Console</span>
+      <div className="md:pl-60">
+        <header className="h-14 sticky top-0 z-30 border-b border-border/70 bg-background/85 backdrop-blur-md flex items-center px-6 gap-4">
+          <div className="flex items-center gap-2 text-[13px]">
+            <span className="text-muted-foreground">Console</span>
             <span className="text-border">/</span>
             <span className="text-foreground font-medium">{title}</span>
           </div>
@@ -48,17 +47,16 @@ function DashLayout() {
               <Search className="h-3.5 w-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
               <Input
                 placeholder="Buscar..."
-                className="h-9 w-64 pl-8 bg-muted/50 border-transparent focus-visible:bg-background"
+                className="h-8 w-64 pl-8 text-[12.5px] bg-muted/60 border-transparent focus-visible:bg-background focus-visible:border-border"
               />
+              <kbd className="hidden lg:flex absolute right-2 top-1/2 -translate-y-1/2 h-5 items-center gap-0.5 rounded border border-border bg-background px-1.5 font-mono text-[10px] text-muted-foreground">
+                ⌘K
+              </kbd>
             </div>
-            <Button variant="ghost" size="icon" className="relative">
-              <Bell className="h-4 w-4" />
-              <span className="absolute top-2 right-2 h-1.5 w-1.5 rounded-full bg-primary" />
-            </Button>
             <ThemeToggle />
           </div>
         </header>
-        <main className="p-6 lg:p-8 max-w-[1600px]">
+        <main className="p-6 lg:px-8 lg:py-8">
           <Outlet />
         </main>
       </div>
