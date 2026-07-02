@@ -194,7 +194,7 @@ function LoginPage() {
                     </>
                   ) : (
                     <>
-                      Entrar no console
+                      Entrar no painel
                       <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
                     </>
                   )}
