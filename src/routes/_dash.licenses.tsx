@@ -1000,7 +1000,7 @@ function TestLicenseDialog({
                   <button
                     key={m}
                     type="button"
-                    onClick={() => setMinutes(m)}
+                    onClick={() => setMinutes(m as 3 | 30 | 60)}
                     className={[
                       "rounded-md border px-3 py-2.5 text-left transition-colors",
                       minutes === m
