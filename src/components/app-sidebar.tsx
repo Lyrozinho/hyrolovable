@@ -169,5 +169,7 @@ export function AppSidebar() {
         </div>
       </div>
     </aside>
+    </>
   );
 }
+
