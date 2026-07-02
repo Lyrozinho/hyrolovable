@@ -221,6 +221,14 @@ function LicensesPage() {
             <RefreshCw className={`h-3.5 w-3.5 mr-1.5 ${isFetching ? "animate-spin" : ""}`} />
             Atualizar
           </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-9"
+            onClick={() => setTestOpen(true)}
+          >
+            <FlaskConical className="h-3.5 w-3.5 mr-1.5" /> Gerar teste
+          </Button>
           <Button size="sm" className="h-9" onClick={() => setCreateOpen(true)}>
             <Plus className="h-3.5 w-3.5 mr-1.5" /> Nova licença
           </Button>
