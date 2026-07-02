@@ -74,86 +74,128 @@ function DashboardPage() {
       label: "Licenças Ativas",
       value: data?.activeLicenses ?? 0,
       icon: KeyRound,
+      accent: "from-violet-500/20 to-violet-500/0",
+      iconClass: "text-violet-500 bg-violet-500/10",
     },
     {
       label: "Usuários Online",
       value: data?.onlineSessions ?? 0,
       icon: Activity,
+      accent: "from-emerald-500/20 to-emerald-500/0",
+      iconClass: "text-emerald-500 bg-emerald-500/10",
     },
     {
       label: "Revendedores Ativos",
       value: data?.activeResellers ?? 0,
       icon: Users,
+      accent: "from-amber-500/20 to-amber-500/0",
+      iconClass: "text-amber-500 bg-amber-500/10",
     },
     {
-      label: "Total últimos 30 dias",
+      label: "Ativações (30d)",
       value: data?.chart.reduce((a, b) => a + b.count, 0) ?? 0,
       icon: TrendingUp,
+      accent: "from-sky-500/20 to-sky-500/0",
+      iconClass: "text-sky-500 bg-sky-500/10",
     },
   ];
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Visão Geral</h1>
-        <p className="text-sm text-muted-foreground">
-          Métricas principais e crescimento de ativações.
-        </p>
+    <div className="space-y-8">
+      <div className="flex items-end justify-between flex-wrap gap-4">
+        <div>
+          <h1 className="text-3xl font-semibold tracking-tight">Visão Geral</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Métricas principais e crescimento de ativações em tempo real.
+          </p>
+        </div>
+        <div className="text-xs text-muted-foreground bg-muted/50 border border-border/60 rounded-lg px-3 py-1.5">
+          Atualizado agora · {new Date().toLocaleTimeString("pt-BR")}
+        </div>
       </div>
 
       <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 xl:grid-cols-4">
         {cards.map((c) => (
-          <Card key={c.label} className="p-5 border-border/60">
-            <div className="flex items-start justify-between">
+          <Card
+            key={c.label}
+            className="relative p-5 border-border/60 overflow-hidden shadow-elegant"
+          >
+            <div
+              className={`absolute inset-0 bg-gradient-to-br ${c.accent} pointer-events-none opacity-60`}
+            />
+            <div className="relative flex items-start justify-between">
               <div>
-                <div className="text-xs text-muted-foreground">{c.label}</div>
-                <div className="text-2xl font-semibold mt-2">
-                  {isLoading ? "—" : c.value.toLocaleString()}
+                <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                  {c.label}
+                </div>
+                <div className="text-3xl font-semibold mt-2 tracking-tight">
+                  {isLoading ? "—" : c.value.toLocaleString("pt-BR")}
                 </div>
               </div>
-              <div className="h-9 w-9 rounded-md bg-primary/10 flex items-center justify-center">
-                <c.icon className="h-4 w-4 text-primary" />
+              <div
+                className={`h-10 w-10 rounded-xl flex items-center justify-center ${c.iconClass}`}
+              >
+                <c.icon className="h-5 w-5" />
               </div>
             </div>
           </Card>
         ))}
       </div>
 
-      <Card className="p-5 border-border/60">
-        <div className="mb-4">
-          <h2 className="text-sm font-semibold">Ativações (últimos 30 dias)</h2>
-          <p className="text-xs text-muted-foreground">Novas licenças criadas por dia</p>
+      <Card className="p-6 border-border/60 shadow-elegant">
+        <div className="mb-6 flex items-end justify-between flex-wrap gap-3">
+          <div>
+            <h2 className="text-base font-semibold">Ativações (últimos 30 dias)</h2>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Novas licenças criadas por dia
+            </p>
+          </div>
+          <div className="flex items-center gap-2 text-xs">
+            <span className="flex items-center gap-1.5 text-muted-foreground">
+              <span className="h-2 w-2 rounded-full bg-primary" /> Ativações
+            </span>
+          </div>
         </div>
-        <div className="h-72 w-full">
+        <div className="h-80 w-full">
           <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={data?.chart ?? []}>
+            <AreaChart data={data?.chart ?? []} margin={{ left: -10, right: 8, top: 4, bottom: 0 }}>
               <defs>
                 <linearGradient id="cGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="var(--color-chart-1)" stopOpacity={0.4} />
-                  <stop offset="100%" stopColor="var(--color-chart-1)" stopOpacity={0} />
+                  <stop offset="0%" stopColor="var(--color-primary)" stopOpacity={0.35} />
+                  <stop offset="100%" stopColor="var(--color-primary)" stopOpacity={0} />
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" vertical={false} />
               <XAxis
                 dataKey="date"
                 stroke="var(--color-muted-foreground)"
                 fontSize={11}
+                tickLine={false}
+                axisLine={false}
                 tickFormatter={(d) => d.slice(5)}
               />
-              <YAxis stroke="var(--color-muted-foreground)" fontSize={11} allowDecimals={false} />
+              <YAxis
+                stroke="var(--color-muted-foreground)"
+                fontSize={11}
+                tickLine={false}
+                axisLine={false}
+                allowDecimals={false}
+              />
               <Tooltip
                 contentStyle={{
                   background: "var(--color-popover)",
                   border: "1px solid var(--color-border)",
-                  borderRadius: 8,
+                  borderRadius: 10,
                   fontSize: 12,
+                  boxShadow: "var(--shadow-elegant)",
                 }}
+                labelStyle={{ color: "var(--color-muted-foreground)", fontSize: 11 }}
               />
               <Area
                 type="monotone"
                 dataKey="count"
-                stroke="var(--color-chart-1)"
-                strokeWidth={2}
+                stroke="var(--color-primary)"
+                strokeWidth={2.5}
                 fill="url(#cGrad)"
               />
             </AreaChart>
