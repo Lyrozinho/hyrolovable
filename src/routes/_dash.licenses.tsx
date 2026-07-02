@@ -645,7 +645,26 @@ function CreateLicenseDialog({
               </label>
             </div>
           </div>
+
+          {/* Painel access password */}
+          <div className="space-y-1.5">
+            <Label className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">
+              Senha de acesso ao painel <span className="text-muted-foreground/70 normal-case tracking-normal">(opcional)</span>
+            </Label>
+            <Input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Mín. 6 caracteres — deixe em branco para não permitir login"
+              className="h-10 text-[13px]"
+            />
+            <p className="text-[11px] text-muted-foreground">
+              Com senha definida, o cliente pode logar em <span className="font-mono">/login</span> e acompanhar sua assinatura.
+            </p>
+          </div>
         </div>
+
+
 
         <DialogFooter className="px-6 py-4 border-t border-border/60 bg-muted/30 gap-2">
           <Button variant="ghost" size="sm" onClick={() => onOpenChange(false)}>
