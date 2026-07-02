@@ -106,7 +106,7 @@ function LoginPage() {
                     Autenticação segura
                   </div>
                   <h1 className="text-[22px] font-semibold tracking-tight leading-tight">
-                    Entrar no console
+                    Entrar no painel
                   </h1>
                   <p className="text-[13px] text-muted-foreground mt-1.5 leading-relaxed">
                     Acesse com suas credenciais de administrador.
@@ -194,7 +194,7 @@ function LoginPage() {
                     </>
                   ) : (
                     <>
-                      Entrar no console
+                      Entrar no painel
                       <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
                     </>
                   )}
@@ -235,7 +235,7 @@ function LoginPage() {
 
           {/* Footnote */}
           <p className="mt-6 text-[11px] text-muted-foreground/80 leading-relaxed text-center px-4">
-            Acesso restrito e monitorado. Todas as ações realizadas neste console
+            Acesso restrito e monitorado. Todas as ações realizadas neste painel
             são registradas em auditoria.
           </p>
         </div>
