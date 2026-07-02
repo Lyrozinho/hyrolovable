@@ -96,6 +96,8 @@ function LicensesPage() {
   const [testOpen, setTestOpen] = useState(false);
   const [editing, setEditing] = useState<License | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [revealed, setRevealed] = useState<Record<string, boolean>>({});
+  const [revealAll, setRevealAll] = useState(false);
 
   const { data, isLoading, refetch, isFetching, error } = useQuery({
     queryKey: ["licenses", search, status, page],
