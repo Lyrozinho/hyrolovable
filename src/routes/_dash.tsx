@@ -36,18 +36,18 @@ function DashLayout() {
     <div className="min-h-screen bg-background">
       <AppSidebar />
       <div className="md:pl-64">
-        <header className="h-16 sticky top-0 z-30 border-b border-border bg-card flex items-center px-8 gap-4">
-          <div className="flex items-center gap-3 text-[13px]">
+        <header className="h-16 sticky top-0 z-30 border-b border-border bg-card flex items-center px-6 gap-4">
+          <div className="flex items-center gap-3 text-[13px] min-w-0">
             <span className="text-muted-foreground">Console</span>
             <span className="text-border">/</span>
-            <span className="text-foreground font-medium">{title}</span>
+            <span className="text-foreground font-medium truncate">{title}</span>
           </div>
           <div className="ml-auto flex items-center gap-2">
             <div className="relative hidden md:block">
               <Search className="h-3.5 w-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
               <Input
                 placeholder="Buscar..."
-                className="h-9 w-72 pl-9 pr-10 text-[12.5px] rounded-full bg-muted border-transparent focus-visible:bg-background focus-visible:border-border focus-visible:ring-0"
+                className="h-9 w-64 pl-9 pr-10 text-[12.5px] rounded-full bg-muted border-transparent focus-visible:bg-background focus-visible:border-border focus-visible:ring-0"
               />
               <kbd className="hidden lg:flex absolute right-2.5 top-1/2 -translate-y-1/2 h-5 items-center justify-center rounded border border-border bg-background px-1.5 font-mono text-[10px] font-bold text-muted-foreground">
                 ⌘K
@@ -56,11 +56,10 @@ function DashLayout() {
             <ThemeToggle />
           </div>
         </header>
-        <main className="p-8">
-          <div className="max-w-7xl mx-auto">
-            <Outlet />
-          </div>
+        <main className="px-6 py-6">
+          <Outlet />
         </main>
+
       </div>
     </div>
   );
