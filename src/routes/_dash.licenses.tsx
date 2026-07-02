@@ -330,18 +330,38 @@ function LicensesPage() {
                 return (
                   <TableRow key={l.id} className="border-border">
                     <TableCell className="py-3">
-                      <button
-                        onClick={() => copyKey(l.id)}
-                        className="group inline-flex items-center gap-2 font-mono text-[12.5px] text-foreground/90 hover:text-foreground"
-                        title="Copiar chave"
-                      >
-                        <span className="tracking-wider">{l.id}</span>
-                        {copiedId === l.id ? (
-                          <Check className="h-3.5 w-3.5 text-success" />
-                        ) : (
-                          <Copy className="h-3.5 w-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
-                        )}
-                      </button>
+                      {(() => {
+                        const isRevealed = revealAll || !!revealed[l.id];
+                        return (
+                          <div className="inline-flex items-center gap-1.5">
+                            <button
+                              onClick={() => copyKey(l.id)}
+                              className={[
+                                "group inline-flex items-center gap-2 font-mono text-[12.5px] text-foreground/90 hover:text-foreground rounded px-1.5 py-0.5 -ml-1.5 transition-all",
+                                isRevealed ? "" : "select-none blur-[5px] hover:blur-[3px]",
+                              ].join(" ")}
+                              title={isRevealed ? "Copiar chave" : "Revele para copiar"}
+                            >
+                              <span className="tracking-wider">{l.id}</span>
+                              {copiedId === l.id ? (
+                                <Check className="h-3.5 w-3.5 text-success" />
+                              ) : (
+                                <Copy className="h-3.5 w-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                              )}
+                            </button>
+                            <button
+                              onClick={() =>
+                                setRevealed((r) => ({ ...r, [l.id]: !r[l.id] }))
+                              }
+                              className="h-6 w-6 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted flex items-center justify-center shrink-0"
+                              title={isRevealed ? "Ocultar" : "Revelar"}
+                              aria-label={isRevealed ? "Ocultar chave" : "Revelar chave"}
+                            >
+                              {isRevealed ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                            </button>
+                          </div>
+                        );
+                      })()}
                     </TableCell>
                     <TableCell className="text-[13px]">{l.user_email ?? "—"}</TableCell>
                     <TableCell>
