@@ -19,22 +19,24 @@ export function AppSidebar() {
   ).toUpperCase();
 
   return (
-    <aside className="hidden md:flex fixed left-0 top-0 h-screen w-60 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground">
+    <aside className="hidden md:flex fixed left-0 top-0 h-screen w-64 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground">
       {/* Brand */}
-      <div className="flex items-center gap-2.5 px-5 h-14 border-b border-sidebar-border">
-        <div className="h-7 w-7 rounded-md bg-sidebar-accent border border-sidebar-border flex items-center justify-center">
-          <span className="text-[11px] font-bold text-sidebar-foreground tracking-tight">H</span>
+      <div className="px-6 py-5 flex items-center gap-3">
+        <div className="h-8 w-8 rounded-lg bg-sidebar-primary flex items-center justify-center shrink-0">
+          <div className="h-3.5 w-3.5 border-2 border-sidebar-primary-foreground rounded-[2px] rotate-45" />
         </div>
-        <div className="flex items-baseline gap-1.5 leading-none">
-          <span className="text-[13.5px] font-semibold tracking-tight text-sidebar-foreground">Hyro</span>
-          <span className="text-[10.5px] text-sidebar-foreground/50 uppercase tracking-[0.12em]">Admin</span>
+        <div className="flex flex-col leading-none">
+          <span className="text-[15px] font-semibold tracking-tight text-sidebar-foreground">Hyro</span>
+          <span className="text-[10px] font-medium text-sidebar-foreground/50 uppercase tracking-[0.14em] mt-1">
+            Admin Console
+          </span>
         </div>
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 overflow-y-auto px-3 py-4">
-        <div className="px-2.5 mb-1.5 text-[10.5px] font-medium text-sidebar-foreground/45 uppercase tracking-[0.1em]">
-          Console
+      <nav className="flex-1 overflow-y-auto px-4 pt-3">
+        <div className="px-2 mb-2 text-[11px] font-bold text-sidebar-foreground/40 uppercase tracking-[0.14em]">
+          Overview
         </div>
         <ul className="space-y-0.5">
           {items.map((item) => {
@@ -45,22 +47,13 @@ export function AppSidebar() {
                 <Link
                   to={item.url}
                   className={[
-                    "group relative flex items-center gap-2.5 rounded-md px-2.5 h-8.5 py-2 text-[13px] transition-colors",
+                    "flex items-center gap-3 px-3 py-2 rounded-md text-[13.5px] font-medium transition-colors",
                     active
-                      ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
-                      : "text-sidebar-foreground/65 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground",
+                      ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                      : "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/60",
                   ].join(" ")}
                 >
-                  {active && (
-                    <span className="absolute left-0 top-1.5 bottom-1.5 w-[2px] rounded-r-full bg-sidebar-foreground/80" />
-                  )}
-                  <item.icon
-                    className={[
-                      "h-4 w-4 shrink-0",
-                      active ? "text-sidebar-foreground" : "text-sidebar-foreground/55 group-hover:text-sidebar-foreground",
-                    ].join(" ")}
-                    strokeWidth={active ? 2.1 : 1.75}
-                  />
+                  <item.icon className="h-4 w-4 shrink-0" strokeWidth={2} />
                   <span>{item.title}</span>
                 </Link>
               </li>
@@ -70,22 +63,22 @@ export function AppSidebar() {
       </nav>
 
       {/* User */}
-      <div className="border-t border-sidebar-border p-3">
-        <div className="flex items-center gap-2.5 px-1.5 py-1.5">
-          <div className="h-7 w-7 rounded-md bg-sidebar-accent border border-sidebar-border flex items-center justify-center text-[11px] font-semibold text-sidebar-foreground shrink-0">
+      <div className="p-4 border-t border-sidebar-border">
+        <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-sidebar-accent/60 transition-colors">
+          <div className="h-8 w-8 rounded-full bg-sidebar-accent border border-sidebar-border flex items-center justify-center text-[11.5px] font-semibold text-sidebar-foreground shrink-0">
             {initial}
           </div>
           <div className="flex-1 min-w-0">
-            <div className="text-[12.5px] font-medium truncate leading-tight text-sidebar-foreground">
+            <div className="text-[13px] font-medium truncate text-sidebar-foreground leading-tight">
               {session?.user.name ?? "Administrador"}
             </div>
-            <div className="text-[11px] text-sidebar-foreground/55 truncate leading-tight mt-0.5">
+            <div className="text-[11.5px] text-sidebar-foreground/55 truncate leading-tight mt-0.5">
               {session?.user.email}
             </div>
           </div>
           <button
             onClick={() => signOut()}
-            className="h-7 w-7 rounded-md text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent flex items-center justify-center transition-colors"
+            className="h-7 w-7 rounded-md text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent flex items-center justify-center transition-colors shrink-0"
             aria-label="Sair"
             title="Sair"
           >

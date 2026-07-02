@@ -35,29 +35,31 @@ function DashLayout() {
   return (
     <div className="min-h-screen bg-background">
       <AppSidebar />
-      <div className="md:pl-60">
-        <header className="h-14 sticky top-0 z-30 border-b border-border/60 glass-header flex items-center px-6 gap-4">
-          <div className="flex items-center gap-2 text-[13px]">
+      <div className="md:pl-64">
+        <header className="h-16 sticky top-0 z-30 border-b border-border bg-card flex items-center px-8 gap-4">
+          <div className="flex items-center gap-3 text-[13px]">
             <span className="text-muted-foreground">Console</span>
             <span className="text-border">/</span>
             <span className="text-foreground font-medium">{title}</span>
           </div>
           <div className="ml-auto flex items-center gap-2">
             <div className="relative hidden md:block">
-              <Search className="h-3.5 w-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <Search className="h-3.5 w-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
               <Input
                 placeholder="Buscar..."
-                className="h-8 w-64 pl-8 text-[12.5px] bg-muted/60 border-transparent focus-visible:bg-background focus-visible:border-border"
+                className="h-9 w-72 pl-9 pr-10 text-[12.5px] rounded-full bg-muted border-transparent focus-visible:bg-background focus-visible:border-border focus-visible:ring-0"
               />
-              <kbd className="hidden lg:flex absolute right-2 top-1/2 -translate-y-1/2 h-5 items-center gap-0.5 rounded border border-border bg-background px-1.5 font-mono text-[10px] text-muted-foreground">
+              <kbd className="hidden lg:flex absolute right-2.5 top-1/2 -translate-y-1/2 h-5 items-center justify-center rounded border border-border bg-background px-1.5 font-mono text-[10px] font-bold text-muted-foreground">
                 ⌘K
               </kbd>
             </div>
             <ThemeToggle />
           </div>
         </header>
-        <main className="p-6 lg:px-8 lg:py-8">
-          <Outlet />
+        <main className="p-8">
+          <div className="max-w-7xl mx-auto">
+            <Outlet />
+          </div>
         </main>
       </div>
     </div>
