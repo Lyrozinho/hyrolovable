@@ -37,16 +37,28 @@ function DashInner() {
     if (!loading && !session) navigate({ to: "/login", replace: true });
   }, [loading, session, navigate]);
 
+  // Client role can only access subscription/resellers
+  useEffect(() => {
+    if (!session) return;
+    if (session.user.role === "client") {
+      if (pathname === "/dashboard" || pathname === "/licenses" || pathname === "/") {
+        navigate({ to: "/subscription", replace: true });
+      }
+    }
+  }, [session, pathname, navigate]);
+
   if (loading || !session) {
     return <div className="min-h-screen bg-background" />;
   }
+
+
 
   const title = titles[pathname] ?? "Painel";
 
   return (
     <div className="min-h-screen bg-background">
       <AppSidebar />
-      <div className={collapsed ? "md:pl-[68px] transition-[padding] duration-200" : "md:pl-64 transition-[padding] duration-200"}>
+      <div className={collapsed ? "md:pl-[72px] transition-[padding] duration-200" : "md:pl-64 transition-[padding] duration-200"}>
         <header className="h-16 sticky top-0 z-30 border-b border-border bg-card flex items-center px-6 gap-4">
           <div className="flex items-center gap-3 text-[13px] min-w-0">
             <span className="text-muted-foreground">Console</span>

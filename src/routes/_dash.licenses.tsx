@@ -35,7 +35,9 @@ import {
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { generateLicenseKey } from "@/lib/license-key";
+import { sha256Hex } from "@/lib/auth";
 import { toast } from "sonner";
+
 
 export const Route = createFileRoute("/_dash/licenses")({
   component: LicensesPage,
@@ -467,11 +469,15 @@ function CreateLicenseDialog({
   const [email, setEmail] = useState("");
   const [days, setDays] = useState("30");
   const [lifetime, setLifetime] = useState(false);
+  const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [previewKey, setPreviewKey] = useState<string>(generateLicenseKey());
 
   useEffect(() => {
-    if (open) setPreviewKey(generateLicenseKey());
+    if (open) {
+      setPreviewKey(generateLicenseKey());
+      setPassword("");
+    }
   }, [open]);
 
   const submit = async () => {
@@ -480,19 +486,32 @@ function CreateLicenseDialog({
       toast.error("Informe um e-mail.");
       return;
     }
+    if (password && password.length < 6) {
+      toast.error("A senha deve ter no mínimo 6 caracteres.");
+      return;
+    }
     setSubmitting(true);
     try {
+      const passwordHash = password ? await sha256Hex(password) : null;
+
       // 1) Buscar ou criar usuário em hyro_extension_users
       let userId: string | null = null;
       const { data: existing, error: uerr } = await supabase
         .from("hyro_extension_users")
-        .select("id")
+        .select("id, password_hash")
         .eq("email", emailNorm)
         .maybeSingle();
       if (uerr) throw uerr;
 
       if (existing) {
         userId = existing.id;
+        // Atualiza senha se admin definiu uma nova
+        if (passwordHash) {
+          await supabase
+            .from("hyro_extension_users")
+            .update({ password_hash: passwordHash, active: true })
+            .eq("id", userId);
+        }
       } else {
         const { data: created, error: cerr } = await supabase
           .from("hyro_extension_users")
@@ -500,7 +519,7 @@ function CreateLicenseDialog({
             email: emailNorm,
             name: emailNorm.split("@")[0],
             role: "user",
-            password_hash: "",
+            password_hash: passwordHash ?? "",
             active: true,
           })
           .select("id")
@@ -528,12 +547,14 @@ function CreateLicenseDialog({
       setEmail("");
       setDays("30");
       setLifetime(false);
+      setPassword("");
     } catch (e: any) {
       toast.error(e.message ?? "Erro ao criar");
     } finally {
       setSubmitting(false);
     }
   };
+
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -624,7 +645,26 @@ function CreateLicenseDialog({
               </label>
             </div>
           </div>
+
+          {/* Painel access password */}
+          <div className="space-y-1.5">
+            <Label className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">
+              Senha de acesso ao painel <span className="text-muted-foreground/70 normal-case tracking-normal">(opcional)</span>
+            </Label>
+            <Input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Mín. 6 caracteres — deixe em branco para não permitir login"
+              className="h-10 text-[13px]"
+            />
+            <p className="text-[11px] text-muted-foreground">
+              Com senha definida, o cliente pode logar em <span className="font-mono">/login</span> e acompanhar sua assinatura.
+            </p>
+          </div>
         </div>
+
+
 
         <DialogFooter className="px-6 py-4 border-t border-border/60 bg-muted/30 gap-2">
           <Button variant="ghost" size="sm" onClick={() => onOpenChange(false)}>
