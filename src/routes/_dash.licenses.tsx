@@ -35,7 +35,9 @@ import {
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { generateLicenseKey } from "@/lib/license-key";
-import { sha256Hex } from "@/lib/auth";
+import { sha256Hex, useAuth } from "@/lib/auth";
+
+const OWNER_EMAIL = "adminpainel@gmail.com";
 import { toast } from "sonner";
 
 
