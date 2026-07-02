@@ -218,6 +218,16 @@ function LicensesPage() {
           <Button
             variant="outline"
             size="sm"
+            onClick={() => setRevealAll((v) => !v)}
+            className="h-9"
+            title={revealAll ? "Ocultar todas as chaves" : "Revelar todas as chaves"}
+          >
+            {revealAll ? <EyeOff className="h-3.5 w-3.5 mr-1.5" /> : <Eye className="h-3.5 w-3.5 mr-1.5" />}
+            {revealAll ? "Ocultar chaves" : "Revelar chaves"}
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
             onClick={() => refetch()}
             disabled={isFetching}
             className="h-9"
