@@ -13,8 +13,8 @@ type NavItem = {
 const items: NavItem[] = [
   { title: "Visão geral", url: "/dashboard", icon: LayoutDashboard, roles: ["admin"] },
   { title: "Licenças", url: "/licenses", icon: KeyRound, roles: ["admin"] },
-  { title: "Revendedores", url: "/resellers", icon: Users, roles: ["admin", "client"] },
-  { title: "Assinatura", url: "/subscription", icon: Sparkles, roles: ["admin", "client"] },
+  { title: "Revendedores", url: "/resellers", icon: Users, roles: ["client"] },
+  { title: "Assinatura", url: "/subscription", icon: Sparkles, roles: ["client"] },
 ];
 
 export function AppSidebar() {

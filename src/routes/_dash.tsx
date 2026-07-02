@@ -37,12 +37,17 @@ function DashInner() {
     if (!loading && !session) navigate({ to: "/login", replace: true });
   }, [loading, session, navigate]);
 
-  // Client role can only access subscription/resellers
+  // Role-based route gating
   useEffect(() => {
     if (!session) return;
     if (session.user.role === "client") {
       if (pathname === "/dashboard" || pathname === "/licenses" || pathname === "/") {
         navigate({ to: "/subscription", replace: true });
+      }
+    } else {
+      // admin should not access client-only routes
+      if (pathname === "/resellers" || pathname === "/subscription") {
+        navigate({ to: "/dashboard", replace: true });
       }
     }
   }, [session, pathname, navigate]);
