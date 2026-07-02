@@ -415,6 +415,9 @@ function LicensesPage() {
             )}
           </TableBody>
         </Table>
+        </div>
+
+
 
         <div className="flex items-center justify-between px-4 py-3 border-t border-border text-[12.5px]">
           <div className="text-muted-foreground tabular-nums">
