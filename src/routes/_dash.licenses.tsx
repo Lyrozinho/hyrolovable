@@ -378,17 +378,38 @@ function CreateLicenseDialog({
   }, [open]);
 
   const submit = async () => {
+    const emailNorm = email.trim().toLowerCase();
+    if (!emailNorm) {
+      toast.error("Informe um e-mail.");
+      return;
+    }
     setSubmitting(true);
     try {
-      const { data: user, error: uerr } = await supabase
+      // 1) Buscar ou criar usuário em hyro_extension_users
+      let userId: string | null = null;
+      const { data: existing, error: uerr } = await supabase
         .from("hyro_extension_users")
         .select("id")
-        .eq("email", email.trim().toLowerCase())
+        .eq("email", emailNorm)
         .maybeSingle();
       if (uerr) throw uerr;
-      if (!user) {
-        toast.error("Usuário não encontrado. Cadastre-o primeiro na tabela hyro_extension_users.");
-        return;
+
+      if (existing) {
+        userId = existing.id;
+      } else {
+        const { data: created, error: cerr } = await supabase
+          .from("hyro_extension_users")
+          .insert({
+            email: emailNorm,
+            name: emailNorm.split("@")[0],
+            role: "user",
+            password_hash: "",
+            active: true,
+          })
+          .select("id")
+          .single();
+        if (cerr) throw cerr;
+        userId = created.id;
       }
 
       const expiresAt = lifetime
@@ -398,7 +419,7 @@ function CreateLicenseDialog({
       const key = previewKey;
       const { error } = await supabase.from("hyro_extension_licenses").insert({
         id: key,
-        user_id: user.id,
+        user_id: userId,
         status: "ativa",
         expires_at: expiresAt.toISOString(),
       });
