@@ -763,3 +763,194 @@ function EditLicenseDialog({
     </Dialog>
   );
 }
+
+function TestLicenseDialog({
+  open,
+  onOpenChange,
+}: {
+  open: boolean;
+  onOpenChange: (b: boolean) => void;
+}) {
+  const qc = useQueryClient();
+  const [name, setName] = useState("");
+  const [minutes, setMinutes] = useState<3 | 30>(30);
+  const [submitting, setSubmitting] = useState(false);
+  const [previewKey, setPreviewKey] = useState<string>(generateTestKey());
+
+  useEffect(() => {
+    if (open) {
+      setPreviewKey(generateTestKey());
+      setName("");
+      setMinutes(30);
+    }
+  }, [open]);
+
+  const trimmedName = name.trim();
+  const nameValid =
+    trimmedName.length >= 2 &&
+    trimmedName.length <= 60 &&
+    /^[\p{L}0-9][\p{L}0-9\s'.-]*$/u.test(trimmedName);
+
+  const submit = async () => {
+    if (!nameValid) {
+      toast.error("Informe um nome válido (2–60 caracteres).");
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const email = generateTestEmail();
+      const { data: created, error: cerr } = await supabase
+        .from("hyro_extension_users")
+        .insert({
+          email,
+          name: trimmedName,
+          role: "user",
+          password_hash: "",
+          active: true,
+        })
+        .select("id")
+        .single();
+      if (cerr) throw cerr;
+      const userId = created.id;
+
+      const expiresAt = new Date(Date.now() + minutes * 60 * 1000);
+      const key = previewKey;
+      const { error } = await supabase.from("hyro_extension_licenses").insert({
+        id: key,
+        user_id: userId,
+        status: "ativa",
+        expires_at: expiresAt.toISOString(),
+      });
+      if (error) {
+        // rollback user
+        await supabase.from("hyro_extension_users").delete().eq("id", userId);
+        throw error;
+      }
+
+      // Schedule client-side auto-deletion when the timer expires.
+      const ms = expiresAt.getTime() - Date.now();
+      setTimeout(async () => {
+        await supabase.from("hyro_extension_licenses").delete().eq("id", key);
+        await supabase.from("hyro_extension_users").delete().eq("id", userId);
+        qc.invalidateQueries({ queryKey: ["licenses"] });
+        qc.invalidateQueries({ queryKey: ["dash-stats"] });
+        toast.message("Licença de teste expirada e removida", { description: key });
+      }, ms + 1500);
+
+      toast.success(`Licença de teste criada (${minutes} min)`, { description: key });
+      qc.invalidateQueries({ queryKey: ["licenses"] });
+      qc.invalidateQueries({ queryKey: ["dash-stats"] });
+      onOpenChange(false);
+    } catch (e: any) {
+      toast.error(e.message ?? "Erro ao criar licença de teste");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="glass-panel border-0 sm:max-w-[460px] p-0 overflow-hidden">
+        <DialogHeader className="px-6 pt-6 pb-4 border-b border-border/60">
+          <div className="flex items-start gap-3">
+            <div className="h-9 w-9 rounded-md bg-foreground text-background flex items-center justify-center shrink-0">
+              <FlaskConical className="h-4 w-4" strokeWidth={2} />
+            </div>
+            <div>
+              <DialogTitle className="text-[15px] font-semibold tracking-tight">
+                Licença de teste
+              </DialogTitle>
+              <DialogDescription className="text-[12.5px] text-muted-foreground mt-0.5">
+                Chave temporária com e-mail aleatório. Auto-exclui ao expirar.
+              </DialogDescription>
+            </div>
+          </div>
+        </DialogHeader>
+
+        <div className="px-6 py-5 space-y-5">
+          <div className="space-y-1.5">
+            <Label className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">
+              Chave gerada
+            </Label>
+            <div className="flex items-center gap-2">
+              <div className="flex-1 rounded-md border border-border bg-muted/40 px-3 h-10 flex items-center font-mono text-[13px] tracking-widest">
+                {previewKey}
+              </div>
+              <Button
+                type="button" variant="outline" size="icon"
+                className="h-10 w-10 shrink-0"
+                title="Gerar outra"
+                onClick={() => setPreviewKey(generateTestKey())}
+              >
+                <RefreshCw className="h-3.5 w-3.5" />
+              </Button>
+            </div>
+            <p className="text-[11px] text-muted-foreground">
+              Prefixo <span className="font-mono">TST-</span> · e-mail gerado automaticamente
+            </p>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">
+              Nome do testador
+            </Label>
+            <div className="relative">
+              <UserIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+              <Input
+                value={name}
+                onChange={(e) => setName(e.target.value.slice(0, 60))}
+                placeholder="Ex.: João Silva"
+                maxLength={60}
+                className="h-10 pl-9 text-[13px]"
+              />
+            </div>
+            {name.length > 0 && !nameValid && (
+              <p className="text-[11px] text-destructive">
+                Use 2 a 60 caracteres (letras, números, espaços, . ' -).
+              </p>
+            )}
+          </div>
+
+          <div className="space-y-1.5">
+            <Label className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">
+              Duração
+            </Label>
+            <div className="grid grid-cols-2 gap-2">
+              {[3, 30].map((m) => (
+                <button
+                  key={m}
+                  type="button"
+                  onClick={() => setMinutes(m as 3 | 30)}
+                  className={[
+                    "rounded-md border px-3 py-2.5 text-left transition-colors",
+                    minutes === m
+                      ? "border-foreground bg-foreground/5"
+                      : "border-border hover:bg-muted/40",
+                  ].join(" ")}
+                >
+                  <div className="flex items-center gap-2 text-[13px] font-medium">
+                    <Timer className="h-3.5 w-3.5" />
+                    {m} minutos
+                  </div>
+                  <div className="text-[11px] text-muted-foreground mt-0.5">
+                    {m === 3 ? "Teste rápido" : "Teste estendido"}
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <DialogFooter className="px-6 py-4 border-t border-border/60 bg-muted/30 gap-2">
+          <Button variant="ghost" size="sm" onClick={() => onOpenChange(false)}>
+            Cancelar
+          </Button>
+          <Button size="sm" onClick={submit} disabled={submitting || !nameValid}>
+            {submitting && <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />}
+            Gerar teste
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
