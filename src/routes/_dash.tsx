@@ -37,9 +37,21 @@ function DashInner() {
     if (!loading && !session) navigate({ to: "/login", replace: true });
   }, [loading, session, navigate]);
 
+  // Client role can only access subscription/resellers
+  useEffect(() => {
+    if (!session) return;
+    if (session.user.role === "client") {
+      if (pathname === "/dashboard" || pathname === "/licenses" || pathname === "/") {
+        navigate({ to: "/subscription", replace: true });
+      }
+    }
+  }, [session, pathname, navigate]);
+
   if (loading || !session) {
     return <div className="min-h-screen bg-background" />;
   }
+
+
 
   const title = titles[pathname] ?? "Painel";
 
