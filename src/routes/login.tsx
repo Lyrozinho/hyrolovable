@@ -106,7 +106,7 @@ function LoginPage() {
                     Autenticação segura
                   </div>
                   <h1 className="text-[22px] font-semibold tracking-tight leading-tight">
-                    Entrar no console
+                    Entrar no painel
                   </h1>
                   <p className="text-[13px] text-muted-foreground mt-1.5 leading-relaxed">
                     Acesse com suas credenciais de administrador.
