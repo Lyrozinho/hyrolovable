@@ -103,12 +103,11 @@ function LicensesPage() {
 
   const { data, isLoading, refetch, isFetching, error } = useQuery({
     queryKey: ["licenses", search, status, page],
+    staleTime: 15_000,
     queryFn: async () => {
-      // Remove any expired test licenses before listing so UI stays in sync.
-      await sweepExpiredTestLicenses();
-
       const term = search.trim();
       let matchedUserIds: string[] | null = null;
+
 
 
       // If searching, also try matching by user email
