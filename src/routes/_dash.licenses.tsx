@@ -35,7 +35,9 @@ import {
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { generateLicenseKey } from "@/lib/license-key";
+import { sha256Hex } from "@/lib/auth";
 import { toast } from "sonner";
+
 
 export const Route = createFileRoute("/_dash/licenses")({
   component: LicensesPage,
