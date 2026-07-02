@@ -469,11 +469,15 @@ function CreateLicenseDialog({
   const [email, setEmail] = useState("");
   const [days, setDays] = useState("30");
   const [lifetime, setLifetime] = useState(false);
+  const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [previewKey, setPreviewKey] = useState<string>(generateLicenseKey());
 
   useEffect(() => {
-    if (open) setPreviewKey(generateLicenseKey());
+    if (open) {
+      setPreviewKey(generateLicenseKey());
+      setPassword("");
+    }
   }, [open]);
 
   const submit = async () => {
@@ -482,19 +486,32 @@ function CreateLicenseDialog({
       toast.error("Informe um e-mail.");
       return;
     }
+    if (password && password.length < 6) {
+      toast.error("A senha deve ter no mínimo 6 caracteres.");
+      return;
+    }
     setSubmitting(true);
     try {
+      const passwordHash = password ? await sha256Hex(password) : null;
+
       // 1) Buscar ou criar usuário em hyro_extension_users
       let userId: string | null = null;
       const { data: existing, error: uerr } = await supabase
         .from("hyro_extension_users")
-        .select("id")
+        .select("id, password_hash")
         .eq("email", emailNorm)
         .maybeSingle();
       if (uerr) throw uerr;
 
       if (existing) {
         userId = existing.id;
+        // Atualiza senha se admin definiu uma nova
+        if (passwordHash) {
+          await supabase
+            .from("hyro_extension_users")
+            .update({ password_hash: passwordHash, active: true })
+            .eq("id", userId);
+        }
       } else {
         const { data: created, error: cerr } = await supabase
           .from("hyro_extension_users")
@@ -502,7 +519,7 @@ function CreateLicenseDialog({
             email: emailNorm,
             name: emailNorm.split("@")[0],
             role: "user",
-            password_hash: "",
+            password_hash: passwordHash ?? "",
             active: true,
           })
           .select("id")
@@ -530,12 +547,14 @@ function CreateLicenseDialog({
       setEmail("");
       setDays("30");
       setLifetime(false);
+      setPassword("");
     } catch (e: any) {
       toast.error(e.message ?? "Erro ao criar");
     } finally {
       setSubmitting(false);
     }
   };
+
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
