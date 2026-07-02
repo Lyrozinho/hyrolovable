@@ -135,6 +135,7 @@ function ResellersPage() {
   const isAdmin = session?.user.role !== "client";
   const [createOpen, setCreateOpen] = useState(false);
   const [balanceTarget, setBalanceTarget] = useState<Reseller | null>(null);
+  const [tab, setTab] = useState<"plans" | "list">("plans");
 
   const { data, isLoading } = useQuery({
     queryKey: ["resellers"],
@@ -190,41 +191,75 @@ function ResellersPage() {
         </div>
       </div>
 
-      {/* Partner plans */}
-      <section>
-        <div className="flex items-baseline justify-between mb-4">
-          <div>
-            <h2 className="text-[15px] font-semibold tracking-tight">Planos de parceria</h2>
-            <p className="text-[12.5px] text-muted-foreground mt-0.5">
-              Ativação exclusiva pelo WhatsApp após validação comercial.
-            </p>
-          </div>
-          <div className="hidden md:flex items-center gap-1.5 text-[11px] text-muted-foreground">
-            <ShieldCheck className="h-3 w-3" /> Contrato transparente
-          </div>
-        </div>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          {PARTNER_PLANS.map((p) => (
-            <PartnerCard key={p.id} plan={p} />
-          ))}
-        </div>
-      </section>
-
-      {/* Existing resellers (admin only) */}
+      {/* Tabs (admin only) */}
       {isAdmin && (
-        <section>
-          <div className="flex items-end justify-between mb-4 flex-wrap gap-3">
-            <div>
-              <h2 className="text-[15px] font-semibold tracking-tight">Revendedores ativos</h2>
-              <p className="text-[12.5px] text-muted-foreground mt-0.5">
-                Contas de parceiros já onboardadas.
-              </p>
-            </div>
+        <div className="flex items-center justify-between flex-wrap gap-3 border-b border-border">
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => setTab("plans")}
+              className={[
+                "relative px-3 py-2 text-[13px] font-medium transition-colors",
+                tab === "plans" ? "text-foreground" : "text-muted-foreground hover:text-foreground",
+              ].join(" ")}
+            >
+              <span className="inline-flex items-center gap-1.5">
+                <Handshake className="h-3.5 w-3.5" /> Planos de parceria
+              </span>
+              {tab === "plans" && <span className="absolute left-0 right-0 -bottom-px h-0.5 bg-foreground rounded-full" />}
+            </button>
+            <button
+              onClick={() => setTab("list")}
+              className={[
+                "relative px-3 py-2 text-[13px] font-medium transition-colors",
+                tab === "list" ? "text-foreground" : "text-muted-foreground hover:text-foreground",
+              ].join(" ")}
+            >
+              <span className="inline-flex items-center gap-1.5">
+                <Users className="h-3.5 w-3.5" /> Minhas revendas
+                {(data?.length ?? 0) > 0 && (
+                  <span className="ml-1 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-muted text-[10px] font-mono tabular-nums text-muted-foreground border border-border">
+                    {data!.length}
+                  </span>
+                )}
+              </span>
+              {tab === "list" && <span className="absolute left-0 right-0 -bottom-px h-0.5 bg-foreground rounded-full" />}
+            </button>
+          </div>
+          {tab === "list" && (
             <Button size="sm" onClick={() => setCreateOpen(true)}>
               <Users className="h-3.5 w-3.5 mr-1.5" /> Cadastrar revendedor
             </Button>
-          </div>
+          )}
+        </div>
+      )}
 
+      {/* Partner plans */}
+      {(!isAdmin || tab === "plans") && (
+        <section>
+          {!isAdmin && (
+            <div className="flex items-baseline justify-between mb-4">
+              <div>
+                <h2 className="text-[15px] font-semibold tracking-tight">Planos de parceria</h2>
+                <p className="text-[12.5px] text-muted-foreground mt-0.5">
+                  Ativação exclusiva pelo WhatsApp após validação comercial.
+                </p>
+              </div>
+              <div className="hidden md:flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                <ShieldCheck className="h-3 w-3" /> Contrato transparente
+              </div>
+            </div>
+          )}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            {PARTNER_PLANS.map((p) => (
+              <PartnerCard key={p.id} plan={p} />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Existing resellers (admin only) */}
+      {isAdmin && tab === "list" && (
+        <section>
           <div className="rounded-lg border border-border bg-card overflow-hidden">
             <Table>
               <TableHeader>
