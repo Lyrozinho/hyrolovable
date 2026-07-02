@@ -396,6 +396,7 @@ function LicensesPage() {
       </div>
 
       <CreateLicenseDialog open={createOpen} onOpenChange={setCreateOpen} />
+      <TestLicenseDialog open={testOpen} onOpenChange={setTestOpen} />
       <EditLicenseDialog license={editing} onClose={() => setEditing(null)} />
     </div>
   );
