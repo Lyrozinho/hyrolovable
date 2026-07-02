@@ -847,7 +847,9 @@ function TestLicenseDialog({
 }) {
   const qc = useQueryClient();
   const [name, setName] = useState("");
-  const [minutes, setMinutes] = useState<3 | 30>(30);
+  const { session } = useAuth();
+  const isOwner = session?.user.email?.toLowerCase() === OWNER_EMAIL;
+  const [minutes, setMinutes] = useState<3 | 30 | 60>(30);
   const [submitting, setSubmitting] = useState(false);
   const [previewKey, setPreviewKey] = useState<string>(generateTestKey());
 
