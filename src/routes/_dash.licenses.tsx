@@ -1,7 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
-import { Card } from "@/components/ui/card";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,6 +10,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
 import {
@@ -28,8 +28,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Plus, Pencil, Ban, CheckCircle2, Trash2, Search, Loader2 } from "lucide-react";
+import {
+  Plus, Pencil, Ban, CheckCircle2, Trash2, Search, Loader2,
+  KeyRound, Copy, Check, Infinity as InfinityIcon, Mail, CalendarClock, RefreshCw,
+} from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import { generateLicenseKey } from "@/lib/license-key";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_dash/licenses")({
@@ -54,11 +58,11 @@ function LicensesPage() {
   const [page, setPage] = useState(0);
   const [createOpen, setCreateOpen] = useState(false);
   const [editing, setEditing] = useState<License | null>(null);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, refetch, isFetching } = useQuery({
     queryKey: ["licenses", search, status, page],
     queryFn: async () => {
-      // Fetch licenses joined with users via user_id
       let query = supabase
         .from("hyro_extension_licenses")
         .select("id, user_id, status, expires_at, created_at, hyro_extension_users(email)", {
@@ -85,14 +89,7 @@ function LicensesPage() {
   });
 
   const totalPages = Math.max(1, Math.ceil((data?.count ?? 0) / PAGE_SIZE));
-
-  const filtered = useMemo(() => {
-    if (!search.trim()) return data?.rows ?? [];
-    const q = search.trim().toLowerCase();
-    return (data?.rows ?? []).filter(
-      (r) => r.id.toLowerCase().includes(q) || (r.user_email ?? "").toLowerCase().includes(q),
-    );
-  }, [data, search]);
+  const rows = data?.rows ?? [];
 
   const toggleStatus = async (l: License) => {
     const next = l.status === "ativa" ? "inativa" : "ativa";
@@ -113,120 +110,164 @@ function LicensesPage() {
     qc.invalidateQueries({ queryKey: ["licenses"] });
   };
 
+  const copyKey = async (key: string) => {
+    await navigator.clipboard.writeText(key);
+    setCopiedId(key);
+    setTimeout(() => setCopiedId((c) => (c === key ? null : c)), 1600);
+  };
+
+  const isLifetime = (d: string) => new Date(d).getUTCFullYear() >= 2090;
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between flex-wrap gap-3">
+      {/* Header */}
+      <div className="flex items-end justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Licenças</h1>
-          <p className="text-sm text-muted-foreground">
-            Gerencie chaves de licença dos usuários.
+          <h1 className="text-[22px] font-semibold tracking-tight leading-tight">Licenças</h1>
+          <p className="text-[13px] text-muted-foreground mt-1">
+            Gerencie chaves de licença associadas aos usuários da extensão.
           </p>
         </div>
-        <Button onClick={() => setCreateOpen(true)}>
-          <Plus className="h-4 w-4 mr-2" /> Nova licença
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => refetch()}
+            disabled={isFetching}
+            className="h-9"
+          >
+            <RefreshCw className={`h-3.5 w-3.5 mr-1.5 ${isFetching ? "animate-spin" : ""}`} />
+            Atualizar
+          </Button>
+          <Button size="sm" className="h-9" onClick={() => setCreateOpen(true)}>
+            <Plus className="h-3.5 w-3.5 mr-1.5" /> Nova licença
+          </Button>
+        </div>
       </div>
 
-      <Card className="p-4 border-border/60">
-        <div className="flex flex-wrap gap-3 items-center">
-          <div className="relative flex-1 min-w-[240px]">
-            <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              placeholder="Buscar por chave ou e-mail..."
-              value={search}
-              onChange={(e) => {
-                setPage(0);
-                setSearch(e.target.value);
-              }}
-              className="pl-9"
-            />
-          </div>
-          <Select
-            value={status}
-            onValueChange={(v) => {
+      {/* Filters */}
+      <div className="rounded-lg border border-border bg-card p-3 flex flex-wrap gap-2 items-center">
+        <div className="relative flex-1 min-w-[240px]">
+          <Search className="h-3.5 w-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            placeholder="Buscar por chave ou e-mail..."
+            value={search}
+            onChange={(e) => {
               setPage(0);
-              setStatus(v);
+              setSearch(e.target.value);
             }}
-          >
-            <SelectTrigger className="w-44">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos os status</SelectItem>
-              <SelectItem value="ativa">Ativa</SelectItem>
-              <SelectItem value="inativa">Inativa</SelectItem>
-              <SelectItem value="expirada">Expirada</SelectItem>
-            </SelectContent>
-          </Select>
+            className="pl-9 h-9 bg-background border-border text-[13px]"
+          />
         </div>
-      </Card>
+        <Select
+          value={status}
+          onValueChange={(v) => {
+            setPage(0);
+            setStatus(v);
+          }}
+        >
+          <SelectTrigger className="w-44 h-9 text-[13px]">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos os status</SelectItem>
+            <SelectItem value="ativa">Ativa</SelectItem>
+            <SelectItem value="inativa">Inativa</SelectItem>
+            <SelectItem value="expirada">Expirada</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
 
-      <Card className="border-border/60 overflow-hidden">
+      {/* Table */}
+      <div className="rounded-lg border border-border bg-card overflow-hidden">
         <Table>
           <TableHeader>
-            <TableRow>
-              <TableHead>Chave</TableHead>
-              <TableHead>E-mail</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Expira em</TableHead>
-              <TableHead>Criada em</TableHead>
-              <TableHead className="text-right">Ações</TableHead>
+            <TableRow className="bg-muted/40 hover:bg-muted/40 border-border">
+              <TableHead className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">Chave</TableHead>
+              <TableHead className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">E-mail</TableHead>
+              <TableHead className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">Status</TableHead>
+              <TableHead className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">Expira</TableHead>
+              <TableHead className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">Criada</TableHead>
+              <TableHead className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium text-right">Ações</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center py-10 text-muted-foreground">
+                <TableCell colSpan={6} className="text-center py-14 text-muted-foreground text-sm">
                   <Loader2 className="h-4 w-4 animate-spin inline mr-2" /> Carregando...
                 </TableCell>
               </TableRow>
-            ) : filtered.length === 0 ? (
+            ) : rows.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center py-10 text-muted-foreground">
-                  Nenhuma licença encontrada
+                <TableCell colSpan={6} className="text-center py-16">
+                  <div className="mx-auto flex flex-col items-center gap-3 text-muted-foreground">
+                    <div className="h-10 w-10 rounded-lg border border-dashed border-border flex items-center justify-center">
+                      <KeyRound className="h-4 w-4" />
+                    </div>
+                    <div className="text-sm">Nenhuma licença encontrada</div>
+                    <Button size="sm" variant="outline" onClick={() => setCreateOpen(true)}>
+                      <Plus className="h-3.5 w-3.5 mr-1.5" /> Criar primeira licença
+                    </Button>
+                  </div>
                 </TableCell>
               </TableRow>
             ) : (
-              filtered.map((l) => {
+              rows.map((l) => {
                 const expired = new Date(l.expires_at) < new Date();
+                const lifetime = isLifetime(l.expires_at);
+                const statusLabel = expired ? "expirada" : l.status;
                 return (
-                  <TableRow key={l.id}>
-                    <TableCell className="font-mono text-xs">{l.id.slice(0, 18)}…</TableCell>
-                    <TableCell>{l.user_email ?? "—"}</TableCell>
-                    <TableCell>
-                      <Badge
-                        variant={
-                          expired ? "destructive" : l.status === "ativa" ? "default" : "secondary"
-                        }
+                  <TableRow key={l.id} className="border-border">
+                    <TableCell className="py-3">
+                      <button
+                        onClick={() => copyKey(l.id)}
+                        className="group inline-flex items-center gap-2 font-mono text-[12.5px] text-foreground/90 hover:text-foreground"
+                        title="Copiar chave"
                       >
-                        {expired ? "expirada" : l.status}
-                      </Badge>
+                        <span className="tracking-wider">{l.id}</span>
+                        {copiedId === l.id ? (
+                          <Check className="h-3.5 w-3.5 text-success" />
+                        ) : (
+                          <Copy className="h-3.5 w-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                        )}
+                      </button>
                     </TableCell>
-                    <TableCell className="text-sm">
-                      {new Date(l.expires_at).toLocaleDateString("pt-BR")}
+                    <TableCell className="text-[13px]">{l.user_email ?? "—"}</TableCell>
+                    <TableCell>
+                      <StatusBadge status={statusLabel} />
                     </TableCell>
-                    <TableCell className="text-sm text-muted-foreground">
+                    <TableCell className="text-[13px]">
+                      {lifetime ? (
+                        <span className="inline-flex items-center gap-1 text-muted-foreground">
+                          <InfinityIcon className="h-3.5 w-3.5" /> Lifetime
+                        </span>
+                      ) : (
+                        new Date(l.expires_at).toLocaleDateString("pt-BR")
+                      )}
+                    </TableCell>
+                    <TableCell className="text-[13px] text-muted-foreground">
                       {new Date(l.created_at).toLocaleDateString("pt-BR")}
                     </TableCell>
-                    <TableCell className="text-right space-x-1">
-                      <Button size="icon" variant="ghost" onClick={() => setEditing(l)}>
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button size="icon" variant="ghost" onClick={() => toggleStatus(l)}>
-                        {l.status === "ativa" ? (
-                          <Ban className="h-4 w-4" />
-                        ) : (
-                          <CheckCircle2 className="h-4 w-4" />
-                        )}
-                      </Button>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="text-destructive hover:text-destructive"
-                        onClick={() => remove(l)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                    <TableCell className="text-right">
+                      <div className="inline-flex items-center gap-0.5">
+                        <IconAction label="Editar" onClick={() => setEditing(l)}>
+                          <Pencil className="h-3.5 w-3.5" />
+                        </IconAction>
+                        <IconAction
+                          label={l.status === "ativa" ? "Suspender" : "Reativar"}
+                          onClick={() => toggleStatus(l)}
+                        >
+                          {l.status === "ativa" ? (
+                            <Ban className="h-3.5 w-3.5" />
+                          ) : (
+                            <CheckCircle2 className="h-3.5 w-3.5" />
+                          )}
+                        </IconAction>
+                        <IconAction label="Excluir" onClick={() => remove(l)} danger>
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </IconAction>
+                      </div>
                     </TableCell>
                   </TableRow>
                 );
@@ -235,22 +276,20 @@ function LicensesPage() {
           </TableBody>
         </Table>
 
-        <div className="flex items-center justify-between px-4 py-3 border-t border-border/60 text-sm">
-          <div className="text-muted-foreground">
-            Total: {data?.count ?? 0} · Página {page + 1} de {totalPages}
+        <div className="flex items-center justify-between px-4 py-3 border-t border-border text-[12.5px]">
+          <div className="text-muted-foreground tabular-nums">
+            {data?.count ?? 0} licenças · Página {page + 1} de {totalPages}
           </div>
           <div className="flex gap-2">
             <Button
-              size="sm"
-              variant="outline"
+              size="sm" variant="outline"
               disabled={page === 0}
               onClick={() => setPage((p) => p - 1)}
             >
               Anterior
             </Button>
             <Button
-              size="sm"
-              variant="outline"
+              size="sm" variant="outline"
               disabled={page >= totalPages - 1}
               onClick={() => setPage((p) => p + 1)}
             >
@@ -258,11 +297,65 @@ function LicensesPage() {
             </Button>
           </div>
         </div>
-      </Card>
+      </div>
 
       <CreateLicenseDialog open={createOpen} onOpenChange={setCreateOpen} />
       <EditLicenseDialog license={editing} onClose={() => setEditing(null)} />
     </div>
+  );
+}
+
+function StatusBadge({ status }: { status: string }) {
+  const map: Record<string, { label: string; className: string; dot: string }> = {
+    ativa: {
+      label: "Ativa",
+      className: "border-success/30 text-success bg-success/10",
+      dot: "bg-success",
+    },
+    inativa: {
+      label: "Suspensa",
+      className: "border-border text-muted-foreground bg-muted/40",
+      dot: "bg-muted-foreground",
+    },
+    expirada: {
+      label: "Expirada",
+      className: "border-destructive/30 text-destructive bg-destructive/10",
+      dot: "bg-destructive",
+    },
+  };
+  const s = map[status] ?? map.inativa;
+  return (
+    <Badge
+      variant="outline"
+      className={`gap-1.5 h-6 px-2 text-[11px] font-medium ${s.className}`}
+    >
+      <span className={`h-1.5 w-1.5 rounded-full ${s.dot}`} />
+      {s.label}
+    </Badge>
+  );
+}
+
+function IconAction({
+  children, onClick, label, danger,
+}: {
+  children: React.ReactNode;
+  onClick: () => void;
+  label: string;
+  danger?: boolean;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      title={label}
+      aria-label={label}
+      className={[
+        "h-8 w-8 rounded-md flex items-center justify-center transition-colors",
+        "text-muted-foreground hover:bg-muted",
+        danger ? "hover:text-destructive" : "hover:text-foreground",
+      ].join(" ")}
+    >
+      {children}
+    </button>
   );
 }
 
@@ -278,11 +371,15 @@ function CreateLicenseDialog({
   const [days, setDays] = useState("30");
   const [lifetime, setLifetime] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [previewKey, setPreviewKey] = useState<string>(generateLicenseKey());
+
+  useEffect(() => {
+    if (open) setPreviewKey(generateLicenseKey());
+  }, [open]);
 
   const submit = async () => {
     setSubmitting(true);
     try {
-      // Look up user
       const { data: user, error: uerr } = await supabase
         .from("hyro_extension_users")
         .select("id")
@@ -290,23 +387,23 @@ function CreateLicenseDialog({
         .maybeSingle();
       if (uerr) throw uerr;
       if (!user) {
-        toast.error("Usuário não encontrado. Cadastre-o primeiro em hyro_extension_users.");
+        toast.error("Usuário não encontrado. Cadastre-o primeiro na tabela hyro_extension_users.");
         return;
       }
 
       const expiresAt = lifetime
         ? new Date("2099-12-31T23:59:59Z")
-        : new Date(Date.now() + parseInt(days) * 24 * 3600 * 1000);
+        : new Date(Date.now() + parseInt(days || "30") * 24 * 3600 * 1000);
 
-      const id = crypto.randomUUID();
+      const key = previewKey;
       const { error } = await supabase.from("hyro_extension_licenses").insert({
-        id,
+        id: key,
         user_id: user.id,
         status: "ativa",
         expires_at: expiresAt.toISOString(),
       });
       if (error) throw error;
-      toast.success("Licença criada");
+      toast.success("Licença criada", { description: key });
       qc.invalidateQueries({ queryKey: ["licenses"] });
       qc.invalidateQueries({ queryKey: ["dash-stats"] });
       onOpenChange(false);
@@ -322,46 +419,101 @@ function CreateLicenseDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Nova licença</DialogTitle>
+      <DialogContent className="glass-panel border-0 sm:max-w-[460px] p-0 overflow-hidden">
+        <DialogHeader className="px-6 pt-6 pb-4 border-b border-border/60">
+          <div className="flex items-start gap-3">
+            <div className="h-9 w-9 rounded-md bg-foreground text-background flex items-center justify-center shrink-0">
+              <KeyRound className="h-4 w-4" strokeWidth={2} />
+            </div>
+            <div>
+              <DialogTitle className="text-[15px] font-semibold tracking-tight">
+                Nova licença
+              </DialogTitle>
+              <DialogDescription className="text-[12.5px] text-muted-foreground mt-0.5">
+                Vincule uma nova chave a um usuário existente.
+              </DialogDescription>
+            </div>
+          </div>
         </DialogHeader>
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <Label>E-mail do usuário</Label>
-            <Input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="usuario@exemplo.com"
-            />
+
+        <div className="px-6 py-5 space-y-5">
+          {/* Key preview */}
+          <div className="space-y-1.5">
+            <Label className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">
+              Chave gerada
+            </Label>
+            <div className="flex items-center gap-2">
+              <div className="flex-1 rounded-md border border-border bg-muted/40 px-3 h-10 flex items-center font-mono text-[13px] tracking-widest">
+                {previewKey}
+              </div>
+              <Button
+                type="button" variant="outline" size="icon"
+                className="h-10 w-10 shrink-0"
+                title="Gerar outra"
+                onClick={() => setPreviewKey(generateLicenseKey())}
+              >
+                <RefreshCw className="h-3.5 w-3.5" />
+              </Button>
+            </div>
+            <p className="text-[11px] text-muted-foreground">
+              Formato XXX-XXXX-XXX-XXX · gerada aleatoriamente
+            </p>
           </div>
-          <div className="space-y-2">
-            <Label>Duração (dias)</Label>
-            <Input
-              type="number"
-              min={1}
-              value={days}
-              onChange={(e) => setDays(e.target.value)}
-              disabled={lifetime}
-            />
+
+          {/* Email */}
+          <div className="space-y-1.5">
+            <Label className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">
+              E-mail do usuário
+            </Label>
+            <div className="relative">
+              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+              <Input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="usuario@exemplo.com"
+                className="h-10 pl-9 text-[13px]"
+              />
+            </div>
           </div>
-          <label className="flex items-center gap-2 text-sm">
-            <input
-              type="checkbox"
-              checked={lifetime}
-              onChange={(e) => setLifetime(e.target.checked)}
-              className="h-4 w-4"
-            />
-            Ilimitado / Lifetime (expira em 2099)
-          </label>
+
+          {/* Duration */}
+          <div className="space-y-1.5">
+            <Label className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">
+              Duração
+            </Label>
+            <div className="rounded-md border border-border overflow-hidden divide-y divide-border">
+              <div className="flex items-center px-3 h-10 gap-2">
+                <CalendarClock className="h-3.5 w-3.5 text-muted-foreground" />
+                <Input
+                  type="number" min={1}
+                  value={days}
+                  onChange={(e) => setDays(e.target.value)}
+                  disabled={lifetime}
+                  className="h-8 border-0 shadow-none focus-visible:ring-0 p-0 text-[13px] bg-transparent disabled:opacity-50"
+                />
+                <span className="text-[12px] text-muted-foreground">dias</span>
+              </div>
+              <label className="flex items-center gap-2.5 px-3 h-10 cursor-pointer hover:bg-muted/40">
+                <input
+                  type="checkbox"
+                  checked={lifetime}
+                  onChange={(e) => setLifetime(e.target.checked)}
+                  className="h-3.5 w-3.5 rounded border-border accent-foreground"
+                />
+                <InfinityIcon className="h-3.5 w-3.5 text-muted-foreground" />
+                <span className="text-[13px]">Vitalícia (expira em 2099)</span>
+              </label>
+            </div>
+          </div>
         </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+
+        <DialogFooter className="px-6 py-4 border-t border-border/60 bg-muted/30 gap-2">
+          <Button variant="ghost" size="sm" onClick={() => onOpenChange(false)}>
             Cancelar
           </Button>
-          <Button onClick={submit} disabled={submitting || !email}>
-            {submitting && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+          <Button size="sm" onClick={submit} disabled={submitting || !email}>
+            {submitting && <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />}
             Criar licença
           </Button>
         </DialogFooter>
@@ -382,7 +534,7 @@ function EditLicenseDialog({
   const [expires, setExpires] = useState("");
   const [saving, setSaving] = useState(false);
 
-  useMemo(() => {
+  useEffect(() => {
     if (license) {
       setEmail(license.user_email ?? "");
       setExpires(license.expires_at.slice(0, 10));
@@ -428,31 +580,65 @@ function EditLicenseDialog({
 
   return (
     <Dialog open={!!license} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Editar licença</DialogTitle>
+      <DialogContent className="glass-panel border-0 sm:max-w-[460px] p-0 overflow-hidden">
+        <DialogHeader className="px-6 pt-6 pb-4 border-b border-border/60">
+          <div className="flex items-start gap-3">
+            <div className="h-9 w-9 rounded-md bg-foreground text-background flex items-center justify-center shrink-0">
+              <Pencil className="h-4 w-4" />
+            </div>
+            <div>
+              <DialogTitle className="text-[15px] font-semibold tracking-tight">
+                Editar licença
+              </DialogTitle>
+              <DialogDescription className="text-[12.5px] text-muted-foreground mt-0.5">
+                Atualize o usuário associado ou a data de expiração.
+              </DialogDescription>
+            </div>
+          </div>
         </DialogHeader>
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <Label>Chave</Label>
-            <Input value={license.id} disabled className="font-mono text-xs" />
+
+        <div className="px-6 py-5 space-y-5">
+          <div className="space-y-1.5">
+            <Label className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">
+              Chave
+            </Label>
+            <div className="rounded-md border border-border bg-muted/40 px-3 h-10 flex items-center font-mono text-[13px] tracking-widest text-muted-foreground">
+              {license.id}
+            </div>
           </div>
-          <div className="space-y-2">
-            <Label>E-mail do usuário</Label>
-            <Input value={email} onChange={(e) => setEmail(e.target.value)} />
+          <div className="space-y-1.5">
+            <Label className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">
+              E-mail
+            </Label>
+            <div className="relative">
+              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+              <Input
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="h-10 pl-9 text-[13px]"
+              />
+            </div>
           </div>
-          <div className="space-y-2">
-            <Label>Expira em</Label>
-            <Input type="date" value={expires} onChange={(e) => setExpires(e.target.value)} />
+          <div className="space-y-1.5">
+            <Label className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">
+              Expira em
+            </Label>
+            <Input
+              type="date"
+              value={expires}
+              onChange={(e) => setExpires(e.target.value)}
+              className="h-10 text-[13px]"
+            />
           </div>
         </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose}>
+
+        <DialogFooter className="px-6 py-4 border-t border-border/60 bg-muted/30 gap-2">
+          <Button variant="ghost" size="sm" onClick={onClose}>
             Cancelar
           </Button>
-          <Button onClick={save} disabled={saving}>
-            {saving && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-            Salvar
+          <Button size="sm" onClick={save} disabled={saving}>
+            {saving && <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />}
+            Salvar alterações
           </Button>
         </DialogFooter>
       </DialogContent>

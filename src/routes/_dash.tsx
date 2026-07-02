@@ -36,7 +36,7 @@ function DashLayout() {
     <div className="min-h-screen bg-background">
       <AppSidebar />
       <div className="md:pl-60">
-        <header className="h-14 sticky top-0 z-30 border-b border-border/70 bg-background/85 backdrop-blur-md flex items-center px-6 gap-4">
+        <header className="h-14 sticky top-0 z-30 border-b border-border/60 glass-header flex items-center px-6 gap-4">
           <div className="flex items-center gap-2 text-[13px]">
             <span className="text-muted-foreground">Console</span>
             <span className="text-border">/</span>
