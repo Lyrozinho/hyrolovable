@@ -235,7 +235,7 @@ function LoginPage() {
 
           {/* Footnote */}
           <p className="mt-6 text-[11px] text-muted-foreground/80 leading-relaxed text-center px-4">
-            Acesso restrito e monitorado. Todas as ações realizadas neste console
+            Acesso restrito e monitorado. Todas as ações realizadas neste painel
             são registradas em auditoria.
           </p>
         </div>
