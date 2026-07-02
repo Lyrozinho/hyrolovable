@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
-import { KeyRound, Users, Activity, TrendingUp, ArrowUpRight } from "lucide-react";
+import { KeyRound, ArrowUpRight } from "lucide-react";
 import {
   ResponsiveContainer,
   AreaChart,
@@ -131,32 +131,26 @@ function DashboardPage() {
         <StatCard
           label="Licenças ativas"
           value={data?.activeLicenses ?? 0}
-          icon={KeyRound}
+          hint="período atual"
           loading={isLoading}
         />
         <StatCard
           label="Sessões online"
           value={data?.onlineSessions ?? 0}
-          icon={Activity}
           hint="agora"
           loading={isLoading}
         />
         <StatCard
           label="Revendedores"
           value={data?.activeResellers ?? 0}
-          icon={Users}
           hint="ativos"
           loading={isLoading}
         />
         <StatCard
           label="Ativações · 30d"
           value={total30}
-          icon={TrendingUp}
-          hint={
-            delta === 0
-              ? "estável"
-              : `${delta > 0 ? "+" : ""}${delta.toFixed(1)}% vs. período anterior`
-          }
+          delta={delta}
+          hint="vs. período anterior"
           loading={isLoading}
         />
       </div>
