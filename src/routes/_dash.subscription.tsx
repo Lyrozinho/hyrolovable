@@ -146,41 +146,41 @@ function SubscriptionPage() {
   }, [stats?.nearest]);
 
   return (
-    <div className="space-y-10">
-      {/* Header — editorial hero */}
-      <div className="relative overflow-hidden rounded-2xl border border-border bg-gradient-to-br from-card via-card to-secondary/40 px-8 py-10">
+    <div className="space-y-6">
+      {/* Header — compact editorial */}
+      <div className="relative overflow-hidden rounded-xl border border-border bg-gradient-to-br from-card via-card to-secondary/40 px-6 py-5">
         <div
           aria-hidden
-          className="absolute inset-0 opacity-[0.35] pointer-events-none"
+          className="absolute inset-0 opacity-[0.3] pointer-events-none"
           style={{
             backgroundImage:
               "radial-gradient(circle at 20% 20%, color-mix(in oklab, var(--color-foreground) 6%, transparent) 0, transparent 40%), radial-gradient(circle at 80% 60%, color-mix(in oklab, var(--color-foreground) 4%, transparent) 0, transparent 50%)",
           }}
         />
-        <div className="relative flex flex-wrap items-end justify-between gap-6">
+        <div className="relative flex flex-wrap items-center justify-between gap-4">
           <div className="max-w-2xl">
-            <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full border border-border bg-background/80 backdrop-blur text-[10px] uppercase tracking-[0.18em] text-muted-foreground font-medium mb-4">
+            <div className="inline-flex items-center gap-2 px-2 py-0.5 rounded-full border border-border bg-background/80 backdrop-blur text-[10px] uppercase tracking-[0.16em] text-muted-foreground font-medium mb-2">
               <span className="h-1.5 w-1.5 rounded-full bg-success animate-pulse" />
               Faturamento
             </div>
-            <h1 className="text-[32px] leading-[1.1] font-semibold tracking-tight">
+            <h1 className="text-[22px] leading-[1.15] font-semibold tracking-tight">
               Escolha o plano ideal para escalar sua operação
             </h1>
-            <p className="text-[14px] text-muted-foreground mt-3 leading-relaxed">
+            <p className="text-[12.5px] text-muted-foreground mt-1.5 leading-relaxed">
               Planos flexíveis, sem taxas ocultas. Ative em minutos e cancele quando quiser.
-              Todos os planos incluem o painel completo e suporte humano por WhatsApp.
             </p>
           </div>
           <a
             href={`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent("Olá! Tenho dúvidas sobre os planos do Hyro Admin.")}`}
             target="_blank"
             rel="noreferrer"
-            className="inline-flex items-center gap-2 text-[12.5px] font-medium px-4 py-2.5 rounded-lg border border-border bg-background hover:bg-accent transition-colors shadow-xs"
+            className="inline-flex items-center gap-2 text-[12.5px] font-medium px-4 py-2 rounded-lg border border-border bg-background hover:bg-accent transition-colors shadow-xs"
           >
             <MessageCircle className="h-3.5 w-3.5" /> Falar com atendimento
           </a>
         </div>
       </div>
+
 
       {/* License validation */}
       <section>
