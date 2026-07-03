@@ -9,6 +9,7 @@ import {
   Save,
   ExternalLink,
   Info,
+  Download,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,8 +24,9 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { useAuth } from "@/lib/auth";
-import { useUpgrade } from "@/lib/upgrade-store";
+import { fetchUpgradeBlob, useUpgrade } from "@/lib/upgrade-store";
 import { toast } from "sonner";
+
 
 export const Route = createFileRoute("/_dash/upgrade-admin")({
   component: UpgradeAdminPage,
