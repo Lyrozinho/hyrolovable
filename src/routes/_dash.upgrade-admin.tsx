@@ -43,7 +43,7 @@ function formatSize(bytes: number) {
 function UpgradeAdminPage() {
   const { session } = useAuth();
   const isAdmin = session?.user.role !== "client";
-  const { meta, setUpgrade, updateInfo, clearUpgrade } = useUpgrade();
+  const { meta, loading, error, setUpgrade, updateInfo, clearUpgrade } = useUpgrade();
 
   const [uploading, setUploading] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -54,7 +54,7 @@ function UpgradeAdminPage() {
   useEffect(() => {
     setVersion(meta?.version ?? "");
     setNotes(meta?.notes ?? "");
-  }, [meta?.blobId]);
+  }, [meta?.updatedAt]);
 
   if (!isAdmin) {
     return (
@@ -95,10 +95,14 @@ function UpgradeAdminPage() {
     }
   };
 
-  const saveInfo = () => {
-    if (!meta) return;
-    updateInfo({ version, notes });
-    toast.success("Informações atualizadas");
+  const saveInfo = async () => {
+    if (!meta || meta.source !== "cloud") return;
+    try {
+      await updateInfo({ version, notes });
+      toast.success("Informações atualizadas");
+    } catch {
+      toast.error("Falha ao atualizar informações.");
+    }
   };
 
   return (
@@ -121,7 +125,15 @@ function UpgradeAdminPage() {
       {/* Current file */}
       <div className="rounded-xl border border-border bg-card p-5">
         <div className="text-[13px] font-semibold text-foreground mb-3">Arquivo atual</div>
-        {meta ? (
+        {loading ? (
+          <div className="rounded-lg border border-border bg-background p-4 text-[12.5px] text-muted-foreground">
+            Carregando arquivo atual...
+          </div>
+        ) : error ? (
+          <div className="rounded-lg border border-destructive/25 bg-destructive/5 p-4 text-[12.5px] text-destructive">
+            {error}
+          </div>
+        ) : meta ? (
           <div className="flex items-center gap-4 rounded-lg border border-border bg-background p-4">
             <div className="h-12 w-12 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
               <FileArchive className="h-6 w-6" />
@@ -134,6 +146,8 @@ function UpgradeAdminPage() {
                 <span>{formatSize(meta.size)}</span>
                 <span className="text-border">·</span>
                 <span>Atualizado {new Date(meta.updatedAt).toLocaleString("pt-BR")}</span>
+                <span className="text-border">·</span>
+                <span>{meta.source === "cloud" ? "Upload da atualização" : "ZIP publicado no projeto"}</span>
                 {meta.version && (
                   <>
                     <span className="text-border">·</span>
@@ -150,7 +164,6 @@ function UpgradeAdminPage() {
                 size="sm"
                 onClick={async () => {
                   const up = await fetchUpgradeBlob();
-                  if (!up) return toast.error("Arquivo não encontrado no armazenamento.");
                   const url = URL.createObjectURL(up.blob);
                   const a = document.createElement("a");
                   a.href = url;
@@ -251,7 +264,7 @@ function UpgradeAdminPage() {
             )}
           </Button>
           {meta && (
-            <Button type="button" variant="outline" onClick={saveInfo}>
+            <Button type="button" variant="outline" onClick={saveInfo} disabled={meta.source !== "cloud"}>
               <Save className="h-4 w-4 mr-1.5" />
               Salvar versão/notas
             </Button>
@@ -261,7 +274,7 @@ function UpgradeAdminPage() {
         <div className="flex items-start gap-2 text-[11.5px] text-muted-foreground border-t border-border pt-3">
           <Info className="h-3.5 w-3.5 mt-0.5 shrink-0" />
           <div>
-            O arquivo é armazenado localmente no navegador (IndexedDB). Para servir globalmente a todos os clientes, hospede em um servidor/CDN — este modo funciona para testes e distribuição pessoal.
+            O arquivo enviado fica salvo no armazenamento do projeto e passa a ser baixado por todos em <code className="text-[10.5px] font-mono px-1 py-0.5 rounded bg-background">/upgrade</code>.
           </div>
         </div>
 

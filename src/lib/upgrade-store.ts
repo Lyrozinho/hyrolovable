@@ -1,94 +1,135 @@
 import { useCallback, useEffect, useState } from "react";
-import { deleteBlob, getBlob, putBlob } from "./media-store";
+import { supabase as cloud } from "@/integrations/supabase/client";
 
 export type UpgradeMeta = {
-  blobId: string;
   fileName: string;
   size: number;
   mime: string;
   version?: string;
   notes?: string;
   updatedAt: number;
+  source: "cloud" | "bundled";
 };
 
-const STORAGE_KEY = "hyro_upgrade_v1";
 const EVENT = "hyro_upgrade_change";
+const BUCKET = "upgrade-files";
+const ZIP_PATH = "upgrade/latest.zip";
+const META_PATH = "upgrade/latest.json";
 
-function read(): UpgradeMeta | null {
-  if (typeof window === "undefined") return null;
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return null;
-    return JSON.parse(raw) as UpgradeMeta;
-  } catch {
-    return null;
-  }
+type WritableUpgradeMeta = Omit<UpgradeMeta, "source">;
+
+function cleanText(value?: string) {
+  const text = value?.trim();
+  return text ? text : undefined;
 }
 
-function write(meta: UpgradeMeta | null) {
-  if (meta) localStorage.setItem(STORAGE_KEY, JSON.stringify(meta));
-  else localStorage.removeItem(STORAGE_KEY);
-  window.dispatchEvent(new Event(EVENT));
+function emitChange() {
+  if (typeof window !== "undefined") window.dispatchEvent(new Event(EVENT));
+}
+
+async function uploadMetadata(meta: WritableUpgradeMeta) {
+  const blob = new Blob([JSON.stringify(meta)], { type: "application/json" });
+  const { error } = await cloud.storage.from(BUCKET).upload(META_PATH, blob, {
+    upsert: true,
+    cacheControl: "30",
+    contentType: "application/json",
+  });
+  if (error) throw error;
+}
+
+export async function fetchUpgradeMeta(): Promise<UpgradeMeta> {
+  const res = await fetch("/api/public/upgrade-meta", { cache: "no-store" });
+  if (!res.ok) throw new Error(`Falha ao buscar atualização: ${res.status}`);
+  return (await res.json()) as UpgradeMeta;
+}
+
+function fileNameFromDisposition(value: string | null) {
+  if (!value) return null;
+  const utf = value.match(/filename\*=UTF-8''([^;]+)/i)?.[1];
+  if (utf) return decodeURIComponent(utf.replace(/\"/g, ""));
+  const ascii = value.match(/filename="?([^";]+)"?/i)?.[1];
+  return ascii ?? null;
+}
+
+export async function fetchUpgradeBlob(): Promise<{ blob: Blob; fileName: string }> {
+  const res = await fetch(`/api/public/upgrade-zip?t=${Date.now()}`, { cache: "no-store" });
+  if (!res.ok) throw new Error(`Falha no download: ${res.status}`);
+  const blob = await res.blob();
+  const fileName = fileNameFromDisposition(res.headers.get("content-disposition")) ?? "HERO-Lovable-v5.8-FINAL.zip";
+  return { blob, fileName };
 }
 
 export function useUpgrade() {
-  const [meta, setMeta] = useState<UpgradeMeta | null>(() => read());
+  const [meta, setMeta] = useState<UpgradeMeta | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const refresh = useCallback(async () => {
+    try {
+      setError(null);
+      const next = await fetchUpgradeMeta();
+      setMeta(next);
+      return next;
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Falha ao carregar atualização.";
+      setError(msg);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    const sync = () => setMeta(read());
-    sync();
-    window.addEventListener(EVENT, sync);
-    window.addEventListener("storage", sync);
-    return () => {
-      window.removeEventListener(EVENT, sync);
-      window.removeEventListener("storage", sync);
-    };
-  }, []);
+    refresh().catch(() => undefined);
+    window.addEventListener(EVENT, refresh);
+    return () => window.removeEventListener(EVENT, refresh);
+  }, [refresh]);
 
-  const setUpgrade = useCallback(
-    async (file: File, extra?: { version?: string; notes?: string }) => {
-      const prev = read();
-      const id = await putBlob(file, "upg");
-      const next: UpgradeMeta = {
-        blobId: id,
-        fileName: file.name,
-        size: file.size,
-        mime: file.type || "application/zip",
-        version: extra?.version?.trim() || undefined,
-        notes: extra?.notes?.trim() || undefined,
-        updatedAt: Date.now(),
-      };
-      write(next);
-      if (prev?.blobId) await deleteBlob(prev.blobId);
-      return next;
-    },
-    [],
-  );
-
-  const updateInfo = useCallback((extra: { version?: string; notes?: string }) => {
-    const prev = read();
-    if (!prev) return;
-    write({
-      ...prev,
-      version: extra.version?.trim() || undefined,
-      notes: extra.notes?.trim() || undefined,
+  const setUpgrade = useCallback(async (file: File, extra?: { version?: string; notes?: string }) => {
+    const next: WritableUpgradeMeta = {
+      fileName: file.name,
+      size: file.size,
+      mime: file.type || "application/zip",
+      version: cleanText(extra?.version),
+      notes: cleanText(extra?.notes),
       updatedAt: Date.now(),
+    };
+
+    const { error: zipError } = await cloud.storage.from(BUCKET).upload(ZIP_PATH, file, {
+      upsert: true,
+      cacheControl: "30",
+      contentType: "application/zip",
     });
+    if (zipError) throw zipError;
+
+    await uploadMetadata(next);
+    const saved: UpgradeMeta = { ...next, source: "cloud" };
+    setMeta(saved);
+    emitChange();
+    return saved;
   }, []);
+
+  const updateInfo = useCallback(async (extra: { version?: string; notes?: string }) => {
+    if (!meta || meta.source !== "cloud") return;
+    const next: WritableUpgradeMeta = {
+      fileName: meta.fileName,
+      size: meta.size,
+      mime: meta.mime,
+      version: cleanText(extra.version),
+      notes: cleanText(extra.notes),
+      updatedAt: Date.now(),
+    };
+    await uploadMetadata(next);
+    setMeta({ ...next, source: "cloud" });
+    emitChange();
+  }, [meta]);
 
   const clearUpgrade = useCallback(async () => {
-    const prev = read();
-    write(null);
-    if (prev?.blobId) await deleteBlob(prev.blobId);
-  }, []);
+    const { error } = await cloud.storage.from(BUCKET).remove([ZIP_PATH, META_PATH]);
+    if (error) throw error;
+    emitChange();
+    await refresh();
+  }, [refresh]);
 
-  return { meta, setUpgrade, updateInfo, clearUpgrade };
-}
-
-export async function fetchUpgradeBlob(): Promise<{ blob: Blob; fileName: string } | null> {
-  const meta = read();
-  if (!meta) return null;
-  const blob = await getBlob(meta.blobId);
-  if (!blob) return null;
-  return { blob, fileName: meta.fileName };
+  return { meta, loading, error, refresh, setUpgrade, updateInfo, clearUpgrade };
 }

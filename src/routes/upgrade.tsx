@@ -27,44 +27,22 @@ function formatSize(bytes: number) {
 }
 
 function UpgradePage() {
-  const { meta } = useUpgrade();
+  const { meta, loading } = useUpgrade();
   const [downloading, setDownloading] = useState(false);
 
   const download = async () => {
     setDownloading(true);
     try {
-      // Prefer admin-uploaded ZIP (IndexedDB). Only fall back to bundled file
-      // if there's no metadata AT ALL — never silently override an uploaded one.
-      if (meta) {
-        const uploaded = await fetchUpgradeBlob();
-        if (!uploaded) {
-          throw new Error(
-            "Arquivo enviado não foi encontrado no armazenamento local. Envie novamente em /upgrade-admin."
-          );
-        }
-        const url = URL.createObjectURL(uploaded.blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = uploaded.fileName;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        URL.revokeObjectURL(url);
-        toast.success(`Baixando ${uploaded.fileName}`);
-        return;
-      }
-      const res = await fetch("/hyro-lovable.zip", { cache: "no-store" });
-      if (!res.ok) throw new Error(`Falha no download: ${res.status}`);
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
+      const uploaded = await fetchUpgradeBlob();
+      const url = URL.createObjectURL(uploaded.blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = "hyro-lovable.zip";
+      a.download = uploaded.fileName;
       document.body.appendChild(a);
       a.click();
       a.remove();
       URL.revokeObjectURL(url);
-      toast.success("Baixando hyro-lovable.zip (versão padrão)");
+      toast.success(`Baixando ${uploaded.fileName}`);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Falha no download");
     } finally {
@@ -100,7 +78,9 @@ function UpgradePage() {
           <div className="text-center">
             <div className="text-[15px] font-semibold tracking-tight">Atualização da Extensão</div>
             <div className="text-[12.5px] text-muted-foreground mt-1">
-              {meta?.version
+              {loading
+                ? "Verificando arquivo mais recente..."
+                : meta?.version
                 ? `Versão ${meta.version} · atualizada em ${new Date(meta.updatedAt).toLocaleDateString("pt-BR")}`
                 : "Versão mais recente do Hyro Lovable"}
             </div>
@@ -123,16 +103,16 @@ function UpgradePage() {
                     {meta.fileName}
                   </div>
                   <div className="text-[11px] text-muted-foreground mt-0.5">
-                    {formatSize(meta.size)} · enviado {new Date(meta.updatedAt).toLocaleString("pt-BR")}
+                    {formatSize(meta.size)} · {meta.source === "cloud" ? "enviado" : "publicado"} {new Date(meta.updatedAt).toLocaleString("pt-BR")}
                   </div>
                 </>
               ) : (
                 <>
                   <div className="text-[12.5px] font-medium text-foreground">
-                    Nenhum arquivo enviado
+                    {loading ? "Verificando arquivo..." : "Arquivo padrão publicado"}
                   </div>
                   <div className="text-[11px] text-muted-foreground mt-0.5">
-                    Será usado o arquivo padrão embutido no projeto (<span className="font-mono">hyro-lovable.zip</span>). Envie o correto em <span className="font-mono">/upgrade-admin</span>.
+                    O ZIP real publicado no projeto será baixado diretamente pelo botão abaixo.
                   </div>
                 </>
               )}
