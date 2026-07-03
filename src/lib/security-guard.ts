@@ -150,25 +150,38 @@ function setupDevtoolsDetection() {
   const check = () => {
     if (isDevtoolsOpen()) warn();
   };
-  setInterval(check, 1000);
+  setInterval(check, 800);
 
-  // Heurística 2: getter em objeto passado ao console dispara quando devtools formata
+  // Heurística 2: getter em objeto passado a toString dispara quando devtools formata
   try {
     const bait: any = {};
-    let hit = 0;
     Object.defineProperty(bait, "id", {
-      get() {
-        hit++;
-        if (hit > 0) warn();
-        return "";
-      },
+      get() { warn(); return ""; },
     });
+    setInterval(() => { try { bait + ""; } catch { /* ignore */ } }, 1500);
+  } catch { /* ignore */ }
+
+  // Heurística 3: timing com `debugger` — pausa apenas quando DevTools está aberto
+  try {
+    const probe = new Function("debugger;");
     setInterval(() => {
-      // usa toString para não depender do console (que foi neutralizado)
-      try { bait + ""; } catch { /* ignore */ }
-    }, 2000);
+      const t0 = performance.now();
+      try { probe(); } catch { /* ignore */ }
+      const dt = performance.now() - t0;
+      if (dt > 120) warn();
+    }, 1200);
+  } catch { /* ignore */ }
+
+  // Heurística 4: getter em RegExp.toString — Firefox/Chrome disparam ao inspecionar
+  try {
+    const re = /devtools/;
+    let hits = 0;
+    (re as any).toString = function () { hits++; if (hits > 0) warn(); return ""; };
+    setInterval(() => { try { console.profile?.(re as any); console.profileEnd?.(); } catch { /* ignore */ } }, 2000);
   } catch { /* ignore */ }
 }
+
+
 
 function isDevtoolsOpen(): boolean {
   const threshold = 160;
