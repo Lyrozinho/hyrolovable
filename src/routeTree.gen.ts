@@ -13,6 +13,7 @@ import { Route as UpgradeRouteImport } from './routes/upgrade'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as DashRouteImport } from './routes/_dash'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as DashTutorialsRouteImport } from './routes/_dash.tutorials'
 import { Route as DashSubscriptionRouteImport } from './routes/_dash.subscription'
 import { Route as DashResellersRouteImport } from './routes/_dash.resellers'
 import { Route as DashLicensesRouteImport } from './routes/_dash.licenses'
@@ -36,6 +37,11 @@ const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const DashTutorialsRoute = DashTutorialsRouteImport.update({
+  id: '/tutorials',
+  path: '/tutorials',
+  getParentRoute: () => DashRoute,
 } as any)
 const DashSubscriptionRoute = DashSubscriptionRouteImport.update({
   id: '/subscription',
@@ -66,6 +72,7 @@ export interface FileRoutesByFullPath {
   '/licenses': typeof DashLicensesRoute
   '/resellers': typeof DashResellersRoute
   '/subscription': typeof DashSubscriptionRoute
+  '/tutorials': typeof DashTutorialsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -75,6 +82,7 @@ export interface FileRoutesByTo {
   '/licenses': typeof DashLicensesRoute
   '/resellers': typeof DashResellersRoute
   '/subscription': typeof DashSubscriptionRoute
+  '/tutorials': typeof DashTutorialsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -86,6 +94,7 @@ export interface FileRoutesById {
   '/_dash/licenses': typeof DashLicensesRoute
   '/_dash/resellers': typeof DashResellersRoute
   '/_dash/subscription': typeof DashSubscriptionRoute
+  '/_dash/tutorials': typeof DashTutorialsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -97,6 +106,7 @@ export interface FileRouteTypes {
     | '/licenses'
     | '/resellers'
     | '/subscription'
+    | '/tutorials'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -106,6 +116,7 @@ export interface FileRouteTypes {
     | '/licenses'
     | '/resellers'
     | '/subscription'
+    | '/tutorials'
   id:
     | '__root__'
     | '/'
@@ -116,6 +127,7 @@ export interface FileRouteTypes {
     | '/_dash/licenses'
     | '/_dash/resellers'
     | '/_dash/subscription'
+    | '/_dash/tutorials'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -155,6 +167,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_dash/tutorials': {
+      id: '/_dash/tutorials'
+      path: '/tutorials'
+      fullPath: '/tutorials'
+      preLoaderRoute: typeof DashTutorialsRouteImport
+      parentRoute: typeof DashRoute
+    }
     '/_dash/subscription': {
       id: '/_dash/subscription'
       path: '/subscription'
@@ -191,6 +210,7 @@ interface DashRouteChildren {
   DashLicensesRoute: typeof DashLicensesRoute
   DashResellersRoute: typeof DashResellersRoute
   DashSubscriptionRoute: typeof DashSubscriptionRoute
+  DashTutorialsRoute: typeof DashTutorialsRoute
 }
 
 const DashRouteChildren: DashRouteChildren = {
@@ -198,6 +218,7 @@ const DashRouteChildren: DashRouteChildren = {
   DashLicensesRoute: DashLicensesRoute,
   DashResellersRoute: DashResellersRoute,
   DashSubscriptionRoute: DashSubscriptionRoute,
+  DashTutorialsRoute: DashTutorialsRoute,
 }
 
 const DashRouteWithChildren = DashRoute._addFileChildren(DashRouteChildren)
