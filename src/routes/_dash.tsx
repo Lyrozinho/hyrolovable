@@ -18,6 +18,7 @@ const titles: Record<string, string> = {
   "/resellers": "Revendedores",
   "/subscription": "Assinatura",
   "/tutorials": "Tutoriais",
+  "/upgrade-admin": "Atualização",
 };
 
 function DashLayout() {
