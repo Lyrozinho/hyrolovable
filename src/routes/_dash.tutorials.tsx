@@ -27,8 +27,7 @@ import {
   DialogFooter,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { useTutorials, useBlobUrl, type Tutorial } from "@/lib/tutorials";
-import { putBlob, deleteBlob } from "@/lib/media-store";
+import { useTutorials, useSignedMediaUrl, uploadTutorialFile, removeTutorialFile, type Tutorial } from "@/lib/tutorials";
 import { VideoPlayer } from "@/components/video-player";
 import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
