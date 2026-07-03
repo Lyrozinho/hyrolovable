@@ -205,6 +205,30 @@ function TutorialsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Support */}
+      <div className="rounded-xl border border-border bg-card p-5 md:p-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div className="flex items-start gap-3">
+          <div className="h-10 w-10 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+            <LifeBuoy className="h-5 w-5" />
+          </div>
+          <div>
+            <div className="text-sm font-semibold text-foreground">Precisa de ajuda?</div>
+            <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
+              Fale com nosso suporte pelo WhatsApp — respondemos em minutos, de segunda a sábado.
+            </p>
+          </div>
+        </div>
+        <a
+          href="https://wa.me/5527981359051"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center justify-center gap-2 h-10 px-4 rounded-md bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-medium transition-colors shrink-0"
+        >
+          <MessageCircle className="h-4 w-4" />
+          Falar no WhatsApp
+        </a>
+      </div>
     </div>
   );
 }
