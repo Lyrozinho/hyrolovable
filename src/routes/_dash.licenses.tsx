@@ -864,57 +864,90 @@ function LicenseCreatedSuccess({
     password: string;
     expiresAt: Date;
     lifetime: boolean;
+    redemptionUrl?: string;
   };
   onClose: () => void;
   onCreateAnother: () => void;
 }) {
   const [copied, setCopied] = useState(false);
+  const [copiedLink, setCopiedLink] = useState(false);
   const panelUrl = "https://hyrolovable.lovable.app";
+  const isPerso = !!data.redemptionUrl;
   const validity = data.lifetime
     ? "Vitalícia (nunca expira)"
     : data.expiresAt.toLocaleDateString("pt-BR", {
         day: "2-digit", month: "long", year: "numeric",
       });
 
-  const message = [
-    "🎉 *Sua licença Hyro Lovable está pronta!*",
-    "",
-    "Olá! Sua licença foi ativada com sucesso. Guarde estes dados em local seguro:",
-    "",
-    "🔑 *Chave de licença*",
-    `\`${data.key}\``,
-    "",
-    "📧 *E-mail de acesso*",
-    data.email,
-    ...(data.password
-      ? ["", "🔒 *Senha do painel*", data.password]
-      : []),
-    "",
-    "📅 *Validade*",
-    validity,
-    "",
-    "🌐 *Acesse o painel*",
-    panelUrl,
-    "",
-    "━━━━━━━━━━━━━━━━━━",
-    "*Como começar:*",
-    "1️⃣ Acesse o painel pelo link acima",
-    ...(data.password
-      ? ["2️⃣ Faça login com o e-mail e senha enviados"]
-      : ["2️⃣ Solicite sua senha de acesso pelo suporte"]),
-    "3️⃣ Baixe e instale a extensão em: " + panelUrl + "/upgrade",
-    "4️⃣ Ative com sua chave de licença",
-    "",
-    "💬 Dúvidas? Fale conosco no WhatsApp: (27) 98135-9051",
-    "",
-    "_Obrigado por escolher a Hyro Lovable! 🚀_",
-  ].join("\n");
+  const message = isPerso
+    ? [
+        "🎉 *Sua licença Hyro Lovable está pronta!*",
+        "",
+        "Olá! Criamos um link exclusivo pra você resgatar sua licença. Só você poderá abrir — o link trava no seu IP no primeiro acesso.",
+        "",
+        "🔗 *Seu link de resgate*",
+        data.redemptionUrl!,
+        "",
+        "📧 *E-mail de acesso*",
+        data.email,
+        "",
+        "📅 *Validade*",
+        validity,
+        "",
+        "━━━━━━━━━━━━━━━━━━",
+        "*Como resgatar:*",
+        "1️⃣ Abra o link acima no seu navegador",
+        "2️⃣ Preencha nome, sobrenome e senha (o e-mail já vem preenchido)",
+        "3️⃣ Sua licença será liberada automaticamente",
+        "",
+        "💬 Dúvidas? WhatsApp: (27) 98135-9051",
+        "",
+        "_Obrigado por escolher a Hyro Lovable! 🚀_",
+      ].join("\n")
+    : [
+        "🎉 *Sua licença Hyro Lovable está pronta!*",
+        "",
+        "Olá! Sua licença foi ativada com sucesso. Guarde estes dados em local seguro:",
+        "",
+        "🔑 *Chave de licença*",
+        `\`${data.key}\``,
+        "",
+        "📧 *E-mail de acesso*",
+        data.email,
+        ...(data.password ? ["", "🔒 *Senha do painel*", data.password] : []),
+        "",
+        "📅 *Validade*",
+        validity,
+        "",
+        "🌐 *Acesse o painel*",
+        panelUrl,
+        "",
+        "━━━━━━━━━━━━━━━━━━",
+        "*Como começar:*",
+        "1️⃣ Acesse o painel pelo link acima",
+        ...(data.password
+          ? ["2️⃣ Faça login com o e-mail e senha enviados"]
+          : ["2️⃣ Solicite sua senha de acesso pelo suporte"]),
+        "3️⃣ Baixe e instale a extensão em: " + panelUrl + "/upgrade",
+        "4️⃣ Ative com sua chave de licença",
+        "",
+        "💬 Dúvidas? Fale conosco no WhatsApp: (27) 98135-9051",
+        "",
+        "_Obrigado por escolher a Hyro Lovable! 🚀_",
+      ].join("\n");
 
   const copy = async () => {
     await navigator.clipboard.writeText(message);
     setCopied(true);
     toast.success("Mensagem copiada");
     setTimeout(() => setCopied(false), 2000);
+  };
+  const copyLink = async () => {
+    if (!data.redemptionUrl) return;
+    await navigator.clipboard.writeText(data.redemptionUrl);
+    setCopiedLink(true);
+    toast.success("Link copiado");
+    setTimeout(() => setCopiedLink(false), 2000);
   };
 
   const whatsUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
@@ -928,7 +961,7 @@ function LicenseCreatedSuccess({
           </div>
           <div>
             <DialogTitle className="text-[15px] font-semibold tracking-tight">
-              Licença criada com sucesso
+              {isPerso ? "Link personalizado gerado" : "Licença criada com sucesso"}
             </DialogTitle>
             <DialogDescription className="text-[12.5px] text-muted-foreground mt-0.5">
               Copie a mensagem abaixo e envie para o cliente pelo WhatsApp ou e-mail.
@@ -938,15 +971,29 @@ function LicenseCreatedSuccess({
       </DialogHeader>
 
       <div className="px-6 py-5 space-y-4">
+        {isPerso && data.redemptionUrl && (
+          <div className="space-y-1.5">
+            <Label className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">
+              Link de resgate (travado por IP no 1º acesso)
+            </Label>
+            <div className="flex items-center gap-2">
+              <div className="flex-1 rounded-md border border-border bg-muted/40 px-3 h-10 flex items-center font-mono text-[12px] truncate">
+                {data.redemptionUrl}
+              </div>
+              <Button type="button" variant="outline" size="icon" className="h-10 w-10 shrink-0" onClick={copyLink}>
+                {copiedLink ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+              </Button>
+            </div>
+          </div>
+        )}
+
         {/* Quick facts */}
         <div className="grid grid-cols-2 gap-2">
           <FactCard label="Chave" value={data.key} mono />
           <FactCard label="E-mail" value={data.email} />
-          <FactCard
-            label="Senha"
-            value={data.password || "— não definida —"}
-            mono={!!data.password}
-          />
+          {!isPerso && (
+            <FactCard label="Senha" value={data.password || "— não definida —"} mono={!!data.password} />
+          )}
           <FactCard label="Validade" value={validity} />
         </div>
 
