@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "GG Lovable",
+  "name": "Hyro Lovable",
   "version": "1.0.0",
   "description": "Extensão oficial do painel Hyro.",
   "permissions": ["activeTab", "storage"],

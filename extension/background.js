@@ -1,3 +1,3 @@
 chrome.runtime.onInstalled.addListener(() => {
-  console.log("GG Lovable instalada.");
+  console.log("Hyro Lovable instalada.");
 });
