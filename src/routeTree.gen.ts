@@ -19,6 +19,8 @@ import { Route as DashSubscriptionRouteImport } from './routes/_dash.subscriptio
 import { Route as DashResellersRouteImport } from './routes/_dash.resellers'
 import { Route as DashLicensesRouteImport } from './routes/_dash.licenses'
 import { Route as DashDashboardRouteImport } from './routes/_dash.dashboard'
+import { Route as ApiPublicUpgradeZipRouteImport } from './routes/api/public/upgrade-zip'
+import { Route as ApiPublicUpgradeMetaRouteImport } from './routes/api/public/upgrade-meta'
 
 const UpgradeRoute = UpgradeRouteImport.update({
   id: '/upgrade',
@@ -69,6 +71,16 @@ const DashDashboardRoute = DashDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => DashRoute,
 } as any)
+const ApiPublicUpgradeZipRoute = ApiPublicUpgradeZipRouteImport.update({
+  id: '/api/public/upgrade-zip',
+  path: '/api/public/upgrade-zip',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicUpgradeMetaRoute = ApiPublicUpgradeMetaRouteImport.update({
+  id: '/api/public/upgrade-meta',
+  path: '/api/public/upgrade-meta',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -80,6 +92,8 @@ export interface FileRoutesByFullPath {
   '/subscription': typeof DashSubscriptionRoute
   '/tutorials': typeof DashTutorialsRoute
   '/upgrade-admin': typeof DashUpgradeAdminRoute
+  '/api/public/upgrade-meta': typeof ApiPublicUpgradeMetaRoute
+  '/api/public/upgrade-zip': typeof ApiPublicUpgradeZipRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -91,6 +105,8 @@ export interface FileRoutesByTo {
   '/subscription': typeof DashSubscriptionRoute
   '/tutorials': typeof DashTutorialsRoute
   '/upgrade-admin': typeof DashUpgradeAdminRoute
+  '/api/public/upgrade-meta': typeof ApiPublicUpgradeMetaRoute
+  '/api/public/upgrade-zip': typeof ApiPublicUpgradeZipRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -104,6 +120,8 @@ export interface FileRoutesById {
   '/_dash/subscription': typeof DashSubscriptionRoute
   '/_dash/tutorials': typeof DashTutorialsRoute
   '/_dash/upgrade-admin': typeof DashUpgradeAdminRoute
+  '/api/public/upgrade-meta': typeof ApiPublicUpgradeMetaRoute
+  '/api/public/upgrade-zip': typeof ApiPublicUpgradeZipRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -117,6 +135,8 @@ export interface FileRouteTypes {
     | '/subscription'
     | '/tutorials'
     | '/upgrade-admin'
+    | '/api/public/upgrade-meta'
+    | '/api/public/upgrade-zip'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -128,6 +148,8 @@ export interface FileRouteTypes {
     | '/subscription'
     | '/tutorials'
     | '/upgrade-admin'
+    | '/api/public/upgrade-meta'
+    | '/api/public/upgrade-zip'
   id:
     | '__root__'
     | '/'
@@ -140,6 +162,8 @@ export interface FileRouteTypes {
     | '/_dash/subscription'
     | '/_dash/tutorials'
     | '/_dash/upgrade-admin'
+    | '/api/public/upgrade-meta'
+    | '/api/public/upgrade-zip'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -147,6 +171,8 @@ export interface RootRouteChildren {
   DashRoute: typeof DashRouteWithChildren
   LoginRoute: typeof LoginRoute
   UpgradeRoute: typeof UpgradeRoute
+  ApiPublicUpgradeMetaRoute: typeof ApiPublicUpgradeMetaRoute
+  ApiPublicUpgradeZipRoute: typeof ApiPublicUpgradeZipRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -221,6 +247,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashDashboardRouteImport
       parentRoute: typeof DashRoute
     }
+    '/api/public/upgrade-zip': {
+      id: '/api/public/upgrade-zip'
+      path: '/api/public/upgrade-zip'
+      fullPath: '/api/public/upgrade-zip'
+      preLoaderRoute: typeof ApiPublicUpgradeZipRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/upgrade-meta': {
+      id: '/api/public/upgrade-meta'
+      path: '/api/public/upgrade-meta'
+      fullPath: '/api/public/upgrade-meta'
+      preLoaderRoute: typeof ApiPublicUpgradeMetaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -249,6 +289,8 @@ const rootRouteChildren: RootRouteChildren = {
   DashRoute: DashRouteWithChildren,
   LoginRoute: LoginRoute,
   UpgradeRoute: UpgradeRoute,
+  ApiPublicUpgradeMetaRoute: ApiPublicUpgradeMetaRoute,
+  ApiPublicUpgradeZipRoute: ApiPublicUpgradeZipRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
