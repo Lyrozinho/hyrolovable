@@ -708,6 +708,40 @@ function CreateLicenseDialog({
             </DialogHeader>
 
             <div className="px-6 py-5 space-y-5">
+              {/* Mode selector */}
+              <div className="space-y-1.5">
+                <Label className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">
+                  Tipo de licença
+                </Label>
+                <div className="grid grid-cols-2 gap-2">
+                  {([
+                    { id: "normal", title: "Normal", desc: "Vincula direto a um usuário existente." },
+                    { id: "personalizado", title: "Personalizado", desc: "Gera link de resgate travado por IP." },
+                  ] as const).map((opt) => {
+                    const active = mode === opt.id;
+                    return (
+                      <button
+                        key={opt.id}
+                        type="button"
+                        onClick={() => setMode(opt.id)}
+                        className={[
+                          "text-left rounded-md border px-3 py-2.5 transition-colors",
+                          active
+                            ? "border-foreground bg-foreground/5"
+                            : "border-border hover:border-foreground/40 hover:bg-muted/40",
+                        ].join(" ")}
+                      >
+                        <div className="flex items-center gap-1.5 text-[12.5px] font-medium">
+                          {opt.id === "personalizado" ? <Link2 className="h-3.5 w-3.5" /> : <KeyRound className="h-3.5 w-3.5" />}
+                          {opt.title}
+                        </div>
+                        <p className="text-[11px] text-muted-foreground mt-0.5 leading-snug">{opt.desc}</p>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
               {/* Key preview */}
               <div className="space-y-1.5">
                 <Label className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">
@@ -734,7 +768,7 @@ function CreateLicenseDialog({
               {/* Email */}
               <div className="space-y-1.5">
                 <Label className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">
-                  E-mail do usuário
+                  {mode === "personalizado" ? "E-mail destino do link" : "E-mail do usuário"}
                 </Label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
@@ -746,6 +780,11 @@ function CreateLicenseDialog({
                     className="h-10 pl-9 text-[13px]"
                   />
                 </div>
+                {mode === "personalizado" && (
+                  <p className="text-[11px] text-muted-foreground">
+                    A pessoa só precisará digitar nome, sobrenome e senha. O e-mail já vem preenchido e travado.
+                  </p>
+                )}
               </div>
 
               {/* Duration */}
@@ -778,22 +817,24 @@ function CreateLicenseDialog({
                 </div>
               </div>
 
-              {/* Painel access password */}
-              <div className="space-y-1.5">
-                <Label className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">
-                  Senha de acesso ao painel <span className="text-muted-foreground/70 normal-case tracking-normal">(opcional)</span>
-                </Label>
-                <Input
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Mín. 6 caracteres — deixe em branco para não permitir login"
-                  className="h-10 text-[13px]"
-                />
-                <p className="text-[11px] text-muted-foreground">
-                  Com senha definida, o cliente pode logar em <span className="font-mono">/login</span> e acompanhar sua assinatura.
-                </p>
-              </div>
+              {/* Painel access password — só no modo Normal */}
+              {mode === "normal" && (
+                <div className="space-y-1.5">
+                  <Label className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">
+                    Senha de acesso ao painel <span className="text-muted-foreground/70 normal-case tracking-normal">(opcional)</span>
+                  </Label>
+                  <Input
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Mín. 6 caracteres — deixe em branco para não permitir login"
+                    className="h-10 text-[13px]"
+                  />
+                  <p className="text-[11px] text-muted-foreground">
+                    Com senha definida, o cliente pode logar em <span className="font-mono">/login</span> e acompanhar sua assinatura.
+                  </p>
+                </div>
+              )}
             </div>
 
             <DialogFooter className="px-6 py-4 border-t border-border/60 bg-muted/30 gap-2">
