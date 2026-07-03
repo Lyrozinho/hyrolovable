@@ -150,7 +150,7 @@ function TutorialsPage() {
               await update(editing.id, payload);
               toast.success("Tutorial atualizado");
             } else {
-              add(payload);
+              await add(payload);
               toast.success("Tutorial publicado");
             }
             setCreating(false);
