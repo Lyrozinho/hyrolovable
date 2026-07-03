@@ -271,11 +271,11 @@ function TutorialCard({
   const hasVideo = !!tutorial.videoPath;
   const thumb = useSignedMediaUrl(tutorial.thumbnailPath);
   return (
-    <div className="group rounded-xl border border-border bg-card overflow-hidden transition-shadow hover:shadow-md">
+    <div className="group rounded-xl border border-border bg-card overflow-hidden transition-shadow hover:shadow-md flex flex-col h-full">
       <button
         type="button"
         onClick={onPlay}
-        className="relative block w-full aspect-video bg-muted overflow-hidden"
+        className="relative block w-full aspect-video bg-muted overflow-hidden shrink-0"
         aria-label={`Assistir ${tutorial.title}`}
       >
         {thumb ? (
@@ -304,7 +304,7 @@ function TutorialCard({
         )}
       </button>
 
-      <div className="p-4">
+      <div className="p-4 flex flex-col flex-1 min-h-0">
         <div className="flex items-start justify-between gap-2">
           <h3 className="text-sm font-semibold text-foreground line-clamp-2 leading-snug">
             {tutorial.title}
@@ -316,20 +316,24 @@ function TutorialCard({
             </span>
           )}
         </div>
-        {tutorial.description && (
+        {tutorial.description ? (
           <p className="mt-1.5 text-xs text-muted-foreground line-clamp-2 leading-relaxed">
             {tutorial.description}
           </p>
+        ) : (
+          <p className="mt-1.5 text-xs text-muted-foreground/0 line-clamp-2 leading-relaxed select-none" aria-hidden>
+            &nbsp;
+          </p>
         )}
 
-        <div className="mt-3 flex flex-wrap items-center gap-2">
-          <Button size="sm" onClick={onPlay} className="flex-1 min-w-[8rem] basis-full sm:basis-0">
+        <div className="mt-auto pt-3 flex items-center gap-2">
+          <Button size="sm" onClick={onPlay} className="flex-1 h-9">
             <Play className="h-3.5 w-3.5 mr-1" fill="currentColor" />
             Assistir
           </Button>
           {isAdmin && (
-            <div className="flex items-center gap-2 shrink-0 ml-auto">
-              <Button size="sm" variant="outline" onClick={onEdit} aria-label="Editar" className="shrink-0">
+            <>
+              <Button size="sm" variant="outline" onClick={onEdit} aria-label="Editar" className="shrink-0 h-9 w-9 p-0">
                 <Pencil className="h-3.5 w-3.5" />
               </Button>
               <Button
@@ -337,11 +341,11 @@ function TutorialCard({
                 variant="outline"
                 onClick={onDelete}
                 aria-label="Excluir"
-                className="shrink-0 text-destructive hover:text-destructive"
+                className="shrink-0 h-9 w-9 p-0 text-destructive hover:text-destructive"
               >
                 <Trash2 className="h-3.5 w-3.5" />
               </Button>
-            </div>
+            </>
           )}
         </div>
       </div>

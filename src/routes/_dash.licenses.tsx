@@ -36,6 +36,7 @@ import {
 import { supabase } from "@/lib/supabase";
 import { PermissionsDialog } from "@/components/permissions-dialog";
 import { RedemptionLinkDialog } from "@/components/redemption-link-dialog";
+import { createLink as createRedemptionLink } from "@/lib/redemption";
 import { generateLicenseKey } from "@/lib/license-key";
 import { sha256Hex, useAuth } from "@/lib/auth";
 
@@ -535,6 +536,8 @@ function CreateLicenseDialog({
   onOpenChange: (b: boolean) => void;
 }) {
   const qc = useQueryClient();
+  const { session } = useAuth();
+  const [mode, setMode] = useState<"normal" | "personalizado">("normal");
   const [email, setEmail] = useState("");
   const [days, setDays] = useState("30");
   const [lifetime, setLifetime] = useState(false);
@@ -547,6 +550,7 @@ function CreateLicenseDialog({
     password: string;
     expiresAt: Date;
     lifetime: boolean;
+    redemptionUrl?: string;
   } | null>(null);
 
   useEffect(() => {
@@ -554,6 +558,7 @@ function CreateLicenseDialog({
       setPreviewKey(generateLicenseKey());
       setPassword("");
       setCreated(null);
+      setMode("normal");
     }
   }, [open]);
 
@@ -563,70 +568,100 @@ function CreateLicenseDialog({
       toast.error("Informe um e-mail.");
       return;
     }
-    if (password && password.length < 6) {
+    if (mode === "normal" && password && password.length < 6) {
       toast.error("A senha deve ter no mínimo 6 caracteres.");
       return;
     }
     setSubmitting(true);
     try {
-      const passwordHash = password ? await sha256Hex(password) : null;
-
-      // 1) Buscar ou criar usuário em hyro_extension_users
-      let userId: string | null = null;
-      const { data: existing, error: uerr } = await supabase
-        .from("hyro_extension_users")
-        .select("id, password_hash")
-        .eq("email", emailNorm)
-        .maybeSingle();
-      if (uerr) throw uerr;
-
-      if (existing) {
-        userId = existing.id;
-        // Atualiza senha se admin definiu uma nova
-        if (passwordHash) {
-          await supabase
-            .from("hyro_extension_users")
-            .update({ password_hash: passwordHash, active: true })
-            .eq("id", userId);
-        }
-      } else {
-        const { data: created, error: cerr } = await supabase
-          .from("hyro_extension_users")
-          .insert({
-            email: emailNorm,
-            name: emailNorm.split("@")[0],
-            role: "user",
-            password_hash: passwordHash ?? "",
-            active: true,
-          })
-          .select("id")
-          .single();
-        if (cerr) throw cerr;
-        userId = created.id;
-      }
-
       const expiresAt = lifetime
         ? new Date("2099-12-31T23:59:59Z")
         : new Date(Date.now() + parseInt(days || "30") * 24 * 3600 * 1000);
-
       const key = previewKey;
-      const { error } = await supabase.from("hyro_extension_licenses").insert({
-        id: key,
-        user_id: userId,
-        status: "ativa",
-        expires_at: expiresAt.toISOString(),
-      });
-      if (error) throw error;
-      toast.success("Licença criada", { description: key });
-      qc.invalidateQueries({ queryKey: ["licenses"] });
-      qc.invalidateQueries({ queryKey: ["dash-stats"] });
-      setCreated({
-        key,
-        email: emailNorm,
-        password: password || "",
-        expiresAt,
-        lifetime,
-      });
+
+      if (mode === "personalizado") {
+        // Cria licença SEM user_id (será vinculada quando a pessoa se cadastrar via link)
+        const { error } = await supabase.from("hyro_extension_licenses").insert({
+          id: key,
+          user_id: null,
+          status: "ativa",
+          expires_at: expiresAt.toISOString(),
+        });
+        if (error) throw error;
+
+        const link = await createRedemptionLink({
+          license_id: key,
+          target_email: emailNorm,
+          created_by: session?.user.email ?? OWNER_EMAIL,
+        });
+        const url = `${window.location.origin}/r/${link.slug}`;
+
+        toast.success("Licença + link personalizado criados");
+        qc.invalidateQueries({ queryKey: ["licenses"] });
+        qc.invalidateQueries({ queryKey: ["dash-stats"] });
+        setCreated({
+          key,
+          email: emailNorm,
+          password: "",
+          expiresAt,
+          lifetime,
+          redemptionUrl: url,
+        });
+      } else {
+        const passwordHash = password ? await sha256Hex(password) : null;
+
+        // 1) Buscar ou criar usuário em hyro_extension_users
+        let userId: string | null = null;
+        const { data: existing, error: uerr } = await supabase
+          .from("hyro_extension_users")
+          .select("id, password_hash")
+          .eq("email", emailNorm)
+          .maybeSingle();
+        if (uerr) throw uerr;
+
+        if (existing) {
+          userId = existing.id;
+          if (passwordHash) {
+            await supabase
+              .from("hyro_extension_users")
+              .update({ password_hash: passwordHash, active: true })
+              .eq("id", userId);
+          }
+        } else {
+          const { data: createdUser, error: cerr } = await supabase
+            .from("hyro_extension_users")
+            .insert({
+              email: emailNorm,
+              name: emailNorm.split("@")[0],
+              role: "user",
+              password_hash: passwordHash ?? "",
+              active: true,
+            })
+            .select("id")
+            .single();
+          if (cerr) throw cerr;
+          userId = createdUser.id;
+        }
+
+        const { error } = await supabase.from("hyro_extension_licenses").insert({
+          id: key,
+          user_id: userId,
+          status: "ativa",
+          expires_at: expiresAt.toISOString(),
+        });
+        if (error) throw error;
+        toast.success("Licença criada", { description: key });
+        qc.invalidateQueries({ queryKey: ["licenses"] });
+        qc.invalidateQueries({ queryKey: ["dash-stats"] });
+        setCreated({
+          key,
+          email: emailNorm,
+          password: password || "",
+          expiresAt,
+          lifetime,
+        });
+      }
+
       setEmail("");
       setDays("30");
       setLifetime(false);
@@ -673,6 +708,40 @@ function CreateLicenseDialog({
             </DialogHeader>
 
             <div className="px-6 py-5 space-y-5">
+              {/* Mode selector */}
+              <div className="space-y-1.5">
+                <Label className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">
+                  Tipo de licença
+                </Label>
+                <div className="grid grid-cols-2 gap-2">
+                  {([
+                    { id: "normal", title: "Normal", desc: "Vincula direto a um usuário existente." },
+                    { id: "personalizado", title: "Personalizado", desc: "Gera link de resgate travado por IP." },
+                  ] as const).map((opt) => {
+                    const active = mode === opt.id;
+                    return (
+                      <button
+                        key={opt.id}
+                        type="button"
+                        onClick={() => setMode(opt.id)}
+                        className={[
+                          "text-left rounded-md border px-3 py-2.5 transition-colors",
+                          active
+                            ? "border-foreground bg-foreground/5"
+                            : "border-border hover:border-foreground/40 hover:bg-muted/40",
+                        ].join(" ")}
+                      >
+                        <div className="flex items-center gap-1.5 text-[12.5px] font-medium">
+                          {opt.id === "personalizado" ? <Link2 className="h-3.5 w-3.5" /> : <KeyRound className="h-3.5 w-3.5" />}
+                          {opt.title}
+                        </div>
+                        <p className="text-[11px] text-muted-foreground mt-0.5 leading-snug">{opt.desc}</p>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
               {/* Key preview */}
               <div className="space-y-1.5">
                 <Label className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">
@@ -699,7 +768,7 @@ function CreateLicenseDialog({
               {/* Email */}
               <div className="space-y-1.5">
                 <Label className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">
-                  E-mail do usuário
+                  {mode === "personalizado" ? "E-mail destino do link" : "E-mail do usuário"}
                 </Label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
@@ -711,6 +780,11 @@ function CreateLicenseDialog({
                     className="h-10 pl-9 text-[13px]"
                   />
                 </div>
+                {mode === "personalizado" && (
+                  <p className="text-[11px] text-muted-foreground">
+                    A pessoa só precisará digitar nome, sobrenome e senha. O e-mail já vem preenchido e travado.
+                  </p>
+                )}
               </div>
 
               {/* Duration */}
@@ -743,22 +817,24 @@ function CreateLicenseDialog({
                 </div>
               </div>
 
-              {/* Painel access password */}
-              <div className="space-y-1.5">
-                <Label className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">
-                  Senha de acesso ao painel <span className="text-muted-foreground/70 normal-case tracking-normal">(opcional)</span>
-                </Label>
-                <Input
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Mín. 6 caracteres — deixe em branco para não permitir login"
-                  className="h-10 text-[13px]"
-                />
-                <p className="text-[11px] text-muted-foreground">
-                  Com senha definida, o cliente pode logar em <span className="font-mono">/login</span> e acompanhar sua assinatura.
-                </p>
-              </div>
+              {/* Painel access password — só no modo Normal */}
+              {mode === "normal" && (
+                <div className="space-y-1.5">
+                  <Label className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">
+                    Senha de acesso ao painel <span className="text-muted-foreground/70 normal-case tracking-normal">(opcional)</span>
+                  </Label>
+                  <Input
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Mín. 6 caracteres — deixe em branco para não permitir login"
+                    className="h-10 text-[13px]"
+                  />
+                  <p className="text-[11px] text-muted-foreground">
+                    Com senha definida, o cliente pode logar em <span className="font-mono">/login</span> e acompanhar sua assinatura.
+                  </p>
+                </div>
+              )}
             </div>
 
             <DialogFooter className="px-6 py-4 border-t border-border/60 bg-muted/30 gap-2">
@@ -788,57 +864,90 @@ function LicenseCreatedSuccess({
     password: string;
     expiresAt: Date;
     lifetime: boolean;
+    redemptionUrl?: string;
   };
   onClose: () => void;
   onCreateAnother: () => void;
 }) {
   const [copied, setCopied] = useState(false);
+  const [copiedLink, setCopiedLink] = useState(false);
   const panelUrl = "https://hyrolovable.lovable.app";
+  const isPerso = !!data.redemptionUrl;
   const validity = data.lifetime
     ? "Vitalícia (nunca expira)"
     : data.expiresAt.toLocaleDateString("pt-BR", {
         day: "2-digit", month: "long", year: "numeric",
       });
 
-  const message = [
-    "🎉 *Sua licença Hyro Lovable está pronta!*",
-    "",
-    "Olá! Sua licença foi ativada com sucesso. Guarde estes dados em local seguro:",
-    "",
-    "🔑 *Chave de licença*",
-    `\`${data.key}\``,
-    "",
-    "📧 *E-mail de acesso*",
-    data.email,
-    ...(data.password
-      ? ["", "🔒 *Senha do painel*", data.password]
-      : []),
-    "",
-    "📅 *Validade*",
-    validity,
-    "",
-    "🌐 *Acesse o painel*",
-    panelUrl,
-    "",
-    "━━━━━━━━━━━━━━━━━━",
-    "*Como começar:*",
-    "1️⃣ Acesse o painel pelo link acima",
-    ...(data.password
-      ? ["2️⃣ Faça login com o e-mail e senha enviados"]
-      : ["2️⃣ Solicite sua senha de acesso pelo suporte"]),
-    "3️⃣ Baixe e instale a extensão em: " + panelUrl + "/upgrade",
-    "4️⃣ Ative com sua chave de licença",
-    "",
-    "💬 Dúvidas? Fale conosco no WhatsApp: (27) 98135-9051",
-    "",
-    "_Obrigado por escolher a Hyro Lovable! 🚀_",
-  ].join("\n");
+  const message = isPerso
+    ? [
+        "🎉 *Sua licença Hyro Lovable está pronta!*",
+        "",
+        "Olá! Criamos um link exclusivo pra você resgatar sua licença. Só você poderá abrir — o link trava no seu IP no primeiro acesso.",
+        "",
+        "🔗 *Seu link de resgate*",
+        data.redemptionUrl!,
+        "",
+        "📧 *E-mail de acesso*",
+        data.email,
+        "",
+        "📅 *Validade*",
+        validity,
+        "",
+        "━━━━━━━━━━━━━━━━━━",
+        "*Como resgatar:*",
+        "1️⃣ Abra o link acima no seu navegador",
+        "2️⃣ Preencha nome, sobrenome e senha (o e-mail já vem preenchido)",
+        "3️⃣ Sua licença será liberada automaticamente",
+        "",
+        "💬 Dúvidas? WhatsApp: (27) 98135-9051",
+        "",
+        "_Obrigado por escolher a Hyro Lovable! 🚀_",
+      ].join("\n")
+    : [
+        "🎉 *Sua licença Hyro Lovable está pronta!*",
+        "",
+        "Olá! Sua licença foi ativada com sucesso. Guarde estes dados em local seguro:",
+        "",
+        "🔑 *Chave de licença*",
+        `\`${data.key}\``,
+        "",
+        "📧 *E-mail de acesso*",
+        data.email,
+        ...(data.password ? ["", "🔒 *Senha do painel*", data.password] : []),
+        "",
+        "📅 *Validade*",
+        validity,
+        "",
+        "🌐 *Acesse o painel*",
+        panelUrl,
+        "",
+        "━━━━━━━━━━━━━━━━━━",
+        "*Como começar:*",
+        "1️⃣ Acesse o painel pelo link acima",
+        ...(data.password
+          ? ["2️⃣ Faça login com o e-mail e senha enviados"]
+          : ["2️⃣ Solicite sua senha de acesso pelo suporte"]),
+        "3️⃣ Baixe e instale a extensão em: " + panelUrl + "/upgrade",
+        "4️⃣ Ative com sua chave de licença",
+        "",
+        "💬 Dúvidas? Fale conosco no WhatsApp: (27) 98135-9051",
+        "",
+        "_Obrigado por escolher a Hyro Lovable! 🚀_",
+      ].join("\n");
 
   const copy = async () => {
     await navigator.clipboard.writeText(message);
     setCopied(true);
     toast.success("Mensagem copiada");
     setTimeout(() => setCopied(false), 2000);
+  };
+  const copyLink = async () => {
+    if (!data.redemptionUrl) return;
+    await navigator.clipboard.writeText(data.redemptionUrl);
+    setCopiedLink(true);
+    toast.success("Link copiado");
+    setTimeout(() => setCopiedLink(false), 2000);
   };
 
   const whatsUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
@@ -852,7 +961,7 @@ function LicenseCreatedSuccess({
           </div>
           <div>
             <DialogTitle className="text-[15px] font-semibold tracking-tight">
-              Licença criada com sucesso
+              {isPerso ? "Link personalizado gerado" : "Licença criada com sucesso"}
             </DialogTitle>
             <DialogDescription className="text-[12.5px] text-muted-foreground mt-0.5">
               Copie a mensagem abaixo e envie para o cliente pelo WhatsApp ou e-mail.
@@ -862,15 +971,29 @@ function LicenseCreatedSuccess({
       </DialogHeader>
 
       <div className="px-6 py-5 space-y-4">
+        {isPerso && data.redemptionUrl && (
+          <div className="space-y-1.5">
+            <Label className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">
+              Link de resgate (travado por IP no 1º acesso)
+            </Label>
+            <div className="flex items-center gap-2">
+              <div className="flex-1 rounded-md border border-border bg-muted/40 px-3 h-10 flex items-center font-mono text-[12px] truncate">
+                {data.redemptionUrl}
+              </div>
+              <Button type="button" variant="outline" size="icon" className="h-10 w-10 shrink-0" onClick={copyLink}>
+                {copiedLink ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+              </Button>
+            </div>
+          </div>
+        )}
+
         {/* Quick facts */}
         <div className="grid grid-cols-2 gap-2">
           <FactCard label="Chave" value={data.key} mono />
           <FactCard label="E-mail" value={data.email} />
-          <FactCard
-            label="Senha"
-            value={data.password || "— não definida —"}
-            mono={!!data.password}
-          />
+          {!isPerso && (
+            <FactCard label="Senha" value={data.password || "— não definida —"} mono={!!data.password} />
+          )}
           <FactCard label="Validade" value={validity} />
         </div>
 
