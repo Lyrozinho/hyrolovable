@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/lib/auth";
 
 export const Route = createFileRoute("/_dash/subscription")({
   component: SubscriptionPage,
@@ -114,12 +115,16 @@ function buildWhatsappLink(plan: Plan) {
 }
 
 function SubscriptionPage() {
+  const { session } = useAuth();
+  const isClient = session?.user.role === "client";
+  const userId = session?.user.id ?? null;
   const { data: stats } = useQuery({
-    queryKey: ["subscription-license-stats"],
+    queryKey: ["subscription-license-stats", isClient ? userId : "admin-all"],
+    enabled: !isClient || !!userId,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("hyro_extension_licenses")
-        .select("id,status,expires_at");
+      let q = supabase.from("hyro_extension_licenses").select("id,status,expires_at,user_id");
+      if (isClient && userId) q = q.eq("user_id", userId);
+      const { data, error } = await q;
       if (error) throw error;
       const now = Date.now();
       const in30 = now + 30 * 24 * 60 * 60 * 1000;
