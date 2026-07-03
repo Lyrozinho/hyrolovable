@@ -7,6 +7,7 @@ import { WelcomeModal } from "@/components/welcome-modal";
 import { Menu, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { SidebarProvider, useSidebar } from "@/lib/sidebar";
+import { installSecurityGuard } from "@/lib/security-guard";
 
 export const Route = createFileRoute("/_dash")({
   ssr: false,
