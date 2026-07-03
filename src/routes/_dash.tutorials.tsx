@@ -214,8 +214,8 @@ function TutorialsPage() {
 }
 
 function PlayerDialog({ tutorial, onClose }: { tutorial: Tutorial | null; onClose: () => void }) {
-  const videoUrl = useBlobUrl(tutorial?.videoBlobId);
-  const thumbUrl = useBlobUrl(tutorial?.thumbnailBlobId);
+  const videoUrl = useSignedMediaUrl(tutorial?.videoPath);
+  const thumbUrl = useSignedMediaUrl(tutorial?.thumbnailPath);
   return (
     <Dialog open={!!tutorial} onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-w-4xl p-0 overflow-hidden gap-0">
@@ -261,8 +261,8 @@ function TutorialCard({
   onEdit: () => void;
   onDelete: () => void;
 }) {
-  const hasVideo = !!tutorial.videoBlobId;
-  const thumb = useBlobUrl(tutorial.thumbnailBlobId);
+  const hasVideo = !!tutorial.videoPath;
+  const thumb = useSignedMediaUrl(tutorial.thumbnailPath);
   return (
     <div className="group rounded-xl border border-border bg-card overflow-hidden transition-shadow hover:shadow-md">
       <button
@@ -345,9 +345,9 @@ function TutorialCard({
 type FormPayload = {
   title: string;
   description: string;
-  videoBlobId?: string;
+  videoPath?: string;
   videoMime?: string;
-  thumbnailBlobId?: string;
+  thumbnailPath?: string;
   duration?: string;
 };
 
@@ -367,13 +367,13 @@ function TutorialFormDialog({
   const [duration, setDuration] = useState("");
 
   // Video state — either an existing blob id (persisted) or a freshly uploaded one (pending).
-  const [videoBlobId, setVideoBlobId] = useState<string | undefined>(undefined);
+  const [videoPath, setVideoBlobId] = useState<string | undefined>(undefined);
   const [videoMime, setVideoMime] = useState<string | undefined>(undefined);
   const [videoName, setVideoName] = useState<string>("");
   const [videoSize, setVideoSize] = useState<number>(0);
   const [uploadingVideo, setUploadingVideo] = useState(false);
 
-  const [thumbBlobId, setThumbBlobId] = useState<string | undefined>(undefined);
+  const [thumbPath, setThumbBlobId] = useState<string | undefined>(undefined);
   const [uploadingThumb, setUploadingThumb] = useState(false);
 
   // Track blob ids we created in this session but did NOT commit (cleanup on cancel).
@@ -382,18 +382,18 @@ function TutorialFormDialog({
   const videoInputRef = useRef<HTMLInputElement>(null);
   const thumbInputRef = useRef<HTMLInputElement>(null);
 
-  const thumbPreview = useBlobUrl(thumbBlobId);
+  const thumbPreview = useSignedMediaUrl(thumbPath);
 
   useEffect(() => {
     if (open) {
       setTitle(initial?.title ?? "");
       setDescription(initial?.description ?? "");
       setDuration(initial?.duration ?? "");
-      setVideoBlobId(initial?.videoBlobId);
+      setVideoBlobId(initial?.videoPath);
       setVideoMime(initial?.videoMime);
       setVideoName("");
       setVideoSize(0);
-      setThumbBlobId(initial?.thumbnailBlobId);
+      setThumbBlobId(initial?.thumbnailPath);
       pendingRef.current = {};
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -415,7 +415,7 @@ function TutorialFormDialog({
     try {
       const id = await putBlob(f, "vid");
       // Clean up previous pending upload (if user swapped without saving).
-      if (pendingRef.current.video && pendingRef.current.video !== initial?.videoBlobId) {
+      if (pendingRef.current.video && pendingRef.current.video !== initial?.videoPath) {
         await deleteBlob(pendingRef.current.video);
       }
       pendingRef.current.video = id;
@@ -447,7 +447,7 @@ function TutorialFormDialog({
     setUploadingThumb(true);
     try {
       const id = await putBlob(f, "thumb");
-      if (pendingRef.current.thumb && pendingRef.current.thumb !== initial?.thumbnailBlobId) {
+      if (pendingRef.current.thumb && pendingRef.current.thumb !== initial?.thumbnailPath) {
         await deleteBlob(pendingRef.current.thumb);
       }
       pendingRef.current.thumb = id;
@@ -481,10 +481,10 @@ function TutorialFormDialog({
 
   const handleClose = async () => {
     // Discard pending uploads that were never committed.
-    if (pendingRef.current.video && pendingRef.current.video !== initial?.videoBlobId) {
+    if (pendingRef.current.video && pendingRef.current.video !== initial?.videoPath) {
       await deleteBlob(pendingRef.current.video);
     }
-    if (pendingRef.current.thumb && pendingRef.current.thumb !== initial?.thumbnailBlobId) {
+    if (pendingRef.current.thumb && pendingRef.current.thumb !== initial?.thumbnailPath) {
       await deleteBlob(pendingRef.current.thumb);
     }
     pendingRef.current = {};
@@ -502,9 +502,9 @@ function TutorialFormDialog({
     await onSubmit({
       title: title.trim(),
       description: description.trim(),
-      videoBlobId,
+      videoPath,
       videoMime,
-      thumbnailBlobId: thumbBlobId,
+      thumbnailPath: thumbPath,
       duration: duration.trim() || undefined,
     });
   };
@@ -546,7 +546,7 @@ function TutorialFormDialog({
           <div className="space-y-1.5">
             <Label>Vídeo do tutorial *</Label>
             <div className="rounded-md border border-border bg-muted/30 p-3 space-y-3">
-              {videoBlobId ? (
+              {videoPath ? (
                 <div className="flex items-center gap-3 rounded bg-background border border-border p-2.5">
                   <div className="h-10 w-10 rounded bg-primary/10 text-primary flex items-center justify-center shrink-0">
                     <FileVideo className="h-5 w-5" />
@@ -598,7 +598,7 @@ function TutorialFormDialog({
                 ) : (
                   <>
                     <Upload className="h-3.5 w-3.5 mr-1.5" />
-                    {videoBlobId ? "Trocar vídeo" : "Enviar vídeo do dispositivo"}
+                    {videoPath ? "Trocar vídeo" : "Enviar vídeo do dispositivo"}
                   </>
                 )}
               </Button>
@@ -653,7 +653,7 @@ function TutorialFormDialog({
                 ) : (
                   <>
                     <Upload className="h-3.5 w-3.5 mr-1.5" />
-                    {thumbBlobId ? "Trocar capa" : "Enviar capa do dispositivo"}
+                    {thumbPath ? "Trocar capa" : "Enviar capa do dispositivo"}
                   </>
                 )}
               </Button>
