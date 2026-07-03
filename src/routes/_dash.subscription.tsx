@@ -294,22 +294,29 @@ function PlanCard({ plan }: { plan: Plan }) {
       className={[
         "group relative rounded-2xl p-6 flex flex-col transition-all duration-300",
         featured
-          ? "bg-foreground text-background border border-foreground shadow-elegant lg:-translate-y-2"
-          : "bg-card text-foreground border border-border hover:border-foreground/30 hover:-translate-y-0.5",
+          ? [
+              "bg-primary text-primary-foreground border shadow-elegant lg:-translate-y-2",
+              // subtle edge in both modes
+              "border-primary/60 dark:border-white/10",
+              // soften harsh white in dark
+              "dark:shadow-none dark:ring-1 dark:ring-white/10",
+            ].join(" ")
+          : "bg-card text-card-foreground border border-border hover:border-foreground/30 hover:-translate-y-0.5 shadow-xs",
       ].join(" ")}
     >
       {plan.badge && (
         <div
           className={[
-            "absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-[0.16em] whitespace-nowrap",
+            "absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-[0.16em] whitespace-nowrap shadow-xs",
             featured
-              ? "bg-background text-foreground border border-background"
+              ? "bg-primary-foreground text-primary border border-primary-foreground"
               : "bg-foreground text-background",
           ].join(" ")}
         >
           {plan.badge}
         </div>
       )}
+
 
       <div className="flex items-center justify-between mb-5">
         <div className="flex items-center gap-2.5">
