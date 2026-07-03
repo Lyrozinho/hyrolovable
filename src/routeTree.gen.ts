@@ -10,9 +10,11 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as UpgradeRouteImport } from './routes/upgrade'
+import { Route as SignupRouteImport } from './routes/signup'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as DashRouteImport } from './routes/_dash'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as RSlugRouteImport } from './routes/r.$slug'
 import { Route as DashUpgradeAdminRouteImport } from './routes/_dash.upgrade-admin'
 import { Route as DashTutorialsRouteImport } from './routes/_dash.tutorials'
 import { Route as DashSubscriptionRouteImport } from './routes/_dash.subscription'
@@ -27,6 +29,11 @@ const UpgradeRoute = UpgradeRouteImport.update({
   path: '/upgrade',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SignupRoute = SignupRouteImport.update({
+  id: '/signup',
+  path: '/signup',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
@@ -39,6 +46,11 @@ const DashRoute = DashRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RSlugRoute = RSlugRouteImport.update({
+  id: '/r/$slug',
+  path: '/r/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DashUpgradeAdminRoute = DashUpgradeAdminRouteImport.update({
@@ -85,6 +97,7 @@ const ApiPublicUpgradeMetaRoute = ApiPublicUpgradeMetaRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/signup': typeof SignupRoute
   '/upgrade': typeof UpgradeRoute
   '/dashboard': typeof DashDashboardRoute
   '/licenses': typeof DashLicensesRoute
@@ -92,12 +105,14 @@ export interface FileRoutesByFullPath {
   '/subscription': typeof DashSubscriptionRoute
   '/tutorials': typeof DashTutorialsRoute
   '/upgrade-admin': typeof DashUpgradeAdminRoute
+  '/r/$slug': typeof RSlugRoute
   '/api/public/upgrade-meta': typeof ApiPublicUpgradeMetaRoute
   '/api/public/upgrade-zip': typeof ApiPublicUpgradeZipRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/signup': typeof SignupRoute
   '/upgrade': typeof UpgradeRoute
   '/dashboard': typeof DashDashboardRoute
   '/licenses': typeof DashLicensesRoute
@@ -105,6 +120,7 @@ export interface FileRoutesByTo {
   '/subscription': typeof DashSubscriptionRoute
   '/tutorials': typeof DashTutorialsRoute
   '/upgrade-admin': typeof DashUpgradeAdminRoute
+  '/r/$slug': typeof RSlugRoute
   '/api/public/upgrade-meta': typeof ApiPublicUpgradeMetaRoute
   '/api/public/upgrade-zip': typeof ApiPublicUpgradeZipRoute
 }
@@ -113,6 +129,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_dash': typeof DashRouteWithChildren
   '/login': typeof LoginRoute
+  '/signup': typeof SignupRoute
   '/upgrade': typeof UpgradeRoute
   '/_dash/dashboard': typeof DashDashboardRoute
   '/_dash/licenses': typeof DashLicensesRoute
@@ -120,6 +137,7 @@ export interface FileRoutesById {
   '/_dash/subscription': typeof DashSubscriptionRoute
   '/_dash/tutorials': typeof DashTutorialsRoute
   '/_dash/upgrade-admin': typeof DashUpgradeAdminRoute
+  '/r/$slug': typeof RSlugRoute
   '/api/public/upgrade-meta': typeof ApiPublicUpgradeMetaRoute
   '/api/public/upgrade-zip': typeof ApiPublicUpgradeZipRoute
 }
@@ -128,6 +146,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/login'
+    | '/signup'
     | '/upgrade'
     | '/dashboard'
     | '/licenses'
@@ -135,12 +154,14 @@ export interface FileRouteTypes {
     | '/subscription'
     | '/tutorials'
     | '/upgrade-admin'
+    | '/r/$slug'
     | '/api/public/upgrade-meta'
     | '/api/public/upgrade-zip'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/login'
+    | '/signup'
     | '/upgrade'
     | '/dashboard'
     | '/licenses'
@@ -148,6 +169,7 @@ export interface FileRouteTypes {
     | '/subscription'
     | '/tutorials'
     | '/upgrade-admin'
+    | '/r/$slug'
     | '/api/public/upgrade-meta'
     | '/api/public/upgrade-zip'
   id:
@@ -155,6 +177,7 @@ export interface FileRouteTypes {
     | '/'
     | '/_dash'
     | '/login'
+    | '/signup'
     | '/upgrade'
     | '/_dash/dashboard'
     | '/_dash/licenses'
@@ -162,6 +185,7 @@ export interface FileRouteTypes {
     | '/_dash/subscription'
     | '/_dash/tutorials'
     | '/_dash/upgrade-admin'
+    | '/r/$slug'
     | '/api/public/upgrade-meta'
     | '/api/public/upgrade-zip'
   fileRoutesById: FileRoutesById
@@ -170,7 +194,9 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   DashRoute: typeof DashRouteWithChildren
   LoginRoute: typeof LoginRoute
+  SignupRoute: typeof SignupRoute
   UpgradeRoute: typeof UpgradeRoute
+  RSlugRoute: typeof RSlugRoute
   ApiPublicUpgradeMetaRoute: typeof ApiPublicUpgradeMetaRoute
   ApiPublicUpgradeZipRoute: typeof ApiPublicUpgradeZipRoute
 }
@@ -182,6 +208,13 @@ declare module '@tanstack/react-router' {
       path: '/upgrade'
       fullPath: '/upgrade'
       preLoaderRoute: typeof UpgradeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/signup': {
+      id: '/signup'
+      path: '/signup'
+      fullPath: '/signup'
+      preLoaderRoute: typeof SignupRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -203,6 +236,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/r/$slug': {
+      id: '/r/$slug'
+      path: '/r/$slug'
+      fullPath: '/r/$slug'
+      preLoaderRoute: typeof RSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_dash/upgrade-admin': {
@@ -288,7 +328,9 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   DashRoute: DashRouteWithChildren,
   LoginRoute: LoginRoute,
+  SignupRoute: SignupRoute,
   UpgradeRoute: UpgradeRoute,
+  RSlugRoute: RSlugRoute,
   ApiPublicUpgradeMetaRoute: ApiPublicUpgradeMetaRoute,
   ApiPublicUpgradeZipRoute: ApiPublicUpgradeZipRoute,
 }
