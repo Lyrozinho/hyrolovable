@@ -415,7 +415,7 @@ function ResellersPage() {
         </section>
       )}
 
-      <CreateResellerDialog open={createOpen} onOpenChange={setCreateOpen} />
+      <CreateResellerDialog open={createOpen} onOpenChange={setCreateOpen} ownerUserId={session?.user.id ?? null} isOwner={isOwner} />
       <AdjustBalanceDialog reseller={balanceTarget} onClose={() => setBalanceTarget(null)} />
     </div>
   );
