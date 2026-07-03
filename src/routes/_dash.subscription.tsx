@@ -295,11 +295,10 @@ function PlanCard({ plan }: { plan: Plan }) {
         "group relative rounded-2xl p-6 flex flex-col transition-all duration-300",
         featured
           ? [
-              "bg-primary text-primary-foreground border shadow-elegant lg:-translate-y-2",
-              // subtle edge in both modes
-              "border-primary/60 dark:border-white/10",
-              // soften harsh white in dark
-              "dark:shadow-none dark:ring-1 dark:ring-white/10",
+              // LIGHT: bloco escuro premium sobre canvas claro
+              "bg-primary text-primary-foreground border border-primary/60 shadow-elegant lg:-translate-y-2",
+              // DARK: bloco elevado escuro com destaque sutil (evita branco puro estourado)
+              "dark:bg-[oklch(0.22_0.006_250)] dark:text-foreground dark:border-white/10 dark:shadow-none dark:ring-1 dark:ring-white/10",
             ].join(" ")
           : "bg-card text-card-foreground border border-border hover:border-foreground/30 hover:-translate-y-0.5 shadow-xs",
       ].join(" ")}
