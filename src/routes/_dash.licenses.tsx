@@ -392,6 +392,9 @@ function LicensesPage() {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="inline-flex items-center gap-0.5">
+                        <IconAction label="Permissões" onClick={() => setPermsFor(l)}>
+                          <ShieldCheck className="h-3.5 w-3.5" />
+                        </IconAction>
                         <IconAction label="Editar" onClick={() => setEditing(l)}>
                           <Pencil className="h-3.5 w-3.5" />
                         </IconAction>
