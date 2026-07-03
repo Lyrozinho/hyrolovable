@@ -324,7 +324,7 @@ function PlanCard({ plan }: { plan: Plan }) {
             className={[
               "h-10 w-10 rounded-xl flex items-center justify-center border",
               featured
-                ? "bg-background/10 border-background/20 text-background"
+                ? "bg-primary-foreground/10 border-primary-foreground/20 text-primary-foreground"
                 : "bg-secondary border-border text-foreground",
             ].join(" ")}
           >
@@ -335,7 +335,7 @@ function PlanCard({ plan }: { plan: Plan }) {
             <div
               className={[
                 "text-[10.5px] font-mono uppercase tracking-wider mt-1.5",
-                featured ? "text-background/60" : "text-muted-foreground",
+                featured ? "text-primary-foreground/60" : "text-muted-foreground",
               ].join(" ")}
             >
               {plan.months === 1 ? "Cobrança mensal" : `Cobrança a cada ${plan.months} meses`}
@@ -347,7 +347,7 @@ function PlanCard({ plan }: { plan: Plan }) {
             className={[
               "px-2 py-1 rounded-md text-[10px] font-bold tracking-wide",
               featured
-                ? "bg-background/15 text-background"
+                ? "bg-primary-foreground/15 text-primary-foreground"
                 : "bg-success/10 text-success border border-success/20",
             ].join(" ")}
           >
@@ -359,7 +359,7 @@ function PlanCard({ plan }: { plan: Plan }) {
       <p
         className={[
           "text-[13px] leading-relaxed mb-6 min-h-[40px]",
-          featured ? "text-background/75" : "text-muted-foreground",
+          featured ? "text-primary-foreground/75" : "text-muted-foreground",
         ].join(" ")}
       >
         {plan.tagline}
@@ -371,7 +371,7 @@ function PlanCard({ plan }: { plan: Plan }) {
           <div
             className={[
               "text-[12px] mb-1 font-mono",
-              featured ? "text-background/50" : "text-muted-foreground",
+              featured ? "text-primary-foreground/50" : "text-muted-foreground",
             ].join(" ")}
           >
             De <span className="line-through">{fmtBRL(plan.originalPrice)}</span> por
@@ -381,7 +381,7 @@ function PlanCard({ plan }: { plan: Plan }) {
           <span
             className={[
               "text-[15px] font-medium mt-2",
-              featured ? "text-background/80" : "text-muted-foreground",
+              featured ? "text-primary-foreground/80" : "text-muted-foreground",
             ].join(" ")}
           >
             R$
@@ -395,7 +395,7 @@ function PlanCard({ plan }: { plan: Plan }) {
           <span
             className={[
               "text-[13px] ml-1",
-              featured ? "text-background/60" : "text-muted-foreground",
+              featured ? "text-primary-foreground/60" : "text-muted-foreground",
             ].join(" ")}
           >
             /mês
@@ -404,7 +404,7 @@ function PlanCard({ plan }: { plan: Plan }) {
         <div
           className={[
             "text-[11.5px] mt-2 flex items-center gap-1.5",
-            featured ? "text-background/60" : "text-muted-foreground",
+            featured ? "text-primary-foreground/60" : "text-muted-foreground",
           ].join(" ")}
         >
           {plan.months === 1
@@ -414,8 +414,8 @@ function PlanCard({ plan }: { plan: Plan }) {
                 <span>{fmtBRL(plan.totalPrice)} cobrados a cada {plan.months} meses</span>
                 {plan.savings ? (
                   <>
-                    <span className={featured ? "text-background/30" : "text-border"}>·</span>
-                    <span className={featured ? "text-background font-medium" : "text-success font-medium"}>
+                    <span className={featured ? "text-primary-foreground/30" : "text-border"}>·</span>
+                    <span className={featured ? "text-primary-foreground font-medium" : "text-success font-medium"}>
                       Economize {fmtBRL(plan.savings)}
                     </span>
                   </>
@@ -428,7 +428,7 @@ function PlanCard({ plan }: { plan: Plan }) {
       <div
         className={[
           "h-px w-full mb-5",
-          featured ? "bg-background/15" : "bg-border",
+          featured ? "bg-primary-foreground/15" : "bg-border",
         ].join(" ")}
       />
 
@@ -438,12 +438,12 @@ function PlanCard({ plan }: { plan: Plan }) {
             <span
               className={[
                 "h-4 w-4 mt-0.5 rounded-full flex items-center justify-center shrink-0",
-                featured ? "bg-background/15" : "bg-secondary border border-border",
+                featured ? "bg-primary-foreground/15" : "bg-secondary border border-border",
               ].join(" ")}
             >
               <Check className="h-2.5 w-2.5" strokeWidth={3.5} />
             </span>
-            <span className={featured ? "text-background/90" : "text-foreground/90"}>{perk}</span>
+            <span className={featured ? "text-primary-foreground/90" : "text-foreground/90"}>{perk}</span>
           </li>
         ))}
       </ul>
@@ -453,10 +453,11 @@ function PlanCard({ plan }: { plan: Plan }) {
         className={[
           "w-full h-11 text-[13px] font-semibold tracking-wide group/btn",
           featured
-            ? "bg-background text-foreground hover:bg-background/90"
+            ? "bg-primary-foreground text-primary hover:bg-primary-foreground/90"
             : "bg-foreground text-background hover:bg-foreground/90",
         ].join(" ")}
       >
+
         <a href={buildWhatsappLink(plan)} target="_blank" rel="noreferrer">
           Adquirir agora
           <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover/btn:translate-x-0.5" />
