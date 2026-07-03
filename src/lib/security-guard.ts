@@ -179,6 +179,9 @@ function setupDevtoolsDetection() {
     (re as any).toString = function () { hits++; if (hits > 0) warn(); return ""; };
     setInterval(() => { try { console.profile?.(re as any); console.profileEnd?.(); } catch { /* ignore */ } }, 2000);
   } catch { /* ignore */ }
+}
+
+
 
 function isDevtoolsOpen(): boolean {
   const threshold = 160;
