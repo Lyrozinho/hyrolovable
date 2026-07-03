@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { Rocket, Download, LifeBuoy, Loader2 } from "lucide-react";
+import { Rocket, Download, LifeBuoy, Loader2, FileArchive, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { fetchUpgradeBlob, useUpgrade } from "@/lib/upgrade-store";
 import { toast } from "sonner";
@@ -20,6 +20,12 @@ export const Route = createFileRoute("/upgrade")({
 
 const WHATSAPP_NUMBER = "5527981359051";
 
+function formatSize(bytes: number) {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+}
+
 function UpgradePage() {
   const { meta } = useUpgrade();
   const [downloading, setDownloading] = useState(false);
@@ -27,33 +33,45 @@ function UpgradePage() {
   const download = async () => {
     setDownloading(true);
     try {
-      // Prefer admin-uploaded ZIP (IndexedDB); fallback to bundled file.
-      const uploaded = await fetchUpgradeBlob();
-      let blob: Blob;
-      let fileName: string;
-      if (uploaded) {
-        blob = uploaded.blob;
-        fileName = uploaded.fileName;
-      } else {
-        const res = await fetch("/hyro-lovable.zip");
-        if (!res.ok) throw new Error(`Falha no download: ${res.status}`);
-        blob = await res.blob();
-        fileName = "hyro-lovable.zip";
+      // Prefer admin-uploaded ZIP (IndexedDB). Only fall back to bundled file
+      // if there's no metadata AT ALL — never silently override an uploaded one.
+      if (meta) {
+        const uploaded = await fetchUpgradeBlob();
+        if (!uploaded) {
+          throw new Error(
+            "Arquivo enviado não foi encontrado no armazenamento local. Envie novamente em /upgrade-admin."
+          );
+        }
+        const url = URL.createObjectURL(uploaded.blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = uploaded.fileName;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+        toast.success(`Baixando ${uploaded.fileName}`);
+        return;
       }
+      const res = await fetch("/hyro-lovable.zip", { cache: "no-store" });
+      if (!res.ok) throw new Error(`Falha no download: ${res.status}`);
+      const blob = await res.blob();
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = fileName;
+      a.download = "hyro-lovable.zip";
       document.body.appendChild(a);
       a.click();
       a.remove();
       URL.revokeObjectURL(url);
+      toast.success("Baixando hyro-lovable.zip (versão padrão)");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Falha no download");
     } finally {
       setDownloading(false);
     }
   };
+
 
   return (
     <div className="relative min-h-screen bg-background flex items-center justify-center py-10 px-4">
@@ -82,11 +100,40 @@ function UpgradePage() {
           <div className="text-center">
             <div className="text-[15px] font-semibold tracking-tight">Atualização da Extensão</div>
             <div className="text-[12.5px] text-muted-foreground mt-1">
-              {meta?.version ? `Versão ${meta.version} · ` : "Versão mais recente do Hyro Lovable"}
-              {meta && (
+              {meta?.version
+                ? `Versão ${meta.version} · atualizada em ${new Date(meta.updatedAt).toLocaleDateString("pt-BR")}`
+                : "Versão mais recente do Hyro Lovable"}
+            </div>
+          </div>
+
+          {/* Which file will be served — makes any mismatch obvious */}
+          <div className={[
+            "mt-5 rounded-xl border px-4 py-3 flex items-start gap-3",
+            meta ? "border-emerald-500/25 bg-emerald-500/5" : "border-amber-500/25 bg-amber-500/5",
+          ].join(" ")}>
+            {meta ? (
+              <FileArchive className="h-4 w-4 mt-0.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+            ) : (
+              <AlertTriangle className="h-4 w-4 mt-0.5 text-amber-600 dark:text-amber-400 shrink-0" />
+            )}
+            <div className="min-w-0 flex-1 text-left">
+              {meta ? (
                 <>
-                  {meta.version ? "" : ""}
-                  {meta.version && `atualizada em ${new Date(meta.updatedAt).toLocaleDateString("pt-BR")}`}
+                  <div className="text-[12.5px] font-medium text-foreground truncate">
+                    {meta.fileName}
+                  </div>
+                  <div className="text-[11px] text-muted-foreground mt-0.5">
+                    {formatSize(meta.size)} · enviado {new Date(meta.updatedAt).toLocaleString("pt-BR")}
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="text-[12.5px] font-medium text-foreground">
+                    Nenhum arquivo enviado
+                  </div>
+                  <div className="text-[11px] text-muted-foreground mt-0.5">
+                    Será usado o arquivo padrão embutido no projeto (<span className="font-mono">hyro-lovable.zip</span>). Envie o correto em <span className="font-mono">/upgrade-admin</span>.
+                  </div>
                 </>
               )}
             </div>
@@ -97,6 +144,7 @@ function UpgradePage() {
               {meta.notes}
             </div>
           )}
+
 
           <div className="mt-6 rounded-xl border border-border bg-secondary/50 px-5 py-4">
             <div className="text-[13px] font-semibold mb-2">Como instalar:</div>
