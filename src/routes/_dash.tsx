@@ -76,11 +76,9 @@ function DashInner() {
               <Search className="h-3.5 w-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
               <Input
                 placeholder="Buscar..."
-                className="h-9 w-64 pl-9 pr-10 text-[12.5px] rounded-full bg-muted border-transparent focus-visible:bg-background focus-visible:border-border focus-visible:ring-0"
+                className="h-9 w-64 pl-9 pr-3 text-[12.5px] rounded-full bg-muted border-transparent focus-visible:bg-background focus-visible:border-border focus-visible:ring-0"
               />
-              <kbd className="hidden lg:flex absolute right-2.5 top-1/2 -translate-y-1/2 h-5 items-center justify-center rounded border border-border bg-background px-1.5 font-mono text-[10px] font-bold text-muted-foreground">
-                ⌘K
-              </kbd>
+
             </div>
             <ThemeToggle />
           </div>
