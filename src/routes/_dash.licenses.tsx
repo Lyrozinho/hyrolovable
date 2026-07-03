@@ -517,11 +517,19 @@ function CreateLicenseDialog({
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [previewKey, setPreviewKey] = useState<string>(generateLicenseKey());
+  const [created, setCreated] = useState<{
+    key: string;
+    email: string;
+    password: string;
+    expiresAt: Date;
+    lifetime: boolean;
+  } | null>(null);
 
   useEffect(() => {
     if (open) {
       setPreviewKey(generateLicenseKey());
       setPassword("");
+      setCreated(null);
     }
   }, [open]);
 
