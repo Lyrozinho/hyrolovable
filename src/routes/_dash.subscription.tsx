@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/lib/auth";
 
 export const Route = createFileRoute("/_dash/subscription")({
   component: SubscriptionPage,
