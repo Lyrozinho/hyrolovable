@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
-import { supabase } from "./supabase";
+import { supabase } from "@/integrations/supabase/client";
+import type { Database } from "@/integrations/supabase/types";
 
 export type Tutorial = {
   id: string;
@@ -106,7 +107,7 @@ export function useTutorials() {
         }
         if (removals.length) await supabase.storage.from(BUCKET).remove(removals);
       }
-      const upd: Record<string, unknown> = { updated_at: new Date().toISOString() };
+      const upd: Database["public"]["Tables"]["hyro_tutorials"]["Update"] = { updated_at: new Date().toISOString() };
       if ("title" in patch) upd.title = patch.title;
       if ("description" in patch) upd.description = patch.description;
       if ("videoPath" in patch) upd.video_path = patch.videoPath ?? null;
