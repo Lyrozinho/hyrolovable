@@ -541,9 +541,13 @@ function PartnerCard({ plan }: { plan: PartnerPlan }) {
 function CreateResellerDialog({
   open,
   onOpenChange,
+  ownerUserId,
+  isOwner,
 }: {
   open: boolean;
   onOpenChange: (b: boolean) => void;
+  ownerUserId: string | null;
+  isOwner: boolean;
 }) {
   const qc = useQueryClient();
   const [email, setEmail] = useState("");
@@ -562,8 +566,20 @@ function CreateResellerDialog({
         p_initial_balance: parseInt(balance) || 0,
       });
       if (error) throw error;
+
+      // Marca o "dono" da revenda (created_by) para permitir filtrar por usuário.
+      // Sem isso, revendedores criados por clientes não seriam listados.
+      if (!isOwner && ownerUserId) {
+        await supabase
+          .from("hyro_extension_users")
+          .update({ created_by: ownerUserId })
+          .eq("email", email.trim().toLowerCase())
+          .is("created_by", null);
+      }
+
       toast.success("Revendedor criado");
       qc.invalidateQueries({ queryKey: ["resellers"] });
+      qc.invalidateQueries({ queryKey: ["my-slots"] });
       qc.invalidateQueries({ queryKey: ["dash-stats"] });
       onOpenChange(false);
       setEmail("");
