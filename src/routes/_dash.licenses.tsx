@@ -31,7 +31,7 @@ import {
 import {
   Plus, Pencil, Ban, CheckCircle2, Trash2, Search, Loader2,
   KeyRound, Copy, Check, Infinity as InfinityIcon, Mail, CalendarClock, RefreshCw,
-  FlaskConical, User as UserIcon, Timer, Eye, EyeOff,
+  FlaskConical, User as UserIcon, Timer, Eye, EyeOff, MessageCircle, PartyPopper,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { generateLicenseKey } from "@/lib/license-key";
@@ -517,11 +517,19 @@ function CreateLicenseDialog({
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [previewKey, setPreviewKey] = useState<string>(generateLicenseKey());
+  const [created, setCreated] = useState<{
+    key: string;
+    email: string;
+    password: string;
+    expiresAt: Date;
+    lifetime: boolean;
+  } | null>(null);
 
   useEffect(() => {
     if (open) {
       setPreviewKey(generateLicenseKey());
       setPassword("");
+      setCreated(null);
     }
   }, [open]);
 
@@ -588,7 +596,13 @@ function CreateLicenseDialog({
       toast.success("Licença criada", { description: key });
       qc.invalidateQueries({ queryKey: ["licenses"] });
       qc.invalidateQueries({ queryKey: ["dash-stats"] });
-      onOpenChange(false);
+      setCreated({
+        key,
+        email: emailNorm,
+        password: password || "",
+        expiresAt,
+        lifetime,
+      });
       setEmail("");
       setDays("30");
       setLifetime(false);
@@ -603,125 +617,299 @@ function CreateLicenseDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="glass-panel border-0 sm:max-w-[460px] p-0 overflow-hidden">
-        <DialogHeader className="px-6 pt-6 pb-4 border-b border-border/60">
-          <div className="flex items-start gap-3">
-            <div className="h-9 w-9 rounded-md bg-foreground text-background flex items-center justify-center shrink-0">
-              <KeyRound className="h-4 w-4" strokeWidth={2} />
-            </div>
-            <div>
-              <DialogTitle className="text-[15px] font-semibold tracking-tight">
-                Nova licença
-              </DialogTitle>
-              <DialogDescription className="text-[12.5px] text-muted-foreground mt-0.5">
-                Vincule uma nova chave a um usuário existente.
-              </DialogDescription>
-            </div>
-          </div>
-        </DialogHeader>
-
-        <div className="px-6 py-5 space-y-5">
-          {/* Key preview */}
-          <div className="space-y-1.5">
-            <Label className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">
-              Chave gerada
-            </Label>
-            <div className="flex items-center gap-2">
-              <div className="flex-1 rounded-md border border-border bg-muted/40 px-3 h-10 flex items-center font-mono text-[13px] tracking-widest">
-                {previewKey}
+      <DialogContent className="glass-panel border-0 sm:max-w-[520px] p-0 overflow-hidden">
+        {created ? (
+          <LicenseCreatedSuccess
+            data={created}
+            onClose={() => {
+              setCreated(null);
+              onOpenChange(false);
+            }}
+            onCreateAnother={() => {
+              setCreated(null);
+              setPreviewKey(generateLicenseKey());
+            }}
+          />
+        ) : (
+          <>
+            <DialogHeader className="px-6 pt-6 pb-4 border-b border-border/60">
+              <div className="flex items-start gap-3">
+                <div className="h-9 w-9 rounded-md bg-foreground text-background flex items-center justify-center shrink-0">
+                  <KeyRound className="h-4 w-4" strokeWidth={2} />
+                </div>
+                <div>
+                  <DialogTitle className="text-[15px] font-semibold tracking-tight">
+                    Nova licença
+                  </DialogTitle>
+                  <DialogDescription className="text-[12.5px] text-muted-foreground mt-0.5">
+                    Vincule uma nova chave a um usuário existente.
+                  </DialogDescription>
+                </div>
               </div>
-              <Button
-                type="button" variant="outline" size="icon"
-                className="h-10 w-10 shrink-0"
-                title="Gerar outra"
-                onClick={() => setPreviewKey(generateLicenseKey())}
-              >
-                <RefreshCw className="h-3.5 w-3.5" />
-              </Button>
-            </div>
-            <p className="text-[11px] text-muted-foreground">
-              Formato XXX-XXXX-XXX-XXX · gerada aleatoriamente
-            </p>
-          </div>
+            </DialogHeader>
 
-          {/* Email */}
-          <div className="space-y-1.5">
-            <Label className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">
-              E-mail do usuário
-            </Label>
-            <div className="relative">
-              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-              <Input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="usuario@exemplo.com"
-                className="h-10 pl-9 text-[13px]"
-              />
-            </div>
-          </div>
+            <div className="px-6 py-5 space-y-5">
+              {/* Key preview */}
+              <div className="space-y-1.5">
+                <Label className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">
+                  Chave gerada
+                </Label>
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 rounded-md border border-border bg-muted/40 px-3 h-10 flex items-center font-mono text-[13px] tracking-widest">
+                    {previewKey}
+                  </div>
+                  <Button
+                    type="button" variant="outline" size="icon"
+                    className="h-10 w-10 shrink-0"
+                    title="Gerar outra"
+                    onClick={() => setPreviewKey(generateLicenseKey())}
+                  >
+                    <RefreshCw className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+                <p className="text-[11px] text-muted-foreground">
+                  Formato XXX-XXXX-XXX-XXX · gerada aleatoriamente
+                </p>
+              </div>
 
-          {/* Duration */}
-          <div className="space-y-1.5">
-            <Label className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">
-              Duração
-            </Label>
-            <div className="rounded-md border border-border overflow-hidden divide-y divide-border">
-              <div className="flex items-center px-3 h-10 gap-2">
-                <CalendarClock className="h-3.5 w-3.5 text-muted-foreground" />
+              {/* Email */}
+              <div className="space-y-1.5">
+                <Label className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">
+                  E-mail do usuário
+                </Label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                  <Input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="usuario@exemplo.com"
+                    className="h-10 pl-9 text-[13px]"
+                  />
+                </div>
+              </div>
+
+              {/* Duration */}
+              <div className="space-y-1.5">
+                <Label className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">
+                  Duração
+                </Label>
+                <div className="rounded-md border border-border overflow-hidden divide-y divide-border">
+                  <div className="flex items-center px-3 h-10 gap-2">
+                    <CalendarClock className="h-3.5 w-3.5 text-muted-foreground" />
+                    <Input
+                      type="number" min={1}
+                      value={days}
+                      onChange={(e) => setDays(e.target.value)}
+                      disabled={lifetime}
+                      className="h-8 border-0 shadow-none focus-visible:ring-0 p-0 text-[13px] bg-transparent disabled:opacity-50"
+                    />
+                    <span className="text-[12px] text-muted-foreground">dias</span>
+                  </div>
+                  <label className="flex items-center gap-2.5 px-3 h-10 cursor-pointer hover:bg-muted/40">
+                    <input
+                      type="checkbox"
+                      checked={lifetime}
+                      onChange={(e) => setLifetime(e.target.checked)}
+                      className="h-3.5 w-3.5 rounded border-border accent-foreground"
+                    />
+                    <InfinityIcon className="h-3.5 w-3.5 text-muted-foreground" />
+                    <span className="text-[13px]">Vitalícia (expira em 2099)</span>
+                  </label>
+                </div>
+              </div>
+
+              {/* Painel access password */}
+              <div className="space-y-1.5">
+                <Label className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">
+                  Senha de acesso ao painel <span className="text-muted-foreground/70 normal-case tracking-normal">(opcional)</span>
+                </Label>
                 <Input
-                  type="number" min={1}
-                  value={days}
-                  onChange={(e) => setDays(e.target.value)}
-                  disabled={lifetime}
-                  className="h-8 border-0 shadow-none focus-visible:ring-0 p-0 text-[13px] bg-transparent disabled:opacity-50"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Mín. 6 caracteres — deixe em branco para não permitir login"
+                  className="h-10 text-[13px]"
                 />
-                <span className="text-[12px] text-muted-foreground">dias</span>
+                <p className="text-[11px] text-muted-foreground">
+                  Com senha definida, o cliente pode logar em <span className="font-mono">/login</span> e acompanhar sua assinatura.
+                </p>
               </div>
-              <label className="flex items-center gap-2.5 px-3 h-10 cursor-pointer hover:bg-muted/40">
-                <input
-                  type="checkbox"
-                  checked={lifetime}
-                  onChange={(e) => setLifetime(e.target.checked)}
-                  className="h-3.5 w-3.5 rounded border-border accent-foreground"
-                />
-                <InfinityIcon className="h-3.5 w-3.5 text-muted-foreground" />
-                <span className="text-[13px]">Vitalícia (expira em 2099)</span>
-              </label>
             </div>
-          </div>
 
-          {/* Painel access password */}
-          <div className="space-y-1.5">
-            <Label className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">
-              Senha de acesso ao painel <span className="text-muted-foreground/70 normal-case tracking-normal">(opcional)</span>
-            </Label>
-            <Input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Mín. 6 caracteres — deixe em branco para não permitir login"
-              className="h-10 text-[13px]"
-            />
-            <p className="text-[11px] text-muted-foreground">
-              Com senha definida, o cliente pode logar em <span className="font-mono">/login</span> e acompanhar sua assinatura.
-            </p>
-          </div>
-        </div>
-
-
-
-        <DialogFooter className="px-6 py-4 border-t border-border/60 bg-muted/30 gap-2">
-          <Button variant="ghost" size="sm" onClick={() => onOpenChange(false)}>
-            Cancelar
-          </Button>
-          <Button size="sm" onClick={submit} disabled={submitting || !email}>
-            {submitting && <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />}
-            Criar licença
-          </Button>
-        </DialogFooter>
+            <DialogFooter className="px-6 py-4 border-t border-border/60 bg-muted/30 gap-2">
+              <Button variant="ghost" size="sm" onClick={() => onOpenChange(false)}>
+                Cancelar
+              </Button>
+              <Button size="sm" onClick={submit} disabled={submitting || !email}>
+                {submitting && <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />}
+                Criar licença
+              </Button>
+            </DialogFooter>
+          </>
+        )}
       </DialogContent>
     </Dialog>
+  );
+}
+
+function LicenseCreatedSuccess({
+  data,
+  onClose,
+  onCreateAnother,
+}: {
+  data: {
+    key: string;
+    email: string;
+    password: string;
+    expiresAt: Date;
+    lifetime: boolean;
+  };
+  onClose: () => void;
+  onCreateAnother: () => void;
+}) {
+  const [copied, setCopied] = useState(false);
+  const panelUrl = "https://hyrolovable.lovable.app";
+  const validity = data.lifetime
+    ? "Vitalícia (nunca expira)"
+    : data.expiresAt.toLocaleDateString("pt-BR", {
+        day: "2-digit", month: "long", year: "numeric",
+      });
+
+  const message = [
+    "🎉 *Sua licença Hyro Lovable está pronta!*",
+    "",
+    "Olá! Sua licença foi ativada com sucesso. Guarde estes dados em local seguro:",
+    "",
+    "🔑 *Chave de licença*",
+    `\`${data.key}\``,
+    "",
+    "📧 *E-mail de acesso*",
+    data.email,
+    ...(data.password
+      ? ["", "🔒 *Senha do painel*", data.password]
+      : []),
+    "",
+    "📅 *Validade*",
+    validity,
+    "",
+    "🌐 *Acesse o painel*",
+    panelUrl,
+    "",
+    "━━━━━━━━━━━━━━━━━━",
+    "*Como começar:*",
+    "1️⃣ Acesse o painel pelo link acima",
+    ...(data.password
+      ? ["2️⃣ Faça login com o e-mail e senha enviados"]
+      : ["2️⃣ Solicite sua senha de acesso pelo suporte"]),
+    "3️⃣ Baixe e instale a extensão em: " + panelUrl + "/upgrade",
+    "4️⃣ Ative com sua chave de licença",
+    "",
+    "💬 Dúvidas? Fale conosco no WhatsApp: (27) 98135-9051",
+    "",
+    "_Obrigado por escolher a Hyro Lovable! 🚀_",
+  ].join("\n");
+
+  const copy = async () => {
+    await navigator.clipboard.writeText(message);
+    setCopied(true);
+    toast.success("Mensagem copiada");
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const whatsUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
+
+  return (
+    <>
+      <DialogHeader className="px-6 pt-6 pb-4 border-b border-border/60">
+        <div className="flex items-start gap-3">
+          <div className="h-10 w-10 rounded-md bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+            <PartyPopper className="h-5 w-5" />
+          </div>
+          <div>
+            <DialogTitle className="text-[15px] font-semibold tracking-tight">
+              Licença criada com sucesso
+            </DialogTitle>
+            <DialogDescription className="text-[12.5px] text-muted-foreground mt-0.5">
+              Copie a mensagem abaixo e envie para o cliente pelo WhatsApp ou e-mail.
+            </DialogDescription>
+          </div>
+        </div>
+      </DialogHeader>
+
+      <div className="px-6 py-5 space-y-4">
+        {/* Quick facts */}
+        <div className="grid grid-cols-2 gap-2">
+          <FactCard label="Chave" value={data.key} mono />
+          <FactCard label="E-mail" value={data.email} />
+          <FactCard
+            label="Senha"
+            value={data.password || "— não definida —"}
+            mono={!!data.password}
+          />
+          <FactCard label="Validade" value={validity} />
+        </div>
+
+        {/* Preview */}
+        <div className="space-y-1.5">
+          <Label className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">
+            Mensagem pronta para envio
+          </Label>
+          <div className="rounded-md border border-border bg-muted/40 p-4 max-h-64 overflow-y-auto">
+            <pre className="text-[12px] leading-relaxed text-foreground whitespace-pre-wrap font-sans">
+              {message}
+            </pre>
+          </div>
+          <p className="text-[11px] text-muted-foreground">
+            Formatação em Markdown do WhatsApp (*negrito*, `chave`) — cole direto no chat.
+          </p>
+        </div>
+      </div>
+
+      <DialogFooter className="px-6 py-4 border-t border-border/60 bg-muted/30 gap-2 flex-wrap sm:flex-nowrap">
+        <Button variant="ghost" size="sm" onClick={onCreateAnother}>
+          <Plus className="h-3.5 w-3.5 mr-1.5" />
+          Criar outra
+        </Button>
+        <div className="ml-auto flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={copy}>
+            {copied ? (
+              <><Check className="h-3.5 w-3.5 mr-1.5" /> Copiado</>
+            ) : (
+              <><Copy className="h-3.5 w-3.5 mr-1.5" /> Copiar mensagem</>
+            )}
+          </Button>
+          <a
+            href={whatsUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 h-9 px-3 rounded-md bg-emerald-500 hover:bg-emerald-600 text-white text-[13px] font-medium transition-colors"
+          >
+            <MessageCircle className="h-3.5 w-3.5" />
+            Enviar no WhatsApp
+          </a>
+          <Button size="sm" onClick={onClose}>Concluir</Button>
+        </div>
+      </DialogFooter>
+    </>
+  );
+}
+
+function FactCard({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
+  return (
+    <div className="rounded-md border border-border bg-card p-2.5">
+      <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">
+        {label}
+      </div>
+      <div
+        className={[
+          "mt-1 text-[12.5px] text-foreground break-all",
+          mono ? "font-mono tracking-wide" : "",
+        ].join(" ")}
+      >
+        {value}
+      </div>
+    </div>
   );
 }
 

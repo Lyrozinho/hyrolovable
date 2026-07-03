@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
-import { GraduationCap, Plus, Play, Pencil, Trash2, Clock, X } from "lucide-react";
+import { useMemo, useRef, useState } from "react";
+import { GraduationCap, Plus, Play, Pencil, Trash2, Clock, X, Upload, MessageCircle, LifeBuoy, ImageIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -205,6 +205,30 @@ function TutorialsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Support */}
+      <div className="rounded-xl border border-border bg-card p-5 md:p-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div className="flex items-start gap-3">
+          <div className="h-10 w-10 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+            <LifeBuoy className="h-5 w-5" />
+          </div>
+          <div>
+            <div className="text-sm font-semibold text-foreground">Precisa de ajuda?</div>
+            <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
+              Fale com nosso suporte pelo WhatsApp — respondemos em minutos, de segunda a sábado.
+            </p>
+          </div>
+        </div>
+        <a
+          href="https://wa.me/5527981359051"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center justify-center gap-2 h-10 px-4 rounded-md bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-medium transition-colors shrink-0"
+        >
+          <MessageCircle className="h-4 w-4" />
+          Falar no WhatsApp
+        </a>
+      </div>
     </div>
   );
 }
@@ -327,6 +351,7 @@ function TutorialFormDialog({
   const [videoUrl, setVideoUrl] = useState(initial?.videoUrl ?? "");
   const [thumbnailUrl, setThumbnailUrl] = useState(initial?.thumbnailUrl ?? "");
   const [duration, setDuration] = useState(initial?.duration ?? "");
+  const fileRef = useRef<HTMLInputElement>(null);
 
   // Reset when opening with new initial
   useMemo(() => {
@@ -405,25 +430,77 @@ function TutorialFormDialog({
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <Label htmlFor="tut-thumb">Capa (URL)</Label>
-              <Input
-                id="tut-thumb"
-                value={thumbnailUrl}
-                onChange={(e) => setThumbnailUrl(e.target.value)}
-                placeholder="https://..."
-              />
+          <div className="space-y-1.5">
+            <Label>Capa do vídeo</Label>
+            <div className="rounded-md border border-border bg-muted/30 p-3 space-y-3">
+              {thumbnailUrl ? (
+                <div className="relative aspect-video w-full rounded overflow-hidden bg-black">
+                  <img src={thumbnailUrl} alt="Capa" className="w-full h-full object-cover" />
+                  <button
+                    type="button"
+                    onClick={() => setThumbnailUrl("")}
+                    className="absolute top-2 right-2 h-7 w-7 rounded-md bg-black/70 hover:bg-black text-white flex items-center justify-center"
+                    aria-label="Remover capa"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              ) : (
+                <div className="aspect-video w-full rounded bg-muted flex flex-col items-center justify-center gap-1.5 text-muted-foreground">
+                  <ImageIcon className="h-6 w-6" />
+                  <span className="text-[11.5px]">Nenhuma capa selecionada</span>
+                </div>
+              )}
+              <div className="flex flex-col sm:flex-row gap-2">
+                <input
+                  ref={fileRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (!f) return;
+                    if (f.size > 2 * 1024 * 1024) {
+                      toast.error("Imagem muito grande (máx. 2MB).");
+                      return;
+                    }
+                    const reader = new FileReader();
+                    reader.onload = () => setThumbnailUrl(String(reader.result));
+                    reader.readAsDataURL(f);
+                    e.target.value = "";
+                  }}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => fileRef.current?.click()}
+                  className="flex-1"
+                >
+                  <Upload className="h-3.5 w-3.5 mr-1.5" />
+                  Enviar imagem
+                </Button>
+                <Input
+                  value={thumbnailUrl.startsWith("data:") ? "" : thumbnailUrl}
+                  onChange={(e) => setThumbnailUrl(e.target.value)}
+                  placeholder="ou cole uma URL..."
+                  className="h-9 flex-1 text-[12.5px]"
+                />
+              </div>
+              <p className="text-[10.5px] text-muted-foreground">
+                Formatos: JPG, PNG, WebP · máx. 2MB.
+              </p>
             </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="tut-dur">Duração</Label>
-              <Input
-                id="tut-dur"
-                value={duration}
-                onChange={(e) => setDuration(e.target.value)}
-                placeholder="Ex: 5:32"
-              />
-            </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="tut-dur">Duração (opcional)</Label>
+            <Input
+              id="tut-dur"
+              value={duration}
+              onChange={(e) => setDuration(e.target.value)}
+              placeholder="Ex: 5:32"
+            />
           </div>
 
           <DialogFooter className="gap-2 sm:gap-2">
