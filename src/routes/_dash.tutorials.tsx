@@ -316,14 +316,14 @@ function TutorialCard({
           </p>
         )}
 
-        <div className="mt-3 flex items-center gap-2">
-          <Button size="sm" onClick={onPlay} className="flex-1">
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <Button size="sm" onClick={onPlay} className="flex-1 min-w-[8rem] basis-full sm:basis-0">
             <Play className="h-3.5 w-3.5 mr-1" fill="currentColor" />
             Assistir
           </Button>
           {isAdmin && (
-            <>
-              <Button size="sm" variant="outline" onClick={onEdit} aria-label="Editar">
+            <div className="flex items-center gap-2 shrink-0 ml-auto">
+              <Button size="sm" variant="outline" onClick={onEdit} aria-label="Editar" className="shrink-0">
                 <Pencil className="h-3.5 w-3.5" />
               </Button>
               <Button
@@ -331,11 +331,11 @@ function TutorialCard({
                 variant="outline"
                 onClick={onDelete}
                 aria-label="Excluir"
-                className="text-destructive hover:text-destructive"
+                className="shrink-0 text-destructive hover:text-destructive"
               >
                 <Trash2 className="h-3.5 w-3.5" />
               </Button>
-            </>
+            </div>
           )}
         </div>
       </div>
