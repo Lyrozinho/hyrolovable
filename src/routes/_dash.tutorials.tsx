@@ -1,6 +1,20 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useRef, useState } from "react";
-import { GraduationCap, Plus, Play, Pencil, Trash2, Clock, X, Upload, MessageCircle, LifeBuoy, ImageIcon } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  GraduationCap,
+  Plus,
+  Play,
+  Pencil,
+  Trash2,
+  Clock,
+  X,
+  Upload,
+  MessageCircle,
+  LifeBuoy,
+  ImageIcon,
+  FileVideo,
+  Loader2,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,7 +27,8 @@ import {
   DialogFooter,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { useTutorials, type Tutorial, detectVideoKind } from "@/lib/tutorials";
+import { useTutorials, useBlobUrl, type Tutorial } from "@/lib/tutorials";
+import { putBlob, deleteBlob } from "@/lib/media-store";
 import { VideoPlayer } from "@/components/video-player";
 import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
@@ -23,6 +38,8 @@ export const Route = createFileRoute("/_dash/tutorials")({
 });
 
 const PAGE_SIZE = 6;
+const MAX_VIDEO_MB = 200;
+const MAX_THUMB_MB = 3;
 
 function TutorialsPage() {
   const { list, add, update, remove } = useTutorials();
@@ -44,7 +61,6 @@ function TutorialsPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div className="flex items-start gap-3">
           <div className="h-10 w-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
@@ -67,7 +83,6 @@ function TutorialsPage() {
         )}
       </div>
 
-      {/* Grid */}
       {list.length === 0 ? (
         <div className="border border-dashed border-border rounded-xl p-12 text-center bg-card">
           <GraduationCap className="h-10 w-10 mx-auto text-muted-foreground/60" />
@@ -94,15 +109,9 @@ function TutorialsPage() {
         </div>
       )}
 
-      {/* Pagination */}
       {totalPages > 1 && (
         <div className="flex items-center justify-center gap-1 pt-2">
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={currentPage === 1}
-            onClick={() => setPage(currentPage - 1)}
-          >
+          <Button variant="outline" size="sm" disabled={currentPage === 1} onClick={() => setPage(currentPage - 1)}>
             Anterior
           </Button>
           {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
@@ -127,34 +136,8 @@ function TutorialsPage() {
         </div>
       )}
 
-      {/* Player modal */}
-      <Dialog open={!!selected} onOpenChange={(o) => !o && setSelected(null)}>
-        <DialogContent className="max-w-4xl p-0 overflow-hidden gap-0">
-          {selected && (
-            <>
-              <div className="bg-black">
-                <VideoPlayer
-                  src={selected.videoUrl}
-                  poster={selected.thumbnailUrl}
-                  title={selected.title}
-                />
-              </div>
-              <div className="p-5">
-                <DialogHeader>
-                  <DialogTitle className="text-lg">{selected.title}</DialogTitle>
-                  {selected.description && (
-                    <DialogDescription className="text-sm leading-relaxed pt-1">
-                      {selected.description}
-                    </DialogDescription>
-                  )}
-                </DialogHeader>
-              </div>
-            </>
-          )}
-        </DialogContent>
-      </Dialog>
+      <PlayerDialog tutorial={selected} onClose={() => setSelected(null)} />
 
-      {/* Admin: create/edit */}
       {isAdmin && (
         <TutorialFormDialog
           open={creating || !!editing}
@@ -163,9 +146,9 @@ function TutorialsPage() {
             setCreating(false);
             setEditing(null);
           }}
-          onSubmit={(payload) => {
+          onSubmit={async (payload) => {
             if (editing) {
-              update(editing.id, payload);
+              await update(editing.id, payload);
               toast.success("Tutorial atualizado");
             } else {
               add(payload);
@@ -177,7 +160,6 @@ function TutorialsPage() {
         />
       )}
 
-      {/* Confirm delete */}
       <Dialog open={!!confirmDelete} onOpenChange={(o) => !o && setConfirmDelete(null)}>
         <DialogContent className="max-w-md">
           <DialogHeader>
@@ -192,9 +174,9 @@ function TutorialsPage() {
             </Button>
             <Button
               variant="destructive"
-              onClick={() => {
+              onClick={async () => {
                 if (confirmDelete) {
-                  remove(confirmDelete.id);
+                  await remove(confirmDelete.id);
                   toast.success("Tutorial excluído");
                 }
                 setConfirmDelete(null);
@@ -206,7 +188,6 @@ function TutorialsPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Support */}
       <div className="rounded-xl border border-border bg-card p-5 md:p-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div className="flex items-start gap-3">
           <div className="h-10 w-10 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
@@ -233,6 +214,39 @@ function TutorialsPage() {
   );
 }
 
+function PlayerDialog({ tutorial, onClose }: { tutorial: Tutorial | null; onClose: () => void }) {
+  const videoUrl = useBlobUrl(tutorial?.videoBlobId);
+  const thumbUrl = useBlobUrl(tutorial?.thumbnailBlobId);
+  return (
+    <Dialog open={!!tutorial} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-w-4xl p-0 overflow-hidden gap-0">
+        {tutorial && (
+          <>
+            <div className="bg-black">
+              <VideoPlayer
+                src={videoUrl}
+                poster={thumbUrl}
+                title={tutorial.title}
+                mime={tutorial.videoMime}
+              />
+            </div>
+            <div className="p-5">
+              <DialogHeader>
+                <DialogTitle className="text-lg">{tutorial.title}</DialogTitle>
+                {tutorial.description && (
+                  <DialogDescription className="text-sm leading-relaxed pt-1">
+                    {tutorial.description}
+                  </DialogDescription>
+                )}
+              </DialogHeader>
+            </div>
+          </>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function TutorialCard({
   tutorial,
   index,
@@ -248,7 +262,8 @@ function TutorialCard({
   onEdit: () => void;
   onDelete: () => void;
 }) {
-  const hasVideo = !!tutorial.videoUrl;
+  const hasVideo = !!tutorial.videoBlobId;
+  const thumb = useBlobUrl(tutorial.thumbnailBlobId);
   return (
     <div className="group rounded-xl border border-border bg-card overflow-hidden transition-shadow hover:shadow-md">
       <button
@@ -257,10 +272,9 @@ function TutorialCard({
         className="relative block w-full aspect-video bg-muted overflow-hidden"
         aria-label={`Assistir ${tutorial.title}`}
       >
-        {tutorial.thumbnailUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
+        {thumb ? (
           <img
-            src={tutorial.thumbnailUrl}
+            src={thumb}
             alt={tutorial.title}
             className="w-full h-full object-cover transition-transform group-hover:scale-[1.03]"
           />
@@ -329,6 +343,15 @@ function TutorialCard({
   );
 }
 
+type FormPayload = {
+  title: string;
+  description: string;
+  videoBlobId?: string;
+  videoMime?: string;
+  thumbnailBlobId?: string;
+  duration?: string;
+};
+
 function TutorialFormDialog({
   open,
   initial,
@@ -338,57 +361,162 @@ function TutorialFormDialog({
   open: boolean;
   initial?: Tutorial;
   onClose: () => void;
-  onSubmit: (payload: {
-    title: string;
-    description: string;
-    videoUrl: string;
-    thumbnailUrl?: string;
-    duration?: string;
-  }) => void;
+  onSubmit: (payload: FormPayload) => void | Promise<void>;
 }) {
-  const [title, setTitle] = useState(initial?.title ?? "");
-  const [description, setDescription] = useState(initial?.description ?? "");
-  const [videoUrl, setVideoUrl] = useState(initial?.videoUrl ?? "");
-  const [thumbnailUrl, setThumbnailUrl] = useState(initial?.thumbnailUrl ?? "");
-  const [duration, setDuration] = useState(initial?.duration ?? "");
-  const fileRef = useRef<HTMLInputElement>(null);
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [duration, setDuration] = useState("");
 
-  // Reset when opening with new initial
-  useMemo(() => {
+  // Video state — either an existing blob id (persisted) or a freshly uploaded one (pending).
+  const [videoBlobId, setVideoBlobId] = useState<string | undefined>(undefined);
+  const [videoMime, setVideoMime] = useState<string | undefined>(undefined);
+  const [videoName, setVideoName] = useState<string>("");
+  const [videoSize, setVideoSize] = useState<number>(0);
+  const [uploadingVideo, setUploadingVideo] = useState(false);
+
+  const [thumbBlobId, setThumbBlobId] = useState<string | undefined>(undefined);
+  const [uploadingThumb, setUploadingThumb] = useState(false);
+
+  // Track blob ids we created in this session but did NOT commit (cleanup on cancel).
+  const pendingRef = useRef<{ video?: string; thumb?: string }>({});
+
+  const videoInputRef = useRef<HTMLInputElement>(null);
+  const thumbInputRef = useRef<HTMLInputElement>(null);
+
+  const thumbPreview = useBlobUrl(thumbBlobId);
+
+  useEffect(() => {
     if (open) {
       setTitle(initial?.title ?? "");
       setDescription(initial?.description ?? "");
-      setVideoUrl(initial?.videoUrl ?? "");
-      setThumbnailUrl(initial?.thumbnailUrl ?? "");
       setDuration(initial?.duration ?? "");
+      setVideoBlobId(initial?.videoBlobId);
+      setVideoMime(initial?.videoMime);
+      setVideoName("");
+      setVideoSize(0);
+      setThumbBlobId(initial?.thumbnailBlobId);
+      pendingRef.current = {};
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, initial?.id]);
 
-  const kind = detectVideoKind(videoUrl);
+  const handleVideoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    e.target.value = "";
+    if (!f) return;
+    if (!f.type.startsWith("video/")) {
+      toast.error("Selecione um arquivo de vídeo válido.");
+      return;
+    }
+    if (f.size > MAX_VIDEO_MB * 1024 * 1024) {
+      toast.error(`Vídeo muito grande (máx. ${MAX_VIDEO_MB}MB).`);
+      return;
+    }
+    setUploadingVideo(true);
+    try {
+      const id = await putBlob(f, "vid");
+      // Clean up previous pending upload (if user swapped without saving).
+      if (pendingRef.current.video && pendingRef.current.video !== initial?.videoBlobId) {
+        await deleteBlob(pendingRef.current.video);
+      }
+      pendingRef.current.video = id;
+      setVideoBlobId(id);
+      setVideoMime(f.type || "video/mp4");
+      setVideoName(f.name);
+      setVideoSize(f.size);
+      toast.success("Vídeo carregado");
+    } catch (err) {
+      console.error(err);
+      toast.error("Falha ao salvar vídeo no navegador.");
+    } finally {
+      setUploadingVideo(false);
+    }
+  };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleThumbChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    e.target.value = "";
+    if (!f) return;
+    if (!f.type.startsWith("image/")) {
+      toast.error("Selecione uma imagem válida.");
+      return;
+    }
+    if (f.size > MAX_THUMB_MB * 1024 * 1024) {
+      toast.error(`Imagem muito grande (máx. ${MAX_THUMB_MB}MB).`);
+      return;
+    }
+    setUploadingThumb(true);
+    try {
+      const id = await putBlob(f, "thumb");
+      if (pendingRef.current.thumb && pendingRef.current.thumb !== initial?.thumbnailBlobId) {
+        await deleteBlob(pendingRef.current.thumb);
+      }
+      pendingRef.current.thumb = id;
+      setThumbBlobId(id);
+    } catch (err) {
+      console.error(err);
+      toast.error("Falha ao salvar imagem.");
+    } finally {
+      setUploadingThumb(false);
+    }
+  };
+
+  const clearVideo = async () => {
+    if (pendingRef.current.video) {
+      await deleteBlob(pendingRef.current.video);
+      pendingRef.current.video = undefined;
+    }
+    setVideoBlobId(undefined);
+    setVideoMime(undefined);
+    setVideoName("");
+    setVideoSize(0);
+  };
+
+  const clearThumb = async () => {
+    if (pendingRef.current.thumb) {
+      await deleteBlob(pendingRef.current.thumb);
+      pendingRef.current.thumb = undefined;
+    }
+    setThumbBlobId(undefined);
+  };
+
+  const handleClose = async () => {
+    // Discard pending uploads that were never committed.
+    if (pendingRef.current.video && pendingRef.current.video !== initial?.videoBlobId) {
+      await deleteBlob(pendingRef.current.video);
+    }
+    if (pendingRef.current.thumb && pendingRef.current.thumb !== initial?.thumbnailBlobId) {
+      await deleteBlob(pendingRef.current.thumb);
+    }
+    pendingRef.current = {};
+    onClose();
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim()) {
       toast.error("Informe um título");
       return;
     }
-    onSubmit({
+    // Commit — clear pending so handleClose doesn't delete them.
+    pendingRef.current = {};
+    await onSubmit({
       title: title.trim(),
       description: description.trim(),
-      videoUrl: videoUrl.trim(),
-      thumbnailUrl: thumbnailUrl.trim() || undefined,
+      videoBlobId,
+      videoMime,
+      thumbnailBlobId: thumbBlobId,
       duration: duration.trim() || undefined,
     });
   };
 
   return (
-    <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-lg">
+    <Dialog open={open} onOpenChange={(o) => !o && handleClose()}>
+      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{initial ? "Editar tutorial" : "Novo tutorial"}</DialogTitle>
           <DialogDescription>
-            Configure o título e o link do vídeo. Suporta URL direta de MP4 ou link do YouTube.
+            Envie o vídeo e a capa direto do seu dispositivo. Nada de URL externa.
           </DialogDescription>
         </DialogHeader>
 
@@ -415,30 +543,82 @@ function TutorialFormDialog({
             />
           </div>
 
+          {/* Video upload */}
           <div className="space-y-1.5">
-            <Label htmlFor="tut-url">URL do vídeo</Label>
-            <Input
-              id="tut-url"
-              value={videoUrl}
-              onChange={(e) => setVideoUrl(e.target.value)}
-              placeholder="https://... .mp4 ou https://youtube.com/watch?v=..."
-            />
-            <div className="text-[11px] text-muted-foreground">
-              {kind === "youtube" && "Link do YouTube detectado — será exibido via player oficial."}
-              {kind === "mp4" && "URL de mídia direta — será usado o player nativo do Hyro."}
-              {kind === "empty" && "Deixe em branco para publicar como rascunho."}
+            <Label>Vídeo do tutorial *</Label>
+            <div className="rounded-md border border-border bg-muted/30 p-3 space-y-3">
+              {videoBlobId ? (
+                <div className="flex items-center gap-3 rounded bg-background border border-border p-2.5">
+                  <div className="h-10 w-10 rounded bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                    <FileVideo className="h-5 w-5" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="text-[12.5px] font-medium text-foreground truncate">
+                      {videoName || "Vídeo salvo"}
+                    </div>
+                    <div className="text-[10.5px] text-muted-foreground">
+                      {videoMime || "video/*"}
+                      {videoSize > 0 && ` · ${(videoSize / (1024 * 1024)).toFixed(1)} MB`}
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={clearVideo}
+                    className="h-7 w-7 rounded-md hover:bg-muted text-muted-foreground hover:text-destructive flex items-center justify-center shrink-0"
+                    aria-label="Remover vídeo"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              ) : (
+                <div className="aspect-video w-full rounded bg-muted flex flex-col items-center justify-center gap-1.5 text-muted-foreground">
+                  <FileVideo className="h-6 w-6" />
+                  <span className="text-[11.5px]">Nenhum vídeo selecionado</span>
+                </div>
+              )}
+              <input
+                ref={videoInputRef}
+                type="file"
+                accept="video/mp4,video/webm,video/quicktime,video/*"
+                className="hidden"
+                onChange={handleVideoChange}
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => videoInputRef.current?.click()}
+                className="w-full"
+                disabled={uploadingVideo}
+              >
+                {uploadingVideo ? (
+                  <>
+                    <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+                    Enviando...
+                  </>
+                ) : (
+                  <>
+                    <Upload className="h-3.5 w-3.5 mr-1.5" />
+                    {videoBlobId ? "Trocar vídeo" : "Enviar vídeo do dispositivo"}
+                  </>
+                )}
+              </Button>
+              <p className="text-[10.5px] text-muted-foreground">
+                Formatos recomendados: MP4 (H.264), WebM · máx. {MAX_VIDEO_MB}MB.
+              </p>
             </div>
           </div>
 
+          {/* Cover upload */}
           <div className="space-y-1.5">
             <Label>Capa do vídeo</Label>
             <div className="rounded-md border border-border bg-muted/30 p-3 space-y-3">
-              {thumbnailUrl ? (
+              {thumbPreview ? (
                 <div className="relative aspect-video w-full rounded overflow-hidden bg-black">
-                  <img src={thumbnailUrl} alt="Capa" className="w-full h-full object-cover" />
+                  <img src={thumbPreview} alt="Capa" className="w-full h-full object-cover" />
                   <button
                     type="button"
-                    onClick={() => setThumbnailUrl("")}
+                    onClick={clearThumb}
                     className="absolute top-2 right-2 h-7 w-7 rounded-md bg-black/70 hover:bg-black text-white flex items-center justify-center"
                     aria-label="Remover capa"
                   >
@@ -451,44 +631,35 @@ function TutorialFormDialog({
                   <span className="text-[11.5px]">Nenhuma capa selecionada</span>
                 </div>
               )}
-              <div className="flex flex-col sm:flex-row gap-2">
-                <input
-                  ref={fileRef}
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={(e) => {
-                    const f = e.target.files?.[0];
-                    if (!f) return;
-                    if (f.size > 2 * 1024 * 1024) {
-                      toast.error("Imagem muito grande (máx. 2MB).");
-                      return;
-                    }
-                    const reader = new FileReader();
-                    reader.onload = () => setThumbnailUrl(String(reader.result));
-                    reader.readAsDataURL(f);
-                    e.target.value = "";
-                  }}
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => fileRef.current?.click()}
-                  className="flex-1"
-                >
-                  <Upload className="h-3.5 w-3.5 mr-1.5" />
-                  Enviar imagem
-                </Button>
-                <Input
-                  value={thumbnailUrl.startsWith("data:") ? "" : thumbnailUrl}
-                  onChange={(e) => setThumbnailUrl(e.target.value)}
-                  placeholder="ou cole uma URL..."
-                  className="h-9 flex-1 text-[12.5px]"
-                />
-              </div>
+              <input
+                ref={thumbInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleThumbChange}
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => thumbInputRef.current?.click()}
+                className="w-full"
+                disabled={uploadingThumb}
+              >
+                {uploadingThumb ? (
+                  <>
+                    <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+                    Enviando...
+                  </>
+                ) : (
+                  <>
+                    <Upload className="h-3.5 w-3.5 mr-1.5" />
+                    {thumbBlobId ? "Trocar capa" : "Enviar capa do dispositivo"}
+                  </>
+                )}
+              </Button>
               <p className="text-[10.5px] text-muted-foreground">
-                Formatos: JPG, PNG, WebP · máx. 2MB.
+                Formatos: JPG, PNG, WebP · máx. {MAX_THUMB_MB}MB.
               </p>
             </div>
           </div>
@@ -504,11 +675,11 @@ function TutorialFormDialog({
           </div>
 
           <DialogFooter className="gap-2 sm:gap-2">
-            <Button type="button" variant="outline" onClick={onClose}>
+            <Button type="button" variant="outline" onClick={handleClose}>
               <X className="h-4 w-4 mr-1" />
               Cancelar
             </Button>
-            <Button type="submit">
+            <Button type="submit" disabled={uploadingVideo || uploadingThumb}>
               {initial ? "Salvar alterações" : "Publicar tutorial"}
             </Button>
           </DialogFooter>
