@@ -133,21 +133,41 @@ function buildPartnerWhatsapp(plan: PartnerPlan) {
 
 function ResellersPage() {
   const { session } = useAuth();
-  const isAdmin = session?.user.role !== "client";
+  const isCloudAdmin = session?.user.role !== "client";
+  const isOwner = isCloudAdmin && session?.user.email?.toLowerCase() === OWNER_EMAIL;
   const [createOpen, setCreateOpen] = useState(false);
   const [balanceTarget, setBalanceTarget] = useState<Reseller | null>(null);
   const [tab, setTab] = useState<"plans" | "list">("plans");
 
+  // Slots contratados/dispon\u00edveis do dono da licen\u00e7a (apenas para clientes)
+  const { data: mySlots } = useQuery({
+    queryKey: ["my-slots", session?.user.id],
+    enabled: !!session && !isCloudAdmin,
+    queryFn: async () => {
+      const licId = await fetchPrimaryLicenseForUser(session!.user.id);
+      if (!licId) return { unlimited: false, total: 0, used: 0 };
+      const perms = await fetchLicensePerms(licId);
+      const { count } = await supabase
+        .from("hyro_extension_users")
+        .select("id", { count: "exact", head: true })
+        .eq("role", "reseller")
+        .eq("created_by", session!.user.id);
+      return { unlimited: perms.unlimited, total: perms.package_slots || 0, used: count || 0 };
+    },
+  });
+
   const { data, isLoading } = useQuery({
-    queryKey: ["resellers"],
-    enabled: isAdmin,
+    queryKey: ["resellers", isOwner ? "all" : session?.user.id],
+    enabled: isCloudAdmin || !!session,
     refetchInterval: 30_000,
     queryFn: async () => {
-      const { data, error } = await supabase
+      let q = supabase
         .from("hyro_extension_users")
-        .select("id, email, name, role, active, created_at, hyro_reseller_balances(balance)")
+        .select("id, email, name, role, active, created_at, created_by, hyro_reseller_balances(balance)")
         .eq("role", "reseller")
         .order("created_at", { ascending: false });
+      if (!isOwner && session) q = q.eq("created_by", session.user.id);
+      const { data, error } = await q;
       if (error) throw error;
 
       const resellers = (data ?? []).map((r: any) => ({
