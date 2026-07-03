@@ -596,7 +596,13 @@ function CreateLicenseDialog({
       toast.success("Licença criada", { description: key });
       qc.invalidateQueries({ queryKey: ["licenses"] });
       qc.invalidateQueries({ queryKey: ["dash-stats"] });
-      onOpenChange(false);
+      setCreated({
+        key,
+        email: emailNorm,
+        password: password || "",
+        expiresAt,
+        lifetime,
+      });
       setEmail("");
       setDays("30");
       setLifetime(false);
