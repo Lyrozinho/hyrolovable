@@ -296,7 +296,7 @@ function PlanCard({ plan }: { plan: Plan }) {
         featured
           ? [
               // LIGHT: bloco escuro premium sobre canvas claro
-              "bg-primary text-primary-foreground border border-primary/60 shadow-elegant lg:-translate-y-2",
+              "bg-primary text-primary-foreground dark:text-foreground border border-primary/60 shadow-elegant lg:-translate-y-2",
               // DARK: bloco elevado escuro com destaque sutil (evita branco puro estourado)
               "dark:bg-[oklch(0.22_0.006_250)] dark:text-foreground dark:border-white/10 dark:shadow-none dark:ring-1 dark:ring-white/10",
             ].join(" ")
@@ -308,7 +308,7 @@ function PlanCard({ plan }: { plan: Plan }) {
           className={[
             "absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-[0.16em] whitespace-nowrap shadow-xs",
             featured
-              ? "bg-primary-foreground text-primary border border-primary-foreground"
+              ? "bg-primary-foreground dark:bg-foreground text-primary dark:text-background border border-primary-foreground dark:border-foreground"
               : "bg-foreground text-background",
           ].join(" ")}
         >
@@ -323,7 +323,7 @@ function PlanCard({ plan }: { plan: Plan }) {
             className={[
               "h-10 w-10 rounded-xl flex items-center justify-center border",
               featured
-                ? "bg-primary-foreground/10 border-primary-foreground/20 text-primary-foreground"
+                ? "bg-primary-foreground/10 dark:bg-foreground/10 border-primary-foreground/20 dark:border-foreground/20 text-primary-foreground dark:text-foreground"
                 : "bg-secondary border-border text-foreground",
             ].join(" ")}
           >
@@ -334,7 +334,7 @@ function PlanCard({ plan }: { plan: Plan }) {
             <div
               className={[
                 "text-[10.5px] font-mono uppercase tracking-wider mt-1.5",
-                featured ? "text-primary-foreground/60" : "text-muted-foreground",
+                featured ? "text-primary-foreground/60 dark:text-foreground/60" : "text-muted-foreground",
               ].join(" ")}
             >
               {plan.months === 1 ? "Cobrança mensal" : `Cobrança a cada ${plan.months} meses`}
@@ -346,7 +346,7 @@ function PlanCard({ plan }: { plan: Plan }) {
             className={[
               "px-2 py-1 rounded-md text-[10px] font-bold tracking-wide",
               featured
-                ? "bg-primary-foreground/15 text-primary-foreground"
+                ? "bg-primary-foreground/15 dark:bg-foreground/15 text-primary-foreground dark:text-foreground"
                 : "bg-success/10 text-success border border-success/20",
             ].join(" ")}
           >
@@ -358,7 +358,7 @@ function PlanCard({ plan }: { plan: Plan }) {
       <p
         className={[
           "text-[13px] leading-relaxed mb-6 min-h-[40px]",
-          featured ? "text-primary-foreground/75" : "text-muted-foreground",
+          featured ? "text-primary-foreground/75 dark:text-foreground/75" : "text-muted-foreground",
         ].join(" ")}
       >
         {plan.tagline}
@@ -370,7 +370,7 @@ function PlanCard({ plan }: { plan: Plan }) {
           <div
             className={[
               "text-[12px] mb-1 font-mono",
-              featured ? "text-primary-foreground/50" : "text-muted-foreground",
+              featured ? "text-primary-foreground/50 dark:text-foreground/50" : "text-muted-foreground",
             ].join(" ")}
           >
             De <span className="line-through">{fmtBRL(plan.originalPrice)}</span> por
@@ -380,7 +380,7 @@ function PlanCard({ plan }: { plan: Plan }) {
           <span
             className={[
               "text-[15px] font-medium mt-2",
-              featured ? "text-primary-foreground/80" : "text-muted-foreground",
+              featured ? "text-primary-foreground/80 dark:text-foreground/80" : "text-muted-foreground",
             ].join(" ")}
           >
             R$
@@ -394,7 +394,7 @@ function PlanCard({ plan }: { plan: Plan }) {
           <span
             className={[
               "text-[13px] ml-1",
-              featured ? "text-primary-foreground/60" : "text-muted-foreground",
+              featured ? "text-primary-foreground/60 dark:text-foreground/60" : "text-muted-foreground",
             ].join(" ")}
           >
             /mês
@@ -403,7 +403,7 @@ function PlanCard({ plan }: { plan: Plan }) {
         <div
           className={[
             "text-[11.5px] mt-2 flex items-center gap-1.5",
-            featured ? "text-primary-foreground/60" : "text-muted-foreground",
+            featured ? "text-primary-foreground/60 dark:text-foreground/60" : "text-muted-foreground",
           ].join(" ")}
         >
           {plan.months === 1
@@ -413,8 +413,8 @@ function PlanCard({ plan }: { plan: Plan }) {
                 <span>{fmtBRL(plan.totalPrice)} cobrados a cada {plan.months} meses</span>
                 {plan.savings ? (
                   <>
-                    <span className={featured ? "text-primary-foreground/30" : "text-border"}>·</span>
-                    <span className={featured ? "text-primary-foreground font-medium" : "text-success font-medium"}>
+                    <span className={featured ? "text-primary-foreground/30 dark:text-foreground/30" : "text-border"}>·</span>
+                    <span className={featured ? "text-primary-foreground dark:text-foreground font-medium" : "text-success font-medium"}>
                       Economize {fmtBRL(plan.savings)}
                     </span>
                   </>
@@ -427,7 +427,7 @@ function PlanCard({ plan }: { plan: Plan }) {
       <div
         className={[
           "h-px w-full mb-5",
-          featured ? "bg-primary-foreground/15" : "bg-border",
+          featured ? "bg-primary-foreground/15 dark:bg-foreground/15" : "bg-border",
         ].join(" ")}
       />
 
@@ -437,12 +437,12 @@ function PlanCard({ plan }: { plan: Plan }) {
             <span
               className={[
                 "h-4 w-4 mt-0.5 rounded-full flex items-center justify-center shrink-0",
-                featured ? "bg-primary-foreground/15" : "bg-secondary border border-border",
+                featured ? "bg-primary-foreground/15 dark:bg-foreground/15" : "bg-secondary border border-border",
               ].join(" ")}
             >
               <Check className="h-2.5 w-2.5" strokeWidth={3.5} />
             </span>
-            <span className={featured ? "text-primary-foreground/90" : "text-foreground/90"}>{perk}</span>
+            <span className={featured ? "text-primary-foreground/90 dark:text-foreground/90" : "text-foreground/90"}>{perk}</span>
           </li>
         ))}
       </ul>
@@ -452,7 +452,7 @@ function PlanCard({ plan }: { plan: Plan }) {
         className={[
           "w-full h-11 text-[13px] font-semibold tracking-wide group/btn",
           featured
-            ? "bg-primary-foreground text-primary hover:bg-primary-foreground/90"
+            ? "bg-primary-foreground dark:bg-foreground text-primary dark:text-background hover:bg-primary-foreground/90 dark:hover:bg-foreground/90 dark:bg-foreground/90"
             : "bg-foreground text-background hover:bg-foreground/90",
         ].join(" ")}
       >
