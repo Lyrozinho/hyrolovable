@@ -536,6 +536,8 @@ function CreateLicenseDialog({
   onOpenChange: (b: boolean) => void;
 }) {
   const qc = useQueryClient();
+  const { session } = useAuth();
+  const [mode, setMode] = useState<"normal" | "personalizado">("normal");
   const [email, setEmail] = useState("");
   const [days, setDays] = useState("30");
   const [lifetime, setLifetime] = useState(false);
@@ -548,6 +550,7 @@ function CreateLicenseDialog({
     password: string;
     expiresAt: Date;
     lifetime: boolean;
+    redemptionUrl?: string;
   } | null>(null);
 
   useEffect(() => {
@@ -555,6 +558,7 @@ function CreateLicenseDialog({
       setPreviewKey(generateLicenseKey());
       setPassword("");
       setCreated(null);
+      setMode("normal");
     }
   }, [open]);
 
@@ -564,70 +568,100 @@ function CreateLicenseDialog({
       toast.error("Informe um e-mail.");
       return;
     }
-    if (password && password.length < 6) {
+    if (mode === "normal" && password && password.length < 6) {
       toast.error("A senha deve ter no mínimo 6 caracteres.");
       return;
     }
     setSubmitting(true);
     try {
-      const passwordHash = password ? await sha256Hex(password) : null;
-
-      // 1) Buscar ou criar usuário em hyro_extension_users
-      let userId: string | null = null;
-      const { data: existing, error: uerr } = await supabase
-        .from("hyro_extension_users")
-        .select("id, password_hash")
-        .eq("email", emailNorm)
-        .maybeSingle();
-      if (uerr) throw uerr;
-
-      if (existing) {
-        userId = existing.id;
-        // Atualiza senha se admin definiu uma nova
-        if (passwordHash) {
-          await supabase
-            .from("hyro_extension_users")
-            .update({ password_hash: passwordHash, active: true })
-            .eq("id", userId);
-        }
-      } else {
-        const { data: created, error: cerr } = await supabase
-          .from("hyro_extension_users")
-          .insert({
-            email: emailNorm,
-            name: emailNorm.split("@")[0],
-            role: "user",
-            password_hash: passwordHash ?? "",
-            active: true,
-          })
-          .select("id")
-          .single();
-        if (cerr) throw cerr;
-        userId = created.id;
-      }
-
       const expiresAt = lifetime
         ? new Date("2099-12-31T23:59:59Z")
         : new Date(Date.now() + parseInt(days || "30") * 24 * 3600 * 1000);
-
       const key = previewKey;
-      const { error } = await supabase.from("hyro_extension_licenses").insert({
-        id: key,
-        user_id: userId,
-        status: "ativa",
-        expires_at: expiresAt.toISOString(),
-      });
-      if (error) throw error;
-      toast.success("Licença criada", { description: key });
-      qc.invalidateQueries({ queryKey: ["licenses"] });
-      qc.invalidateQueries({ queryKey: ["dash-stats"] });
-      setCreated({
-        key,
-        email: emailNorm,
-        password: password || "",
-        expiresAt,
-        lifetime,
-      });
+
+      if (mode === "personalizado") {
+        // Cria licença SEM user_id (será vinculada quando a pessoa se cadastrar via link)
+        const { error } = await supabase.from("hyro_extension_licenses").insert({
+          id: key,
+          user_id: null,
+          status: "ativa",
+          expires_at: expiresAt.toISOString(),
+        });
+        if (error) throw error;
+
+        const link = await createRedemptionLink({
+          license_id: key,
+          target_email: emailNorm,
+          created_by: session?.user.email ?? OWNER_EMAIL,
+        });
+        const url = `${window.location.origin}/r/${link.slug}`;
+
+        toast.success("Licença + link personalizado criados");
+        qc.invalidateQueries({ queryKey: ["licenses"] });
+        qc.invalidateQueries({ queryKey: ["dash-stats"] });
+        setCreated({
+          key,
+          email: emailNorm,
+          password: "",
+          expiresAt,
+          lifetime,
+          redemptionUrl: url,
+        });
+      } else {
+        const passwordHash = password ? await sha256Hex(password) : null;
+
+        // 1) Buscar ou criar usuário em hyro_extension_users
+        let userId: string | null = null;
+        const { data: existing, error: uerr } = await supabase
+          .from("hyro_extension_users")
+          .select("id, password_hash")
+          .eq("email", emailNorm)
+          .maybeSingle();
+        if (uerr) throw uerr;
+
+        if (existing) {
+          userId = existing.id;
+          if (passwordHash) {
+            await supabase
+              .from("hyro_extension_users")
+              .update({ password_hash: passwordHash, active: true })
+              .eq("id", userId);
+          }
+        } else {
+          const { data: createdUser, error: cerr } = await supabase
+            .from("hyro_extension_users")
+            .insert({
+              email: emailNorm,
+              name: emailNorm.split("@")[0],
+              role: "user",
+              password_hash: passwordHash ?? "",
+              active: true,
+            })
+            .select("id")
+            .single();
+          if (cerr) throw cerr;
+          userId = createdUser.id;
+        }
+
+        const { error } = await supabase.from("hyro_extension_licenses").insert({
+          id: key,
+          user_id: userId,
+          status: "ativa",
+          expires_at: expiresAt.toISOString(),
+        });
+        if (error) throw error;
+        toast.success("Licença criada", { description: key });
+        qc.invalidateQueries({ queryKey: ["licenses"] });
+        qc.invalidateQueries({ queryKey: ["dash-stats"] });
+        setCreated({
+          key,
+          email: emailNorm,
+          password: password || "",
+          expiresAt,
+          lifetime,
+        });
+      }
+
       setEmail("");
       setDays("30");
       setLifetime(false);
