@@ -27,6 +27,7 @@ import {
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth";
+import { OWNER_EMAIL, fetchPrimaryLicenseForUser, fetchLicensePerms } from "@/lib/permissions";
 
 export const Route = createFileRoute("/_dash/resellers")({
   component: ResellersPage,
