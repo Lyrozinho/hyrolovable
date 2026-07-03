@@ -580,10 +580,37 @@ function CreateLicenseDialog({
       const key = previewKey;
 
       if (mode === "personalizado") {
-        // Cria licença SEM user_id (será vinculada quando a pessoa se cadastrar via link)
+        // Cria (ou reusa) um usuário placeholder com o e-mail alvo (sem senha).
+        // O signup via /r/:slug preencherá a senha e ativará a conta.
+        let placeholderUserId: string;
+        const { data: existingUser, error: euErr } = await supabase
+          .from("hyro_extension_users")
+          .select("id, password_hash")
+          .eq("email", emailNorm)
+          .maybeSingle();
+        if (euErr) throw euErr;
+
+        if (existingUser) {
+          placeholderUserId = existingUser.id;
+        } else {
+          const { data: newUser, error: nuErr } = await supabase
+            .from("hyro_extension_users")
+            .insert({
+              email: emailNorm,
+              name: emailNorm.split("@")[0],
+              role: "user",
+              password_hash: "",
+              active: false,
+            })
+            .select("id")
+            .single();
+          if (nuErr) throw nuErr;
+          placeholderUserId = newUser.id;
+        }
+
         const { error } = await supabase.from("hyro_extension_licenses").insert({
           id: key,
-          user_id: null,
+          user_id: placeholderUserId,
           status: "ativa",
           expires_at: expiresAt.toISOString(),
         });
