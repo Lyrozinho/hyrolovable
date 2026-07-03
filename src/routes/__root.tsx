@@ -80,12 +80,16 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Hyro Admin — Gerenciamento de Licenças" },
+      { title: "Hyro Admin" },
       { name: "description", content: "Painel administrativo para gerenciamento de chaves de licença e revendedores." },
       { property: "og:title", content: "Hyro Admin" },
-      { property: "og:description", content: "Painel administrativo de licenças e revendedores." },
+      { property: "og:description", content: "Painel administrativo para gerenciamento de chaves de licença e revendedores." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
+      { name: "twitter:title", content: "Hyro Admin" },
+      { name: "twitter:description", content: "Painel administrativo para gerenciamento de chaves de licença e revendedores." },
+      { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/76b57504-2ddd-486d-9e3a-39022afb222e" },
+      { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/76b57504-2ddd-486d-9e3a-39022afb222e" },
     ],
     links: [
       {
