@@ -14,7 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      hyro_tutorials: {
+        Row: {
+          created_at: string
+          description: string
+          duration: string | null
+          id: string
+          sort_order: number
+          thumbnail_path: string | null
+          title: string
+          updated_at: string
+          video_mime: string | null
+          video_path: string | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string
+          duration?: string | null
+          id: string
+          sort_order?: number
+          thumbnail_path?: string | null
+          title: string
+          updated_at?: string
+          video_mime?: string | null
+          video_path?: string | null
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          duration?: string | null
+          id?: string
+          sort_order?: number
+          thumbnail_path?: string | null
+          title?: string
+          updated_at?: string
+          video_mime?: string | null
+          video_path?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
