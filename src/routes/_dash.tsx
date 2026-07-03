@@ -38,6 +38,10 @@ function DashInner() {
   const { collapsed, toggleMobile } = useSidebar();
 
   useEffect(() => {
+    installSecurityGuard();
+  }, []);
+
+  useEffect(() => {
     if (!loading && !session) navigate({ to: "/login", replace: true });
   }, [loading, session, navigate]);
 
