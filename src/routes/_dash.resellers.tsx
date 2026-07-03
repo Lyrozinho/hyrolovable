@@ -286,27 +286,29 @@ function ResellersPage() {
       {isAdmin && tab === "list" && (
         <section>
           <div className="rounded-lg border border-border bg-card overflow-hidden">
+            <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow className="bg-muted/40 hover:bg-muted/40 border-border">
-                  <TableHead className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">Nome</TableHead>
-                  <TableHead className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">E-mail</TableHead>
+                  <TableHead className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">Revendedor</TableHead>
                   <TableHead className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">Status</TableHead>
-                  <TableHead className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">Saldo</TableHead>
-                  <TableHead className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">Desde</TableHead>
+                  <TableHead className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">Alocado</TableHead>
+                  <TableHead className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">Utilizadas</TableHead>
+                  <TableHead className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">Disponíveis</TableHead>
+                  <TableHead className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium min-w-[160px]">Uso</TableHead>
                   <TableHead className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium text-right">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {isLoading ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center py-10 text-muted-foreground text-sm">
+                    <TableCell colSpan={7} className="text-center py-10 text-muted-foreground text-sm">
                       <Loader2 className="h-4 w-4 animate-spin inline mr-2" /> Carregando...
                     </TableCell>
                   </TableRow>
                 ) : (data ?? []).length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center py-14">
+                    <TableCell colSpan={7} className="text-center py-14">
                       <div className="mx-auto flex flex-col items-center gap-3 text-muted-foreground">
                         <div className="h-10 w-10 rounded-lg border border-dashed border-border flex items-center justify-center">
                           <Users className="h-4 w-4" />
@@ -316,10 +318,20 @@ function ResellersPage() {
                     </TableCell>
                   </TableRow>
                 ) : (
-                  data!.map((r) => (
+                  data!.map((r: any) => {
+                    const used = r.used ?? 0;
+                    const available = r.available ?? (r.balance ?? 0);
+                    const allocated = r.allocated ?? (used + available);
+                    const pct = allocated > 0 ? Math.min(100, Math.round((used / allocated) * 100)) : 0;
+                    const empty = available <= 0;
+                    const low = !empty && available <= Math.max(2, Math.ceil(allocated * 0.15));
+                    const tone = empty ? "bg-destructive" : low ? "bg-warning" : "bg-foreground";
+                    return (
                     <TableRow key={r.id} className="border-border">
-                      <TableCell className="font-medium text-[13px]">{r.name ?? "—"}</TableCell>
-                      <TableCell className="text-[13px]">{r.email}</TableCell>
+                      <TableCell className="align-top">
+                        <div className="font-medium text-[13px] leading-tight">{r.name ?? "—"}</div>
+                        <div className="text-[11.5px] text-muted-foreground mt-0.5">{r.email}</div>
+                      </TableCell>
                       <TableCell>
                         <Badge
                           variant="outline"
@@ -333,9 +345,33 @@ function ResellersPage() {
                           {r.active ? "Ativo" : "Inativo"}
                         </Badge>
                       </TableCell>
-                      <TableCell className="font-mono text-[13px] tabular-nums">{r.balance ?? 0}</TableCell>
-                      <TableCell className="text-[12.5px] text-muted-foreground">
-                        {new Date(r.created_at).toLocaleDateString("pt-BR")}
+                      <TableCell className="font-mono text-[13px] tabular-nums text-foreground">{allocated}</TableCell>
+                      <TableCell className="font-mono text-[13px] tabular-nums text-muted-foreground">{used}</TableCell>
+                      <TableCell>
+                        <span
+                          className={[
+                            "inline-flex items-center gap-1.5 font-mono text-[13px] tabular-nums px-2 py-0.5 rounded-md border",
+                            empty
+                              ? "text-destructive border-destructive/30 bg-destructive/10"
+                              : low
+                              ? "text-warning border-warning/30 bg-warning/10"
+                              : "text-success border-success/30 bg-success/10",
+                          ].join(" ")}
+                        >
+                          <span className={`h-1.5 w-1.5 rounded-full ${empty ? "bg-destructive" : low ? "bg-warning" : "bg-success"}`} />
+                          {available}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2 min-w-[140px]">
+                          <div className="flex-1 h-1.5 rounded-full bg-muted overflow-hidden">
+                            <div
+                              className={`h-full ${tone} transition-all`}
+                              style={{ width: `${pct}%` }}
+                            />
+                          </div>
+                          <span className="text-[11px] font-mono tabular-nums text-muted-foreground w-9 text-right">{pct}%</span>
+                        </div>
                       </TableCell>
                       <TableCell className="text-right">
                         <Button size="sm" variant="ghost" className="h-8" onClick={() => setBalanceTarget(r)}>
@@ -343,10 +379,11 @@ function ResellersPage() {
                         </Button>
                       </TableCell>
                     </TableRow>
-                  ))
+                  );})
                 )}
               </TableBody>
             </Table>
+            </div>
           </div>
         </section>
       )}
