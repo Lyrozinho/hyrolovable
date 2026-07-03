@@ -367,13 +367,13 @@ function TutorialFormDialog({
   const [duration, setDuration] = useState("");
 
   // Video state — either an existing blob id (persisted) or a freshly uploaded one (pending).
-  const [videoPath, setVideoBlobId] = useState<string | undefined>(undefined);
+  const [videoPath, setVideoPath] = useState<string | undefined>(undefined);
   const [videoMime, setVideoMime] = useState<string | undefined>(undefined);
   const [videoName, setVideoName] = useState<string>("");
   const [videoSize, setVideoSize] = useState<number>(0);
   const [uploadingVideo, setUploadingVideo] = useState(false);
 
-  const [thumbPath, setThumbBlobId] = useState<string | undefined>(undefined);
+  const [thumbPath, setThumbPath] = useState<string | undefined>(undefined);
   const [uploadingThumb, setUploadingThumb] = useState(false);
 
   // Track blob ids we created in this session but did NOT commit (cleanup on cancel).
@@ -389,11 +389,11 @@ function TutorialFormDialog({
       setTitle(initial?.title ?? "");
       setDescription(initial?.description ?? "");
       setDuration(initial?.duration ?? "");
-      setVideoBlobId(initial?.videoPath);
+      setVideoPath(initial?.videoPath);
       setVideoMime(initial?.videoMime);
       setVideoName("");
       setVideoSize(0);
-      setThumbBlobId(initial?.thumbnailPath);
+      setThumbPath(initial?.thumbnailPath);
       pendingRef.current = {};
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -419,7 +419,7 @@ function TutorialFormDialog({
         await removeTutorialFile(pendingRef.current.video);
       }
       pendingRef.current.video = id;
-      setVideoBlobId(id);
+      setVideoPath(id);
       setVideoMime(f.type || "video/mp4");
       setVideoName(f.name);
       setVideoSize(f.size);
@@ -451,7 +451,7 @@ function TutorialFormDialog({
         await removeTutorialFile(pendingRef.current.thumb);
       }
       pendingRef.current.thumb = id;
-      setThumbBlobId(id);
+      setThumbPath(id);
     } catch (err) {
       console.error(err);
       toast.error("Falha ao salvar imagem.");
@@ -465,7 +465,7 @@ function TutorialFormDialog({
       await removeTutorialFile(pendingRef.current.video);
       pendingRef.current.video = undefined;
     }
-    setVideoBlobId(undefined);
+    setVideoPath(undefined);
     setVideoMime(undefined);
     setVideoName("");
     setVideoSize(0);
@@ -476,7 +476,7 @@ function TutorialFormDialog({
       await removeTutorialFile(pendingRef.current.thumb);
       pendingRef.current.thumb = undefined;
     }
-    setThumbBlobId(undefined);
+    setThumbPath(undefined);
   };
 
   const handleClose = async () => {
