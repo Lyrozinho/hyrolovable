@@ -144,16 +144,38 @@ function UpgradeAdminPage() {
                 )}
               </div>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setConfirmDelete(true)}
-              className="text-destructive hover:text-destructive shrink-0"
-            >
-              <Trash2 className="h-3.5 w-3.5 mr-1.5" />
-              Remover
-            </Button>
+            <div className="flex flex-col gap-1.5 shrink-0">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={async () => {
+                  const up = await fetchUpgradeBlob();
+                  if (!up) return toast.error("Arquivo não encontrado no armazenamento.");
+                  const url = URL.createObjectURL(up.blob);
+                  const a = document.createElement("a");
+                  a.href = url;
+                  a.download = up.fileName;
+                  document.body.appendChild(a);
+                  a.click();
+                  a.remove();
+                  URL.revokeObjectURL(url);
+                }}
+              >
+                <Download className="h-3.5 w-3.5 mr-1.5" />
+                Testar download
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setConfirmDelete(true)}
+                className="text-destructive hover:text-destructive"
+              >
+                <Trash2 className="h-3.5 w-3.5 mr-1.5" />
+                Remover
+              </Button>
+            </div>
           </div>
+
         ) : (
           <div className="rounded-lg border border-dashed border-border bg-muted/30 p-6 text-center">
             <FileArchive className="h-8 w-8 mx-auto text-muted-foreground/60" />
