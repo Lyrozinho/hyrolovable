@@ -2,7 +2,15 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Rocket, Download, LifeBuoy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-export const Route = createFileRoute("/_dash/upgrade")({
+export const Route = createFileRoute("/upgrade")({
+  head: () => ({
+    meta: [
+      { title: "Atualizar Extensão — GG Lovable" },
+      { name: "description", content: "Baixe a versão mais recente da extensão GG Lovable e siga o guia rápido de instalação." },
+      { property: "og:title", content: "Atualizar Extensão — GG Lovable" },
+      { property: "og:description", content: "Baixe a versão mais recente da extensão GG Lovable." },
+    ],
+  }),
   component: UpgradePage,
 });
 
@@ -28,8 +36,7 @@ function UpgradePage() {
   };
 
   return (
-    <div className="relative min-h-[calc(100vh-8rem)] flex items-center justify-center py-10 px-4">
-      {/* ambient glow */}
+    <div className="relative min-h-screen bg-background flex items-center justify-center py-10 px-4">
       <div
         aria-hidden
         className="absolute inset-0 pointer-events-none opacity-70"
@@ -40,7 +47,6 @@ function UpgradePage() {
       />
 
       <div className="relative w-full max-w-xl text-center">
-        {/* Rocket badge */}
         <div className="mx-auto h-16 w-16 rounded-full bg-primary/15 border border-primary/30 flex items-center justify-center shadow-elegant">
           <Rocket className="h-7 w-7 text-primary" />
         </div>
@@ -52,7 +58,6 @@ function UpgradePage() {
           Mantenha sua extensão atualizada para aproveitar as últimas melhorias e correções de segurança.
         </p>
 
-        {/* Card */}
         <div className="mt-8 rounded-2xl border border-border bg-card px-6 py-6 md:px-8 md:py-7 shadow-xs text-left">
           <div className="text-center">
             <div className="text-[15px] font-semibold tracking-tight">Atualização da Extensão</div>

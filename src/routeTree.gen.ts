@@ -9,15 +9,20 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as UpgradeRouteImport } from './routes/upgrade'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as DashRouteImport } from './routes/_dash'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as DashUpgradeRouteImport } from './routes/_dash.upgrade'
 import { Route as DashSubscriptionRouteImport } from './routes/_dash.subscription'
 import { Route as DashResellersRouteImport } from './routes/_dash.resellers'
 import { Route as DashLicensesRouteImport } from './routes/_dash.licenses'
 import { Route as DashDashboardRouteImport } from './routes/_dash.dashboard'
 
+const UpgradeRoute = UpgradeRouteImport.update({
+  id: '/upgrade',
+  path: '/upgrade',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
@@ -31,11 +36,6 @@ const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
-} as any)
-const DashUpgradeRoute = DashUpgradeRouteImport.update({
-  id: '/upgrade',
-  path: '/upgrade',
-  getParentRoute: () => DashRoute,
 } as any)
 const DashSubscriptionRoute = DashSubscriptionRouteImport.update({
   id: '/subscription',
@@ -61,71 +61,79 @@ const DashDashboardRoute = DashDashboardRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/upgrade': typeof UpgradeRoute
   '/dashboard': typeof DashDashboardRoute
   '/licenses': typeof DashLicensesRoute
   '/resellers': typeof DashResellersRoute
   '/subscription': typeof DashSubscriptionRoute
-  '/upgrade': typeof DashUpgradeRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/upgrade': typeof UpgradeRoute
   '/dashboard': typeof DashDashboardRoute
   '/licenses': typeof DashLicensesRoute
   '/resellers': typeof DashResellersRoute
   '/subscription': typeof DashSubscriptionRoute
-  '/upgrade': typeof DashUpgradeRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_dash': typeof DashRouteWithChildren
   '/login': typeof LoginRoute
+  '/upgrade': typeof UpgradeRoute
   '/_dash/dashboard': typeof DashDashboardRoute
   '/_dash/licenses': typeof DashLicensesRoute
   '/_dash/resellers': typeof DashResellersRoute
   '/_dash/subscription': typeof DashSubscriptionRoute
-  '/_dash/upgrade': typeof DashUpgradeRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
     | '/login'
+    | '/upgrade'
     | '/dashboard'
     | '/licenses'
     | '/resellers'
     | '/subscription'
-    | '/upgrade'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/login'
+    | '/upgrade'
     | '/dashboard'
     | '/licenses'
     | '/resellers'
     | '/subscription'
-    | '/upgrade'
   id:
     | '__root__'
     | '/'
     | '/_dash'
     | '/login'
+    | '/upgrade'
     | '/_dash/dashboard'
     | '/_dash/licenses'
     | '/_dash/resellers'
     | '/_dash/subscription'
-    | '/_dash/upgrade'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   DashRoute: typeof DashRouteWithChildren
   LoginRoute: typeof LoginRoute
+  UpgradeRoute: typeof UpgradeRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/upgrade': {
+      id: '/upgrade'
+      path: '/upgrade'
+      fullPath: '/upgrade'
+      preLoaderRoute: typeof UpgradeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/login': {
       id: '/login'
       path: '/login'
@@ -146,13 +154,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
-    }
-    '/_dash/upgrade': {
-      id: '/_dash/upgrade'
-      path: '/upgrade'
-      fullPath: '/upgrade'
-      preLoaderRoute: typeof DashUpgradeRouteImport
-      parentRoute: typeof DashRoute
     }
     '/_dash/subscription': {
       id: '/_dash/subscription'
@@ -190,7 +191,6 @@ interface DashRouteChildren {
   DashLicensesRoute: typeof DashLicensesRoute
   DashResellersRoute: typeof DashResellersRoute
   DashSubscriptionRoute: typeof DashSubscriptionRoute
-  DashUpgradeRoute: typeof DashUpgradeRoute
 }
 
 const DashRouteChildren: DashRouteChildren = {
@@ -198,7 +198,6 @@ const DashRouteChildren: DashRouteChildren = {
   DashLicensesRoute: DashLicensesRoute,
   DashResellersRoute: DashResellersRoute,
   DashSubscriptionRoute: DashSubscriptionRoute,
-  DashUpgradeRoute: DashUpgradeRoute,
 }
 
 const DashRouteWithChildren = DashRoute._addFileChildren(DashRouteChildren)
@@ -207,6 +206,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   DashRoute: DashRouteWithChildren,
   LoginRoute: LoginRoute,
+  UpgradeRoute: UpgradeRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
