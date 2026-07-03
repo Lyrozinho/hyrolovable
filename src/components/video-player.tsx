@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { Play, Pause, Volume2, VolumeX, Maximize, Loader2 } from "lucide-react";
-import { detectVideoKind, youtubeEmbedUrl } from "@/lib/tutorials";
 
 function fmt(t: number) {
   if (!isFinite(t) || t < 0) t = 0;
@@ -13,46 +12,39 @@ export function VideoPlayer({
   src,
   poster,
   title,
+  mime,
 }: {
-  src: string;
-  poster?: string;
+  src?: string | null;
+  poster?: string | null;
   title?: string;
+  mime?: string;
 }) {
-  const kind = detectVideoKind(src);
-
-  if (kind === "empty") {
+  if (!src) {
     return (
       <div className="aspect-video w-full rounded-lg bg-muted flex items-center justify-center border border-border">
         <div className="text-center px-6">
           <div className="text-sm font-medium text-foreground">Vídeo indisponível</div>
           <div className="text-xs text-muted-foreground mt-1">
-            Nenhuma URL de vídeo foi configurada ainda.
+            Nenhum vídeo foi enviado para este tutorial ainda.
           </div>
         </div>
       </div>
     );
   }
-
-  if (kind === "youtube") {
-    const embed = youtubeEmbedUrl(src);
-    if (!embed) return null;
-    return (
-      <div className="aspect-video w-full rounded-lg overflow-hidden bg-black">
-        <iframe
-          src={embed}
-          title={title ?? "Vídeo"}
-          className="w-full h-full"
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-          allowFullScreen
-        />
-      </div>
-    );
-  }
-
-  return <NativePlayer src={src} poster={poster} title={title} />;
+  return <NativePlayer src={src} poster={poster ?? undefined} title={title} mime={mime} />;
 }
 
-function NativePlayer({ src, poster, title }: { src: string; poster?: string; title?: string }) {
+function NativePlayer({
+  src,
+  poster,
+  title: _title,
+  mime,
+}: {
+  src: string;
+  poster?: string;
+  title?: string;
+  mime?: string;
+}) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const [playing, setPlaying] = useState(false);
@@ -61,13 +53,14 @@ function NativePlayer({ src, poster, title }: { src: string; poster?: string; ti
   const [current, setCurrent] = useState(0);
   const [duration, setDuration] = useState(0);
   const [buffering, setBuffering] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [showUI, setShowUI] = useState(true);
   const hideTimer = useRef<number | null>(null);
 
   const togglePlay = useCallback(() => {
     const v = videoRef.current;
     if (!v) return;
-    if (v.paused) v.play();
+    if (v.paused) v.play().catch(() => {/* ignore autoplay errors */});
     else v.pause();
   }, []);
 
@@ -136,7 +129,6 @@ function NativePlayer({ src, poster, title }: { src: string; poster?: string; ti
     >
       <video
         ref={videoRef}
-        src={src}
         poster={poster || undefined}
         className="w-full h-full object-contain cursor-pointer"
         onClick={togglePlay}
@@ -153,17 +145,32 @@ function NativePlayer({ src, poster, title }: { src: string; poster?: string; ti
         onWaiting={() => setBuffering(true)}
         onPlaying={() => setBuffering(false)}
         onCanPlay={() => setBuffering(false)}
+        onError={() =>
+          setError("Não foi possível reproduzir este vídeo. Formato pode não ser suportado.")
+        }
         preload="metadata"
         playsInline
-      />
+        controlsList="nodownload"
+      >
+        <source src={src} type={mime || undefined} />
+      </video>
 
-      {buffering && (
+      {error && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black/80 text-center px-6">
+          <div>
+            <div className="text-sm font-medium text-white">Erro na reprodução</div>
+            <div className="text-xs text-white/70 mt-1">{error}</div>
+          </div>
+        </div>
+      )}
+
+      {buffering && !error && (
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
           <Loader2 className="h-10 w-10 animate-spin text-white/80" />
         </div>
       )}
 
-      {!playing && !buffering && (
+      {!playing && !buffering && !error && (
         <button
           type="button"
           onClick={togglePlay}
@@ -184,7 +191,6 @@ function NativePlayer({ src, poster, title }: { src: string; poster?: string; ti
           showUI || !playing ? "opacity-100" : "opacity-0",
         ].join(" ")}
       >
-        {/* Progress */}
         <div className="relative group/prog h-4 flex items-center cursor-pointer">
           <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-1 bg-white/25 rounded-full">
             <div
