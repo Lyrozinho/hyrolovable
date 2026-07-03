@@ -140,6 +140,7 @@ function ResellersPage() {
   const { data, isLoading } = useQuery({
     queryKey: ["resellers"],
     enabled: isAdmin,
+    refetchInterval: 30_000,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("hyro_extension_users")
@@ -147,10 +148,34 @@ function ResellersPage() {
         .eq("role", "reseller")
         .order("created_at", { ascending: false });
       if (error) throw error;
-      return (data ?? []).map((r: any) => ({
+
+      const resellers = (data ?? []).map((r: any) => ({
         ...r,
         balance: r.hyro_reseller_balances?.[0]?.balance ?? 0,
       })) as Reseller[];
+
+      // Contagem RÍGIDA de licenças criadas por cada revendedor
+      const ids = resellers.map((r) => r.id);
+      let usedMap: Record<string, number> = {};
+      if (ids.length) {
+        const { data: lic } = await supabase
+          .from("hyro_extension_licenses")
+          .select("id, created_by")
+          .in("created_by", ids);
+        for (const row of lic ?? []) {
+          const k = (row as any).created_by as string;
+          if (!k) continue;
+          usedMap[k] = (usedMap[k] ?? 0) + 1;
+        }
+      }
+      return resellers.map((r) => {
+        const used = usedMap[r.id] ?? 0;
+        const available = r.balance ?? 0;
+        const allocated = used + available;
+        return { ...r, used, available, allocated } as Reseller & {
+          used: number; available: number; allocated: number;
+        };
+      });
     },
   });
 
