@@ -30,6 +30,7 @@ import {
 import { useTutorials, useSignedMediaUrl, uploadTutorialFile, removeTutorialFile, type Tutorial } from "@/lib/tutorials";
 import { VideoPlayer } from "@/components/video-player";
 import { useAuth } from "@/lib/auth";
+import { upsertUserFlags } from "@/lib/redemption";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_dash/tutorials")({
@@ -44,6 +45,12 @@ function TutorialsPage() {
   const { list, add, update, remove } = useTutorials();
   const { session } = useAuth();
   const isAdmin = session?.user.role !== "client";
+
+  useEffect(() => {
+    if (session?.user.email) {
+      upsertUserFlags(session.user.email, { tutorial_seen: true }).catch(() => {});
+    }
+  }, [session?.user.email]);
 
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState<Tutorial | null>(null);

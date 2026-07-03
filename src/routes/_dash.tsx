@@ -3,6 +3,7 @@ import { useEffect } from "react";
 import { useAuth } from "@/lib/auth";
 import { AppSidebar } from "@/components/app-sidebar";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { WelcomeModal } from "@/components/welcome-modal";
 import { Menu, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { SidebarProvider, useSidebar } from "@/lib/sidebar";
@@ -89,6 +90,7 @@ function DashInner() {
           <Outlet />
         </main>
       </div>
+      <WelcomeModal />
     </div>
   );
 }
