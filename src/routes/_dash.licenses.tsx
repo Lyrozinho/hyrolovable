@@ -621,7 +621,7 @@ function CreateLicenseDialog({
           target_email: emailNorm,
           created_by: session?.user.email ?? OWNER_EMAIL,
         });
-        const url = `${window.location.origin}/r/${link.slug}`;
+        const url = `https://hyrolovable.lovable.app/r/${link.slug}`;
 
         toast.success("Licença + link personalizado criados");
         qc.invalidateQueries({ queryKey: ["licenses"] });
