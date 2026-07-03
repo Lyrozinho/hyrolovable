@@ -1,22 +1,33 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { LayoutDashboard, KeyRound, Users, LogOut, Sparkles, ChevronsLeft, ChevronsRight, GraduationCap, Rocket } from "lucide-react";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth";
 import { useSidebar } from "@/lib/sidebar";
+import {
+  DEFAULT_PERMS,
+  OWNER_EMAIL,
+  fetchLicensePerms,
+  fetchParentLicenseForReseller,
+  fetchPrimaryLicenseForUser,
+  type MenuKey,
+  type SidePerms,
+} from "@/lib/permissions";
+import { supabase as ext } from "@/lib/supabase";
 
 type NavItem = {
   title: string;
   url: string;
   icon: typeof LayoutDashboard;
   roles: Array<"admin" | "client">;
+  permKey?: MenuKey; // se definido, respeita permissões para role=client
 };
 
 const items: NavItem[] = [
   { title: "Visão geral", url: "/dashboard", icon: LayoutDashboard, roles: ["admin"] },
   { title: "Licenças", url: "/licenses", icon: KeyRound, roles: ["admin"] },
-  { title: "Revendedores", url: "/resellers", icon: Users, roles: ["admin", "client"] },
-  { title: "Assinatura", url: "/subscription", icon: Sparkles, roles: ["admin", "client"] },
-  { title: "Tutoriais", url: "/tutorials", icon: GraduationCap, roles: ["admin", "client"] },
+  { title: "Revendedores", url: "/resellers", icon: Users, roles: ["admin", "client"], permKey: "resellers" },
+  { title: "Assinatura", url: "/subscription", icon: Sparkles, roles: ["admin", "client"], permKey: "subscription" },
+  { title: "Tutoriais", url: "/tutorials", icon: GraduationCap, roles: ["admin", "client"], permKey: "tutorials" },
   { title: "Atualização", url: "/upgrade-admin", icon: Rocket, roles: ["admin"] },
 ];
 
@@ -26,7 +37,51 @@ export function AppSidebar() {
   const { collapsed, toggle, mobileOpen, setMobileOpen } = useSidebar();
 
   const role = (session?.user.role === "client" ? "client" : "admin") as "admin" | "client";
-  const visible = items.filter((i) => i.roles.includes(role));
+  const isOwnerAdmin = role === "admin" && session?.user.email?.toLowerCase() === OWNER_EMAIL;
+
+  // Carrega perms quando é cliente
+  const [clientPerms, setClientPerms] = useState<SidePerms | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    if (role !== "client" || !session?.user.id) {
+      setClientPerms(null);
+      return;
+    }
+    (async () => {
+      try {
+        // descobre se é reseller
+        const { data: u } = await ext
+          .from("hyro_extension_users")
+          .select("role")
+          .eq("id", session.user.id)
+          .maybeSingle();
+        const isReseller = (u as any)?.role === "reseller";
+        const licId = isReseller
+          ? await fetchParentLicenseForReseller(session.user.id)
+          : await fetchPrimaryLicenseForUser(session.user.id);
+        if (!licId) {
+          if (!cancelled) setClientPerms(DEFAULT_PERMS[isReseller ? "resellers" : "owner"]);
+          return;
+        }
+        const p = await fetchLicensePerms(licId);
+        if (!cancelled) setClientPerms(isReseller ? p.resellers : p.owner);
+      } catch {
+        if (!cancelled) setClientPerms(DEFAULT_PERMS.owner);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [role, session?.user.id]);
+
+  const visible = items.filter((i) => {
+    if (!i.roles.includes(role)) return false;
+    if (role === "admin") return true;
+    if (!i.permKey) return true;
+    // Enquanto perms ainda não carregou, esconde apenas Revendedores (para não vazar aba)
+    if (!clientPerms) return i.permKey !== "resellers";
+    return !!clientPerms[i.permKey];
+  });
+  void isOwnerAdmin;
+
 
   const initial = (
     session?.user.name?.[0] ??
