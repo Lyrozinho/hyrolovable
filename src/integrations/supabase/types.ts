@@ -14,6 +14,27 @@ export type Database = {
   }
   public: {
     Tables: {
+      hyro_license_permissions: {
+        Row: {
+          created_at: string
+          license_id: string
+          perms: Json
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          license_id: string
+          perms?: Json
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          license_id?: string
+          perms?: Json
+          updated_at?: string
+        }
+        Relationships: []
+      }
       hyro_tutorials: {
         Row: {
           created_at: string
