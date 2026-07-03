@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { Rocket, Download, LifeBuoy, Loader2 } from "lucide-react";
+import { Rocket, Download, LifeBuoy, Loader2, FileArchive, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { fetchUpgradeBlob, useUpgrade } from "@/lib/upgrade-store";
 import { toast } from "sonner";
@@ -20,6 +20,12 @@ export const Route = createFileRoute("/upgrade")({
 
 const WHATSAPP_NUMBER = "5527981359051";
 
+function formatSize(bytes: number) {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+}
+
 function UpgradePage() {
   const { meta } = useUpgrade();
   const [downloading, setDownloading] = useState(false);
@@ -27,33 +33,45 @@ function UpgradePage() {
   const download = async () => {
     setDownloading(true);
     try {
-      // Prefer admin-uploaded ZIP (IndexedDB); fallback to bundled file.
-      const uploaded = await fetchUpgradeBlob();
-      let blob: Blob;
-      let fileName: string;
-      if (uploaded) {
-        blob = uploaded.blob;
-        fileName = uploaded.fileName;
-      } else {
-        const res = await fetch("/hyro-lovable.zip");
-        if (!res.ok) throw new Error(`Falha no download: ${res.status}`);
-        blob = await res.blob();
-        fileName = "hyro-lovable.zip";
+      // Prefer admin-uploaded ZIP (IndexedDB). Only fall back to bundled file
+      // if there's no metadata AT ALL — never silently override an uploaded one.
+      if (meta) {
+        const uploaded = await fetchUpgradeBlob();
+        if (!uploaded) {
+          throw new Error(
+            "Arquivo enviado não foi encontrado no armazenamento local. Envie novamente em /upgrade-admin."
+          );
+        }
+        const url = URL.createObjectURL(uploaded.blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = uploaded.fileName;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+        toast.success(`Baixando ${uploaded.fileName}`);
+        return;
       }
+      const res = await fetch("/hyro-lovable.zip", { cache: "no-store" });
+      if (!res.ok) throw new Error(`Falha no download: ${res.status}`);
+      const blob = await res.blob();
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = fileName;
+      a.download = "hyro-lovable.zip";
       document.body.appendChild(a);
       a.click();
       a.remove();
       URL.revokeObjectURL(url);
+      toast.success("Baixando hyro-lovable.zip (versão padrão)");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Falha no download");
     } finally {
       setDownloading(false);
     }
   };
+
 
   return (
     <div className="relative min-h-screen bg-background flex items-center justify-center py-10 px-4">
