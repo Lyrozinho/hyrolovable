@@ -450,6 +450,12 @@ function LicensesPage() {
       <CreateLicenseDialog open={createOpen} onOpenChange={setCreateOpen} />
       <TestLicenseDialog open={testOpen} onOpenChange={setTestOpen} />
       <EditLicenseDialog license={editing} onClose={() => setEditing(null)} />
+      <PermissionsDialog
+        licenseId={permsFor?.id ?? null}
+        licenseEmail={permsFor?.user_email ?? null}
+        open={!!permsFor}
+        onOpenChange={(o) => !o && setPermsFor(null)}
+      />
     </div>
   );
 }
