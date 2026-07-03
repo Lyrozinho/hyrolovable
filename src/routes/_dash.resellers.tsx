@@ -27,6 +27,7 @@ import {
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth";
+import { OWNER_EMAIL, fetchPrimaryLicenseForUser, fetchLicensePerms } from "@/lib/permissions";
 
 export const Route = createFileRoute("/_dash/resellers")({
   component: ResellersPage,
@@ -132,21 +133,41 @@ function buildPartnerWhatsapp(plan: PartnerPlan) {
 
 function ResellersPage() {
   const { session } = useAuth();
-  const isAdmin = session?.user.role !== "client";
+  const isCloudAdmin = session?.user.role !== "client";
+  const isOwner = isCloudAdmin && session?.user.email?.toLowerCase() === OWNER_EMAIL;
   const [createOpen, setCreateOpen] = useState(false);
   const [balanceTarget, setBalanceTarget] = useState<Reseller | null>(null);
   const [tab, setTab] = useState<"plans" | "list">("plans");
 
+  // Slots contratados/dispon\u00edveis do dono da licen\u00e7a (apenas para clientes)
+  const { data: mySlots } = useQuery({
+    queryKey: ["my-slots", session?.user.id],
+    enabled: !!session && !isCloudAdmin,
+    queryFn: async () => {
+      const licId = await fetchPrimaryLicenseForUser(session!.user.id);
+      if (!licId) return { unlimited: false, total: 0, used: 0 };
+      const perms = await fetchLicensePerms(licId);
+      const { count } = await supabase
+        .from("hyro_extension_users")
+        .select("id", { count: "exact", head: true })
+        .eq("role", "reseller")
+        .eq("created_by", session!.user.id);
+      return { unlimited: perms.unlimited, total: perms.package_slots || 0, used: count || 0 };
+    },
+  });
+
   const { data, isLoading } = useQuery({
-    queryKey: ["resellers"],
-    enabled: isAdmin,
+    queryKey: ["resellers", isOwner ? "all" : session?.user.id],
+    enabled: isCloudAdmin || !!session,
     refetchInterval: 30_000,
     queryFn: async () => {
-      const { data, error } = await supabase
+      let q = supabase
         .from("hyro_extension_users")
-        .select("id, email, name, role, active, created_at, hyro_reseller_balances(balance)")
+        .select("id, email, name, role, active, created_at, created_by, hyro_reseller_balances(balance)")
         .eq("role", "reseller")
         .order("created_at", { ascending: false });
+      if (!isOwner && session) q = q.eq("created_by", session.user.id);
+      const { data, error } = await q;
       if (error) throw error;
 
       const resellers = (data ?? []).map((r: any) => ({
@@ -216,9 +237,8 @@ function ResellersPage() {
         </div>
       </div>
 
-      {/* Tabs (admin only) */}
-      {isAdmin && (
-        <div className="flex items-center justify-between flex-wrap gap-3 border-b border-border">
+      {/* Tabs */}
+      <div className="flex items-center justify-between flex-wrap gap-3 border-b border-border">
           <div className="flex items-center gap-1">
             <button
               onClick={() => setTab("plans")}
@@ -250,30 +270,37 @@ function ResellersPage() {
               {tab === "list" && <span className="absolute left-0 right-0 -bottom-px h-0.5 bg-foreground rounded-full" />}
             </button>
           </div>
-          {tab === "list" && (
-            <Button size="sm" onClick={() => setCreateOpen(true)}>
-              <Users className="h-3.5 w-3.5 mr-1.5" /> Cadastrar revendedor
-            </Button>
-          )}
-        </div>
-      )}
+          {tab === "list" && (() => {
+            const unlimited = isOwner || !!mySlots?.unlimited;
+            const total = mySlots?.total ?? 0;
+            const used = mySlots?.used ?? (data?.length ?? 0);
+            const available = unlimited ? Infinity : Math.max(0, total - used);
+            const canCreate = isOwner || available > 0;
+            return (
+              <div className="flex items-center gap-3">
+                {!isCloudAdmin && (
+                  <span className="inline-flex items-center gap-1.5 text-[11.5px] px-2 py-1 rounded-md border border-border bg-muted/40 text-muted-foreground">
+                    <Coins className="h-3 w-3" />
+                    Disponíveis: <span className="font-mono text-foreground">{unlimited ? "∞" : available}</span>
+                    {!unlimited && <span className="text-muted-foreground/70">/ {total}</span>}
+                  </span>
+                )}
+                {isOwner && (
+                  <span className="inline-flex items-center gap-1.5 text-[11.5px] px-2 py-1 rounded-md border border-success/30 bg-success/10 text-success">
+                    <Coins className="h-3 w-3" /> Ilimitado
+                  </span>
+                )}
+                <Button size="sm" onClick={() => setCreateOpen(true)} disabled={!canCreate} title={!canCreate ? "Sem licenças disponíveis no pacote" : undefined}>
+                  <Users className="h-3.5 w-3.5 mr-1.5" /> Cadastrar revendedor
+                </Button>
+              </div>
+            );
+          })()}
+      </div>
 
       {/* Partner plans */}
-      {(!isAdmin || tab === "plans") && (
+      {tab === "plans" && (
         <section>
-          {!isAdmin && (
-            <div className="flex items-baseline justify-between mb-4">
-              <div>
-                <h2 className="text-[15px] font-semibold tracking-tight">Planos de parceria</h2>
-                <p className="text-[12.5px] text-muted-foreground mt-0.5">
-                  Ativação exclusiva pelo WhatsApp após validação comercial.
-                </p>
-              </div>
-              <div className="hidden md:flex items-center gap-1.5 text-[11px] text-muted-foreground">
-                <ShieldCheck className="h-3 w-3" /> Contrato transparente
-              </div>
-            </div>
-          )}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             {PARTNER_PLANS.map((p) => (
               <PartnerCard key={p.id} plan={p} />
@@ -282,8 +309,8 @@ function ResellersPage() {
         </section>
       )}
 
-      {/* Existing resellers (admin only) */}
-      {isAdmin && tab === "list" && (
+      {/* Existing resellers */}
+      {tab === "list" && (
         <section>
           <div className="rounded-lg border border-border bg-card overflow-hidden">
             <div className="overflow-x-auto">
@@ -388,7 +415,7 @@ function ResellersPage() {
         </section>
       )}
 
-      <CreateResellerDialog open={createOpen} onOpenChange={setCreateOpen} />
+      <CreateResellerDialog open={createOpen} onOpenChange={setCreateOpen} ownerUserId={session?.user.id ?? null} isOwner={isOwner} />
       <AdjustBalanceDialog reseller={balanceTarget} onClose={() => setBalanceTarget(null)} />
     </div>
   );
@@ -514,9 +541,13 @@ function PartnerCard({ plan }: { plan: PartnerPlan }) {
 function CreateResellerDialog({
   open,
   onOpenChange,
+  ownerUserId,
+  isOwner,
 }: {
   open: boolean;
   onOpenChange: (b: boolean) => void;
+  ownerUserId: string | null;
+  isOwner: boolean;
 }) {
   const qc = useQueryClient();
   const [email, setEmail] = useState("");
@@ -535,8 +566,20 @@ function CreateResellerDialog({
         p_initial_balance: parseInt(balance) || 0,
       });
       if (error) throw error;
+
+      // Marca o "dono" da revenda (created_by) para permitir filtrar por usuário.
+      // Sem isso, revendedores criados por clientes não seriam listados.
+      if (!isOwner && ownerUserId) {
+        await supabase
+          .from("hyro_extension_users")
+          .update({ created_by: ownerUserId })
+          .eq("email", email.trim().toLowerCase())
+          .is("created_by", null);
+      }
+
       toast.success("Revendedor criado");
       qc.invalidateQueries({ queryKey: ["resellers"] });
+      qc.invalidateQueries({ queryKey: ["my-slots"] });
       qc.invalidateQueries({ queryKey: ["dash-stats"] });
       onOpenChange(false);
       setEmail("");

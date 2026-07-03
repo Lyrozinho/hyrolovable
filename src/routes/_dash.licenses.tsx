@@ -31,9 +31,10 @@ import {
 import {
   Plus, Pencil, Ban, CheckCircle2, Trash2, Search, Loader2,
   KeyRound, Copy, Check, Infinity as InfinityIcon, Mail, CalendarClock, RefreshCw,
-  FlaskConical, User as UserIcon, Timer, Eye, EyeOff, MessageCircle, PartyPopper,
+  FlaskConical, User as UserIcon, Timer, Eye, EyeOff, MessageCircle, PartyPopper, ShieldCheck,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import { PermissionsDialog } from "@/components/permissions-dialog";
 import { generateLicenseKey } from "@/lib/license-key";
 import { sha256Hex, useAuth } from "@/lib/auth";
 
@@ -97,6 +98,7 @@ function LicensesPage() {
   const [createOpen, setCreateOpen] = useState(false);
   const [testOpen, setTestOpen] = useState(false);
   const [editing, setEditing] = useState<License | null>(null);
+  const [permsFor, setPermsFor] = useState<License | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [revealed, setRevealed] = useState<Record<string, boolean>>({});
   const [revealAll, setRevealAll] = useState(false);
@@ -391,6 +393,9 @@ function LicensesPage() {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="inline-flex items-center gap-0.5">
+                        <IconAction label="Permissões" onClick={() => setPermsFor(l)}>
+                          <ShieldCheck className="h-3.5 w-3.5" />
+                        </IconAction>
                         <IconAction label="Editar" onClick={() => setEditing(l)}>
                           <Pencil className="h-3.5 w-3.5" />
                         </IconAction>
@@ -445,6 +450,12 @@ function LicensesPage() {
       <CreateLicenseDialog open={createOpen} onOpenChange={setCreateOpen} />
       <TestLicenseDialog open={testOpen} onOpenChange={setTestOpen} />
       <EditLicenseDialog license={editing} onClose={() => setEditing(null)} />
+      <PermissionsDialog
+        licenseId={permsFor?.id ?? null}
+        licenseEmail={permsFor?.user_email ?? null}
+        open={!!permsFor}
+        onOpenChange={(o) => !o && setPermsFor(null)}
+      />
     </div>
   );
 }
