@@ -35,6 +35,45 @@ export type Database = {
         }
         Relationships: []
       }
+      hyro_redemption_links: {
+        Row: {
+          claimed_at: string | null
+          claimed_user_id: string | null
+          created_at: string
+          created_by: string
+          license_id: string
+          locked_ip: string | null
+          slug: string
+          target_email: string
+          target_name: string | null
+          updated_at: string
+        }
+        Insert: {
+          claimed_at?: string | null
+          claimed_user_id?: string | null
+          created_at?: string
+          created_by?: string
+          license_id: string
+          locked_ip?: string | null
+          slug: string
+          target_email: string
+          target_name?: string | null
+          updated_at?: string
+        }
+        Update: {
+          claimed_at?: string | null
+          claimed_user_id?: string | null
+          created_at?: string
+          created_by?: string
+          license_id?: string
+          locked_ip?: string | null
+          slug?: string
+          target_email?: string
+          target_name?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       hyro_tutorials: {
         Row: {
           created_at: string
@@ -71,6 +110,30 @@ export type Database = {
           updated_at?: string
           video_mime?: string | null
           video_path?: string | null
+        }
+        Relationships: []
+      }
+      hyro_user_flags: {
+        Row: {
+          first_ip: string | null
+          tutorial_seen: boolean
+          updated_at: string
+          user_email: string
+          welcome_seen: boolean
+        }
+        Insert: {
+          first_ip?: string | null
+          tutorial_seen?: boolean
+          updated_at?: string
+          user_email: string
+          welcome_seen?: boolean
+        }
+        Update: {
+          first_ip?: string | null
+          tutorial_seen?: boolean
+          updated_at?: string
+          user_email?: string
+          welcome_seen?: boolean
         }
         Relationships: []
       }
