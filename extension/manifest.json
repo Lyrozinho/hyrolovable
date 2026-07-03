@@ -1,0 +1,10 @@
+{
+  "manifest_version": 3,
+  "name": "GG Lovable",
+  "version": "1.0.0",
+  "description": "Extensão oficial do painel Hyro.",
+  "permissions": ["activeTab", "storage"],
+  "action": { "default_popup": "popup.html", "default_icon": "icon.png" },
+  "background": { "service_worker": "background.js" },
+  "icons": { "48": "icon.png", "128": "icon.png" }
+}
