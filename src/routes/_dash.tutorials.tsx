@@ -351,6 +351,7 @@ function TutorialFormDialog({
   const [videoUrl, setVideoUrl] = useState(initial?.videoUrl ?? "");
   const [thumbnailUrl, setThumbnailUrl] = useState(initial?.thumbnailUrl ?? "");
   const [duration, setDuration] = useState(initial?.duration ?? "");
+  const fileRef = useRef<HTMLInputElement>(null);
 
   // Reset when opening with new initial
   useMemo(() => {
