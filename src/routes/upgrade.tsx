@@ -1,8 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Rocket, Download, LifeBuoy } from "lucide-react";
+import { useState } from "react";
+import { Rocket, Download, LifeBuoy, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { fetchUpgradeBlob, useUpgrade } from "@/lib/upgrade-store";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/upgrade")({
+  ssr: false,
   head: () => ({
     meta: [
       { title: "Atualizar Extensão — Hyro Lovable" },
@@ -17,22 +21,38 @@ export const Route = createFileRoute("/upgrade")({
 const WHATSAPP_NUMBER = "5527981359051";
 
 function UpgradePage() {
-  const download = () => {
-    fetch("/hyro-lovable.zip")
-      .then((res) => {
+  const { meta } = useUpgrade();
+  const [downloading, setDownloading] = useState(false);
+
+  const download = async () => {
+    setDownloading(true);
+    try {
+      // Prefer admin-uploaded ZIP (IndexedDB); fallback to bundled file.
+      const uploaded = await fetchUpgradeBlob();
+      let blob: Blob;
+      let fileName: string;
+      if (uploaded) {
+        blob = uploaded.blob;
+        fileName = uploaded.fileName;
+      } else {
+        const res = await fetch("/hyro-lovable.zip");
         if (!res.ok) throw new Error(`Falha no download: ${res.status}`);
-        return res.blob();
-      })
-      .then((blob) => {
-        const a = document.createElement("a");
-        a.href = URL.createObjectURL(blob);
-        a.download = "hyro-lovable.zip";
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        URL.revokeObjectURL(a.href);
-      })
-      .catch((err) => alert(err.message));
+        blob = await res.blob();
+        fileName = "hyro-lovable.zip";
+      }
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Falha no download");
+    } finally {
+      setDownloading(false);
+    }
   };
 
   return (
@@ -61,8 +81,22 @@ function UpgradePage() {
         <div className="mt-8 rounded-2xl border border-border bg-card px-6 py-6 md:px-8 md:py-7 shadow-xs text-left">
           <div className="text-center">
             <div className="text-[15px] font-semibold tracking-tight">Atualização da Extensão</div>
-            <div className="text-[12.5px] text-muted-foreground mt-1">Versão mais recente do Hyro Lovable</div>
+            <div className="text-[12.5px] text-muted-foreground mt-1">
+              {meta?.version ? `Versão ${meta.version} · ` : "Versão mais recente do Hyro Lovable"}
+              {meta && (
+                <>
+                  {meta.version ? "" : ""}
+                  {meta.version && `atualizada em ${new Date(meta.updatedAt).toLocaleDateString("pt-BR")}`}
+                </>
+              )}
+            </div>
           </div>
+
+          {meta?.notes && (
+            <div className="mt-4 rounded-xl border border-primary/20 bg-primary/5 px-4 py-3 text-[12.5px] text-foreground/80 leading-relaxed whitespace-pre-wrap">
+              {meta.notes}
+            </div>
+          )}
 
           <div className="mt-6 rounded-xl border border-border bg-secondary/50 px-5 py-4">
             <div className="text-[13px] font-semibold mb-2">Como instalar:</div>
@@ -82,11 +116,22 @@ function UpgradePage() {
 
           <Button
             onClick={download}
+            disabled={downloading}
             className="mt-6 w-full h-12 text-[14px] font-semibold tracking-wide bg-primary text-primary-foreground hover:bg-primary/90"
           >
-            <Download className="h-4 w-4 mr-2" />
-            Baixar Atualização
+            {downloading ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Preparando...
+              </>
+            ) : (
+              <>
+                <Download className="h-4 w-4 mr-2" />
+                Baixar Atualização
+              </>
+            )}
           </Button>
+
         </div>
 
         <a
