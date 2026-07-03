@@ -1,5 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { LayoutDashboard, KeyRound, Users, LogOut, Sparkles, ChevronsLeft, ChevronsRight } from "lucide-react";
+import { LayoutDashboard, KeyRound, Users, LogOut, Sparkles, ChevronsLeft, ChevronsRight, Rocket } from "lucide-react";
 import { useEffect } from "react";
 import { useAuth } from "@/lib/auth";
 import { useSidebar } from "@/lib/sidebar";
@@ -16,6 +16,7 @@ const items: NavItem[] = [
   { title: "Licenças", url: "/licenses", icon: KeyRound, roles: ["admin"] },
   { title: "Revendedores", url: "/resellers", icon: Users, roles: ["admin", "client"] },
   { title: "Assinatura", url: "/subscription", icon: Sparkles, roles: ["admin", "client"] },
+  { title: "Atualizar", url: "/upgrade", icon: Rocket, roles: ["admin", "client"] },
 ];
 
 export function AppSidebar() {
