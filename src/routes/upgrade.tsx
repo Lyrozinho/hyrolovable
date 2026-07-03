@@ -5,10 +5,10 @@ import { Button } from "@/components/ui/button";
 export const Route = createFileRoute("/upgrade")({
   head: () => ({
     meta: [
-      { title: "Atualizar Extensão — GG Lovable" },
-      { name: "description", content: "Baixe a versão mais recente da extensão GG Lovable e siga o guia rápido de instalação." },
-      { property: "og:title", content: "Atualizar Extensão — GG Lovable" },
-      { property: "og:description", content: "Baixe a versão mais recente da extensão GG Lovable." },
+      { title: "Atualizar Extensão — Hyro Lovable" },
+      { name: "description", content: "Baixe a versão mais recente da extensão Hyro Lovable e siga o guia rápido de instalação." },
+      { property: "og:title", content: "Atualizar Extensão — Hyro Lovable" },
+      { property: "og:description", content: "Baixe a versão mais recente da extensão Hyro Lovable." },
     ],
   }),
   component: UpgradePage,
@@ -18,7 +18,7 @@ const WHATSAPP_NUMBER = "5527981359051";
 
 function UpgradePage() {
   const download = () => {
-    fetch("/gg-lovable.zip")
+    fetch("/hyro-lovable.zip")
       .then((res) => {
         if (!res.ok) throw new Error(`Falha no download: ${res.status}`);
         return res.blob();
@@ -26,7 +26,7 @@ function UpgradePage() {
       .then((blob) => {
         const a = document.createElement("a");
         a.href = URL.createObjectURL(blob);
-        a.download = "gg-lovable.zip";
+        a.download = "hyro-lovable.zip";
         document.body.appendChild(a);
         a.click();
         a.remove();
@@ -61,7 +61,7 @@ function UpgradePage() {
         <div className="mt-8 rounded-2xl border border-border bg-card px-6 py-6 md:px-8 md:py-7 shadow-xs text-left">
           <div className="text-center">
             <div className="text-[15px] font-semibold tracking-tight">Atualização da Extensão</div>
-            <div className="text-[12.5px] text-muted-foreground mt-1">Versão mais recente do GG Lovable</div>
+            <div className="text-[12.5px] text-muted-foreground mt-1">Versão mais recente do Hyro Lovable</div>
           </div>
 
           <div className="mt-6 rounded-xl border border-border bg-secondary/50 px-5 py-4">
@@ -91,7 +91,7 @@ function UpgradePage() {
 
         <a
           href={`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(
-            "Olá! Preciso de ajuda com a instalação da extensão GG Lovable."
+            "Olá! Preciso de ajuda com a instalação da extensão Hyro Lovable."
           )}`}
           target="_blank"
           rel="noreferrer"
