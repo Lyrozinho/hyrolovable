@@ -237,9 +237,8 @@ function ResellersPage() {
         </div>
       </div>
 
-      {/* Tabs (admin only) */}
-      {isAdmin && (
-        <div className="flex items-center justify-between flex-wrap gap-3 border-b border-border">
+      {/* Tabs */}
+      <div className="flex items-center justify-between flex-wrap gap-3 border-b border-border">
           <div className="flex items-center gap-1">
             <button
               onClick={() => setTab("plans")}
@@ -271,30 +270,37 @@ function ResellersPage() {
               {tab === "list" && <span className="absolute left-0 right-0 -bottom-px h-0.5 bg-foreground rounded-full" />}
             </button>
           </div>
-          {tab === "list" && (
-            <Button size="sm" onClick={() => setCreateOpen(true)}>
-              <Users className="h-3.5 w-3.5 mr-1.5" /> Cadastrar revendedor
-            </Button>
-          )}
-        </div>
-      )}
+          {tab === "list" && (() => {
+            const unlimited = isOwner || !!mySlots?.unlimited;
+            const total = mySlots?.total ?? 0;
+            const used = mySlots?.used ?? (data?.length ?? 0);
+            const available = unlimited ? Infinity : Math.max(0, total - used);
+            const canCreate = isOwner || available > 0;
+            return (
+              <div className="flex items-center gap-3">
+                {!isCloudAdmin && (
+                  <span className="inline-flex items-center gap-1.5 text-[11.5px] px-2 py-1 rounded-md border border-border bg-muted/40 text-muted-foreground">
+                    <Coins className="h-3 w-3" />
+                    Disponíveis: <span className="font-mono text-foreground">{unlimited ? "∞" : available}</span>
+                    {!unlimited && <span className="text-muted-foreground/70">/ {total}</span>}
+                  </span>
+                )}
+                {isOwner && (
+                  <span className="inline-flex items-center gap-1.5 text-[11.5px] px-2 py-1 rounded-md border border-success/30 bg-success/10 text-success">
+                    <Coins className="h-3 w-3" /> Ilimitado
+                  </span>
+                )}
+                <Button size="sm" onClick={() => setCreateOpen(true)} disabled={!canCreate} title={!canCreate ? "Sem licenças disponíveis no pacote" : undefined}>
+                  <Users className="h-3.5 w-3.5 mr-1.5" /> Cadastrar revendedor
+                </Button>
+              </div>
+            );
+          })()}
+      </div>
 
       {/* Partner plans */}
-      {(!isAdmin || tab === "plans") && (
+      {tab === "plans" && (
         <section>
-          {!isAdmin && (
-            <div className="flex items-baseline justify-between mb-4">
-              <div>
-                <h2 className="text-[15px] font-semibold tracking-tight">Planos de parceria</h2>
-                <p className="text-[12.5px] text-muted-foreground mt-0.5">
-                  Ativação exclusiva pelo WhatsApp após validação comercial.
-                </p>
-              </div>
-              <div className="hidden md:flex items-center gap-1.5 text-[11px] text-muted-foreground">
-                <ShieldCheck className="h-3 w-3" /> Contrato transparente
-              </div>
-            </div>
-          )}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             {PARTNER_PLANS.map((p) => (
               <PartnerCard key={p.id} plan={p} />
@@ -303,8 +309,8 @@ function ResellersPage() {
         </section>
       )}
 
-      {/* Existing resellers (admin only) */}
-      {isAdmin && tab === "list" && (
+      {/* Existing resellers */}
+      {tab === "list" && (
         <section>
           <div className="rounded-lg border border-border bg-card overflow-hidden">
             <div className="overflow-x-auto">
