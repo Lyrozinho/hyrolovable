@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
-import { GraduationCap, Plus, Play, Pencil, Trash2, Clock, X } from "lucide-react";
+import { useMemo, useRef, useState } from "react";
+import { GraduationCap, Plus, Play, Pencil, Trash2, Clock, X, Upload, MessageCircle, LifeBuoy, ImageIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
