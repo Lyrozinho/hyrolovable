@@ -413,10 +413,10 @@ function TutorialFormDialog({
     }
     setUploadingVideo(true);
     try {
-      const id = await putBlob(f, "vid");
+      const id = await uploadTutorialFile(f, "video");
       // Clean up previous pending upload (if user swapped without saving).
       if (pendingRef.current.video && pendingRef.current.video !== initial?.videoPath) {
-        await deleteBlob(pendingRef.current.video);
+        await removeTutorialFile(pendingRef.current.video);
       }
       pendingRef.current.video = id;
       setVideoBlobId(id);
@@ -446,9 +446,9 @@ function TutorialFormDialog({
     }
     setUploadingThumb(true);
     try {
-      const id = await putBlob(f, "thumb");
+      const id = await uploadTutorialFile(f, "thumb");
       if (pendingRef.current.thumb && pendingRef.current.thumb !== initial?.thumbnailPath) {
-        await deleteBlob(pendingRef.current.thumb);
+        await removeTutorialFile(pendingRef.current.thumb);
       }
       pendingRef.current.thumb = id;
       setThumbBlobId(id);
@@ -462,7 +462,7 @@ function TutorialFormDialog({
 
   const clearVideo = async () => {
     if (pendingRef.current.video) {
-      await deleteBlob(pendingRef.current.video);
+      await removeTutorialFile(pendingRef.current.video);
       pendingRef.current.video = undefined;
     }
     setVideoBlobId(undefined);
@@ -473,7 +473,7 @@ function TutorialFormDialog({
 
   const clearThumb = async () => {
     if (pendingRef.current.thumb) {
-      await deleteBlob(pendingRef.current.thumb);
+      await removeTutorialFile(pendingRef.current.thumb);
       pendingRef.current.thumb = undefined;
     }
     setThumbBlobId(undefined);
@@ -482,10 +482,10 @@ function TutorialFormDialog({
   const handleClose = async () => {
     // Discard pending uploads that were never committed.
     if (pendingRef.current.video && pendingRef.current.video !== initial?.videoPath) {
-      await deleteBlob(pendingRef.current.video);
+      await removeTutorialFile(pendingRef.current.video);
     }
     if (pendingRef.current.thumb && pendingRef.current.thumb !== initial?.thumbnailPath) {
-      await deleteBlob(pendingRef.current.thumb);
+      await removeTutorialFile(pendingRef.current.thumb);
     }
     pendingRef.current = {};
     onClose();
