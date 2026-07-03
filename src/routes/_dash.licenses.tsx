@@ -31,10 +31,11 @@ import {
 import {
   Plus, Pencil, Ban, CheckCircle2, Trash2, Search, Loader2,
   KeyRound, Copy, Check, Infinity as InfinityIcon, Mail, CalendarClock, RefreshCw,
-  FlaskConical, User as UserIcon, Timer, Eye, EyeOff, MessageCircle, PartyPopper, ShieldCheck,
+  FlaskConical, User as UserIcon, Timer, Eye, EyeOff, MessageCircle, PartyPopper, ShieldCheck, Link2,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { PermissionsDialog } from "@/components/permissions-dialog";
+import { RedemptionLinkDialog } from "@/components/redemption-link-dialog";
 import { generateLicenseKey } from "@/lib/license-key";
 import { sha256Hex, useAuth } from "@/lib/auth";
 
@@ -99,9 +100,11 @@ function LicensesPage() {
   const [testOpen, setTestOpen] = useState(false);
   const [editing, setEditing] = useState<License | null>(null);
   const [permsFor, setPermsFor] = useState<License | null>(null);
+  const [linkFor, setLinkFor] = useState<License | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [revealed, setRevealed] = useState<Record<string, boolean>>({});
   const [revealAll, setRevealAll] = useState(false);
+  const { session } = useAuth();
 
   const { data, isLoading, refetch, isFetching, error } = useQuery({
     queryKey: ["licenses", search, status, page],
@@ -393,6 +396,9 @@ function LicensesPage() {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="inline-flex items-center gap-0.5">
+                        <IconAction label="Link personalizado" onClick={() => setLinkFor(l)}>
+                          <Link2 className="h-3.5 w-3.5" />
+                        </IconAction>
                         <IconAction label="Permissões" onClick={() => setPermsFor(l)}>
                           <ShieldCheck className="h-3.5 w-3.5" />
                         </IconAction>
@@ -455,6 +461,13 @@ function LicensesPage() {
         licenseEmail={permsFor?.user_email ?? null}
         open={!!permsFor}
         onOpenChange={(o) => !o && setPermsFor(null)}
+      />
+      <RedemptionLinkDialog
+        licenseId={linkFor?.id ?? null}
+        licenseEmail={linkFor?.user_email ?? null}
+        createdBy={session?.user.email ?? ""}
+        open={!!linkFor}
+        onOpenChange={(o) => !o && setLinkFor(null)}
       />
     </div>
   );
