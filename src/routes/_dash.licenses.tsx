@@ -31,9 +31,10 @@ import {
 import {
   Plus, Pencil, Ban, CheckCircle2, Trash2, Search, Loader2,
   KeyRound, Copy, Check, Infinity as InfinityIcon, Mail, CalendarClock, RefreshCw,
-  FlaskConical, User as UserIcon, Timer, Eye, EyeOff, MessageCircle, PartyPopper,
+  FlaskConical, User as UserIcon, Timer, Eye, EyeOff, MessageCircle, PartyPopper, ShieldCheck,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import { PermissionsDialog } from "@/components/permissions-dialog";
 import { generateLicenseKey } from "@/lib/license-key";
 import { sha256Hex, useAuth } from "@/lib/auth";
 
