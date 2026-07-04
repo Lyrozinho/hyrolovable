@@ -419,10 +419,18 @@ function LicensesPage() {
                         <IconAction label="Link personalizado" onClick={() => setLinkFor(l)}>
                           <Link2 className="h-3.5 w-3.5" />
                         </IconAction>
-                        <IconAction label="Permissões" onClick={() => setPermsFor(l)}>
+                        <IconAction
+                          label={isReseller ? "Somente administradores podem alterar permissões" : "Permissões"}
+                          onClick={() => setPermsFor(l)}
+                          disabled={isReseller}
+                        >
                           <ShieldCheck className="h-3.5 w-3.5" />
                         </IconAction>
-                        <IconAction label="Editar" onClick={() => setEditing(l)}>
+                        <IconAction
+                          label={isReseller ? "Revendedor não pode editar licenças" : "Editar"}
+                          onClick={() => setEditing(l)}
+                          disabled={isReseller}
+                        >
                           <Pencil className="h-3.5 w-3.5" />
                         </IconAction>
                         <IconAction
@@ -435,7 +443,7 @@ function LicensesPage() {
                             <CheckCircle2 className="h-3.5 w-3.5" />
                           )}
                         </IconAction>
-                        <IconAction label="Excluir" onClick={() => remove(l)} danger>
+                        <IconAction label="Excluir" onClick={() => setDeleteTarget(l)} danger>
                           <Trash2 className="h-3.5 w-3.5" />
                         </IconAction>
                       </div>
