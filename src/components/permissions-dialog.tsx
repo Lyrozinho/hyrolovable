@@ -22,6 +22,7 @@ import {
 } from "@/lib/permissions";
 
 const MENU_OPTIONS: { key: MenuKey; label: string; icon: typeof Users }[] = [
+  { key: "licenses", label: "Licenças", icon: ShieldCheck },
   { key: "resellers", label: "Revendedores", icon: Users },
   { key: "subscription", label: "Assinatura", icon: Sparkles },
   { key: "tutorials", label: "Tutoriais", icon: GraduationCap },
@@ -148,7 +149,7 @@ function PermSection({
   onToggle,
 }: {
   title: string;
-  perms: { resellers: boolean; subscription: boolean; tutorials: boolean };
+  perms: { licenses: boolean; resellers: boolean; subscription: boolean; tutorials: boolean };
   onToggle: (key: MenuKey) => void;
 }) {
   return (
