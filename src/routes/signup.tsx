@@ -174,6 +174,10 @@ function SignupPage() {
             <span className="text-[11px] font-bold text-background">H</span>
           </div>
           <span className="text-sm font-semibold tracking-tight">Hyro</span>
+      <header className="h-14 flex items-center px-6 border-b border-border/60">
+        <div className="flex items-center gap-2.5">
+          <img src={hyroLogo} alt="Hyro" className="h-8 w-8 object-contain select-none" draggable={false} />
+          <span className="text-sm font-semibold tracking-tight">Hyro</span>
           <span className="text-[11px] text-muted-foreground uppercase tracking-[0.14em]">Cadastro</span>
         </div>
         <div className="ml-auto"><ThemeToggle /></div>
