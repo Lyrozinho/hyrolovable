@@ -114,11 +114,14 @@ function SignupPage() {
         if (upErr) throw upErr;
         userId = existing.id;
       } else {
+        const isResellerInvite = (boundLink as any)?.kind === "reseller";
         const { data: created, error: cErr } = await ext
           .from("hyro_extension_users")
           .insert({
-            email: em, name: fullName, role: "user",
+            email: em, name: fullName,
+            role: isResellerInvite ? "reseller" : "user",
             password_hash: passwordHash, active: true,
+            created_by: (boundLink as any)?.reseller_owner_id ?? null,
           })
           .select("id")
           .single();
@@ -126,14 +129,29 @@ function SignupPage() {
         userId = created.id;
       }
 
-      // Se veio de link, associa a licença e marca resgatado
+      // Se veio de link:
+      //   - Licença (kind='license'): vincula a licença existente
+      //   - Revenda (kind='reseller'): aplica saldo inicial via RPC (se disponível)
       if (boundLink) {
-        await ext
-          .from("hyro_extension_licenses")
-          .update({ user_id: userId, status: "ativa" })
-          .eq("id", boundLink.license_id);
+        const kind = (boundLink as any).kind ?? "license";
+        if (kind === "reseller") {
+          const slots = (boundLink as any).reseller_slots ?? 0;
+          if (slots > 0) {
+            await ext.rpc("admin_adjust_reseller_balance" as any, {
+              p_reseller_id: userId,
+              p_delta: slots,
+              p_note: `Pacote inicial via link ${boundLink.slug}`,
+            }).catch(() => {});
+          }
+        } else if (boundLink.license_id) {
+          await ext
+            .from("hyro_extension_licenses")
+            .update({ user_id: userId, status: "ativa" })
+            .eq("id", boundLink.license_id);
+        }
         await markLinkClaimed(boundLink.slug, userId);
       }
+
 
       toast.success("Conta criada! Faça login para continuar.");
       navigate({ to: "/login", replace: true });
