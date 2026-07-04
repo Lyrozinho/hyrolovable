@@ -241,7 +241,7 @@ export function AppSidebar() {
             </div>
           )}
           <button
-            onClick={() => signOut()}
+            onClick={handleSignOut}
             className={[
               "rounded-md text-white/55 hover:text-white hover:bg-white/10 flex items-center justify-center transition-colors shrink-0",
               isCollapsed ? "h-8 w-8" : "h-7 w-7",
