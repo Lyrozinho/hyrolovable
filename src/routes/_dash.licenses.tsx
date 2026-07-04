@@ -1097,33 +1097,52 @@ function EditLicenseDialog({
   const qc = useQueryClient();
   const [email, setEmail] = useState("");
   const [expires, setExpires] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPwd, setShowPwd] = useState(false);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (license) {
       setEmail(license.user_email ?? "");
       setExpires(license.expires_at.slice(0, 10));
+      setPassword("");
+      setShowPwd(false);
     }
   }, [license]);
 
   if (!license) return null;
 
   const save = async () => {
+    if (password && password.length < 6) {
+      toast.error("A senha deve ter no mínimo 6 caracteres.");
+      return;
+    }
     setSaving(true);
     try {
       let user_id = license.user_id;
-      if (email && email !== license.user_email) {
+      const emailNorm = email.trim().toLowerCase();
+      if (emailNorm && emailNorm !== (license.user_email ?? "").toLowerCase()) {
         const { data: u, error } = await supabase
           .from("hyro_extension_users")
           .select("id")
-          .eq("email", email.trim().toLowerCase())
+          .eq("email", emailNorm)
           .maybeSingle();
         if (error) throw error;
         if (!u) {
           toast.error("Usuário não encontrado");
+          setSaving(false);
           return;
         }
         user_id = u.id;
+      }
+      // Atualiza senha (se informada) no usuário vinculado
+      if (password && user_id) {
+        const passwordHash = await sha256Hex(password);
+        const { error: pErr } = await supabase
+          .from("hyro_extension_users")
+          .update({ password_hash: passwordHash, active: true })
+          .eq("id", user_id);
+        if (pErr) throw pErr;
       }
       const { error } = await supabase
         .from("hyro_extension_licenses")
@@ -1133,7 +1152,7 @@ function EditLicenseDialog({
         })
         .eq("id", license.id);
       if (error) throw error;
-      toast.success("Licença atualizada");
+      toast.success(password ? "Licença atualizada e senha redefinida" : "Licença atualizada");
       qc.invalidateQueries({ queryKey: ["licenses"] });
       onClose();
     } catch (e: any) {
