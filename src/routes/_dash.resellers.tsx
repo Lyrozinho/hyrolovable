@@ -162,23 +162,35 @@ function ResellersPage() {
     enabled: isCloudAdmin || !!session,
     refetchInterval: 30_000,
     queryFn: async () => {
-      let q = supabase
+      // hyro_extension_users NÃO possui coluna `created_by`. Escopo por criador
+      // é feito via hyro_extension_licenses.reseller_id/created_by mais abaixo.
+      const q = supabase
         .from("hyro_extension_users")
-        .select("id, email, name, role, active, created_at, created_by, hyro_reseller_balances(balance)")
+        .select("id, email, name, role, active, created_at, hyro_reseller_balances(balance)")
         .eq("role", "reseller")
         .order("created_at", { ascending: false });
-      if (!isOwner && session) q = q.eq("created_by", session.user.id);
       const { data, error } = await q;
       if (error) throw error;
 
-      const resellers = (data ?? []).map((r: any) => ({
+      let resellers = (data ?? []).map((r: any) => ({
         ...r,
         balance: r.hyro_reseller_balances?.[0]?.balance ?? 0,
       })) as Reseller[];
 
+      // Non-owner: mostra apenas revendedores cujas licenças foram criadas por mim.
+      if (!isOwner && session) {
+        const { data: mine } = await supabase
+          .from("hyro_extension_licenses")
+          .select("reseller_id")
+          .eq("created_by", session.user.id)
+          .not("reseller_id", "is", null);
+        const allowed = new Set((mine ?? []).map((l: any) => l.reseller_id));
+        resellers = resellers.filter((r) => allowed.has(r.id));
+      }
+
       // Contagem RÍGIDA de licenças criadas por cada revendedor
       const ids = resellers.map((r) => r.id);
-      let usedMap: Record<string, number> = {};
+      const usedMap: Record<string, number> = {};
       if (ids.length) {
         const { data: lic } = await supabase
           .from("hyro_extension_licenses")
