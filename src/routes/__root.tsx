@@ -42,25 +42,16 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   const router = useRouter();
   useEffect(() => {
     reportLovableError(error, { boundary: "tanstack_root_error_component" });
-    // Auto-retry uma vez: muitos erros aqui são transientes (fetch/hidratação).
-    // Sem intervenção manual, o painel se recupera sozinho na próxima tick.
-    const t = setTimeout(() => {
-      try {
-        router.invalidate();
-        reset();
-      } catch { /* ignore */ }
-    }, 150);
-    return () => clearTimeout(t);
-  }, [error, reset, router]);
+  }, [error]);
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
         <h1 className="text-xl font-semibold tracking-tight text-foreground">
-          Carregando…
+          Não foi possível carregar esta tela
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Estamos reconectando com o servidor. Se demorar, clique em Tentar novamente.
+          Clique em Tentar novamente. Se persistir, o erro será registrado para correção.
         </p>
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           <button

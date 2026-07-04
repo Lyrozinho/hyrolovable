@@ -54,6 +54,20 @@ const RESELLER_STEPS = [
   },
 ];
 
+function welcomeLocalKey(email: string) {
+  return `hyro_welcome_seen:${email.trim().toLowerCase()}`;
+}
+
+function wasWelcomeSeenLocally(email: string) {
+  if (typeof window === "undefined") return false;
+  try { return localStorage.getItem(welcomeLocalKey(email)) === "1"; } catch { return false; }
+}
+
+function markWelcomeSeenLocally(email: string) {
+  if (typeof window === "undefined") return;
+  try { localStorage.setItem(welcomeLocalKey(email), "1"); } catch { /* ignore */ }
+}
+
 export function WelcomeModal() {
   const { session } = useAuth();
   const navigate = useNavigate();
@@ -66,6 +80,7 @@ export function WelcomeModal() {
     let cancelled = false;
     (async () => {
       if (!session?.user.email) return;
+      if (wasWelcomeSeenLocally(session.user.email)) return;
       // Detecta se é revendedor
       let reseller = false;
       try {
@@ -79,7 +94,7 @@ export function WelcomeModal() {
       if (cancelled) return;
       setIsReseller(reseller);
 
-      const flags = await fetchUserFlags(session.user.email);
+      const flags = await fetchUserFlags(session.user.email).catch(() => null);
       if (cancelled) return;
       if (!flags?.welcome_seen) {
         setStep(0);
@@ -97,6 +112,7 @@ export function WelcomeModal() {
 
   const finish = async () => {
     if (!session?.user.email) return;
+    markWelcomeSeenLocally(session.user.email);
     setOpen(false);
     upsertUserFlags(session.user.email, { welcome_seen: true }).catch(() => {});
     const finalRoute = steps[steps.length - 1].finalRoute!;

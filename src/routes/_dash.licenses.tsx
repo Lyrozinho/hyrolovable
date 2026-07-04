@@ -116,7 +116,7 @@ function LicensesPage() {
 
 
   const { data, isLoading, refetch, isFetching, error } = useQuery({
-    queryKey: ["licenses", search, status, page],
+    queryKey: ["licenses", session?.user.id ?? "anon", search, status, page],
     staleTime: 15_000,
     queryFn: async () => {
       const term = search.trim();
@@ -139,6 +139,11 @@ function LicensesPage() {
         .select("id, user_id, status, expires_at, created_at", { count: "exact" })
         .order("created_at", { ascending: false })
         .range(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE - 1);
+
+      if (isReseller) {
+        if (!session?.user.id) return { rows: [], count: 0 };
+        query = query.or(`created_by.eq.${session.user.id},reseller_id.eq.${session.user.id}`);
+      }
 
       if (status !== "all") query = query.eq("status", status);
       if (term) {
@@ -181,6 +186,10 @@ function LicensesPage() {
   const rows = data?.rows ?? [];
 
   const toggleStatus = async (l: License) => {
+    if (isReseller) {
+      toast.error("Revendedor não pode suspender ou reativar licenças.");
+      return;
+    }
     const next = l.status === "ativa" ? "inativa" : "ativa";
     const { error } = await supabase
       .from("hyro_extension_licenses")
@@ -434,8 +443,9 @@ function LicensesPage() {
                           <Pencil className="h-3.5 w-3.5" />
                         </IconAction>
                         <IconAction
-                          label={l.status === "ativa" ? "Suspender" : "Reativar"}
+                          label={isReseller ? "Revendedor não pode suspender ou reativar" : l.status === "ativa" ? "Suspender" : "Reativar"}
                           onClick={() => toggleStatus(l)}
+                          disabled={isReseller}
                         >
                           {l.status === "ativa" ? (
                             <Ban className="h-3.5 w-3.5" />
@@ -668,6 +678,8 @@ function CreateLicenseDialog({
           user_id: placeholderUserId,
           status: "ativa",
           expires_at: expiresAt.toISOString(),
+          created_by: session?.user.role === "client" ? session.user.id : null,
+          reseller_id: session?.user.role === "client" ? session.user.id : null,
         });
         if (error) throw error;
 
@@ -730,6 +742,8 @@ function CreateLicenseDialog({
           user_id: userId,
           status: "ativa",
           expires_at: expiresAt.toISOString(),
+          created_by: session?.user.role === "client" ? session.user.id : null,
+          reseller_id: session?.user.role === "client" ? session.user.id : null,
         });
         if (error) throw error;
         toast.success("Licença criada", { description: key });
