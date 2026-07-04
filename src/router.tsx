@@ -10,7 +10,11 @@ export const getRouter = () => {
         gcTime: 5 * 60_000,
         refetchOnWindowFocus: false,
         retry: 1,
+        // Evita que um erro transiente de fetch dispare o errorComponent do root
+        // ("This page didn't load"). Componentes tratam o estado via `error`.
+        throwOnError: false,
       },
+      mutations: { throwOnError: false },
     },
   });
 
