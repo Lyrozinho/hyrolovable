@@ -190,22 +190,3 @@ function isDevtoolsOpen(): boolean {
   return w > threshold || h > threshold;
 }
 
-/* ---------- 7) Endurecer globais ---------- */
-function hardenGlobals() {
-  try {
-    // Impede que scripts do console reescrevam alguns globais críticos
-    const freezeKeys = ["fetch", "XMLHttpRequest"];
-    for (const k of freezeKeys) {
-      try {
-        const val = (window as any)[k];
-        if (val) {
-          Object.defineProperty(window, k, {
-            value: val,
-            writable: false,
-            configurable: false,
-          });
-        }
-      } catch { /* ignore */ }
-    }
-  } catch { /* ignore */ }
-}
