@@ -170,12 +170,6 @@ function SignupPage() {
     <div className="min-h-screen bg-background text-foreground flex flex-col">
       <header className="h-14 flex items-center px-6 border-b border-border/60">
         <div className="flex items-center gap-2.5">
-          <div className="h-7 w-7 rounded-md bg-foreground flex items-center justify-center">
-            <span className="text-[11px] font-bold text-background">H</span>
-          </div>
-          <span className="text-sm font-semibold tracking-tight">Hyro</span>
-      <header className="h-14 flex items-center px-6 border-b border-border/60">
-        <div className="flex items-center gap-2.5">
           <img src={hyroLogo} alt="Hyro" className="h-8 w-8 object-contain select-none" draggable={false} />
           <span className="text-sm font-semibold tracking-tight">Hyro</span>
           <span className="text-[11px] text-muted-foreground uppercase tracking-[0.14em]">Cadastro</span>
