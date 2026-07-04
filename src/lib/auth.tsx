@@ -94,16 +94,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!user.password_hash || user.password_hash !== hash) {
         return { error: "Credenciais inválidas" };
       }
-      // Require at least one active, non-test license
-      const nowIso = new Date().toISOString();
-      const { data: lics } = await ext
-        .from("hyro_extension_licenses")
-        .select("id, status, expires_at")
-        .eq("user_id", user.id)
-        .eq("status", "ativa")
-        .gt("expires_at", nowIso);
-      const validLic = (lics ?? []).find((l: any) => !String(l.id).startsWith("TST-"));
-      if (!validLic) return { error: "Você não possui licença ativa para acessar o painel." };
+      // Cliente comum precisa de licença ativa. Revendedor entra pelo pacote/saldo
+      // de revenda e a criação de licenças continua bloqueada quando não há saldo.
+      if (user.role !== "reseller") {
+        const nowIso = new Date().toISOString();
+        const { data: lics } = await ext
+          .from("hyro_extension_licenses")
+          .select("id, status, expires_at")
+          .eq("user_id", user.id)
+          .eq("status", "ativa")
+          .gt("expires_at", nowIso);
+        const validLic = (lics ?? []).find((l: any) => !String(l.id).startsWith("TST-"));
+        if (!validLic) return { error: "Você não possui licença ativa para acessar o painel." };
+      }
 
       const clientSess: Session & { expiresAt: number } = {
         token: `client_${user.id}_${Date.now()}`,
