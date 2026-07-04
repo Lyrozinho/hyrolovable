@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { supabase as cloud } from "@/integrations/supabase/client";
 import { supabase as ext } from "@/lib/supabase";
 import type { AdminUser } from "./supabase";
@@ -8,6 +8,7 @@ type Session = { token: string; user: AdminUser };
 type AuthCtx = {
   session: Session | null;
   loading: boolean;
+  sessionKey: string;
   signIn: (email: string, password: string) => Promise<{ error?: string; redirectTo?: "/dashboard" | "/subscription" }>;
   signOut: () => Promise<void>;
 };
@@ -60,6 +61,10 @@ export function getSessionHome(session: Session | null): "/dashboard" | "/subscr
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const sessionKey = useMemo(() => {
+    if (!session?.user.id) return "anon";
+    return `${session.user.role}:${session.user.id}:${session.user.email.trim().toLowerCase()}`;
+  }, [session?.user.email, session?.user.id, session?.user.role]);
 
   useEffect(() => {
     const { data: sub } = cloud.auth.onAuthStateChange((_ev, s) => {
@@ -136,7 +141,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setSession(null);
   };
 
-  return <Ctx.Provider value={{ session, loading, signIn, signOut }}>{children}</Ctx.Provider>;
+  return <Ctx.Provider value={{ session, loading, sessionKey, signIn, signOut }}>{children}</Ctx.Provider>;
 }
 
 export function useAuth() {

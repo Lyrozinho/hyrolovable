@@ -4,10 +4,11 @@ import {
   Link,
   createRootRouteWithContext,
   useRouter,
+  useRouterState,
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
@@ -40,6 +41,18 @@ function NotFoundComponent() {
 function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   console.error(error);
   const router = useRouter();
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
+  const errorPathRef = useRef(pathname);
+
+  // Evita erro "grudado" ao trocar de tela: se a URL mudou, a boundary precisa
+  // ser resetada para a nova rota renderizar limpa.
+  useEffect(() => {
+    if (errorPathRef.current !== pathname) {
+      errorPathRef.current = pathname;
+      reset();
+    }
+  }, [pathname, reset]);
+
   useEffect(() => {
     reportLovableError(error, { boundary: "tanstack_root_error_component" });
   }, [error]);

@@ -115,17 +115,20 @@ function buildWhatsappLink(plan: Plan) {
 }
 
 function SubscriptionPage() {
-  const { session } = useAuth();
+  const { session, sessionKey } = useAuth();
   const isClient = session?.user.role === "client";
   const userId = session?.user.id ?? null;
   const { data: stats } = useQuery({
-    queryKey: ["subscription-license-stats", isClient ? userId : "admin-all"],
+    queryKey: ["subscription-license-stats", sessionKey, isClient ? userId : "admin-all"],
     enabled: !isClient || !!userId,
     queryFn: async () => {
       let q = supabase.from("hyro_extension_licenses").select("id,status,expires_at,user_id");
       if (isClient && userId) q = q.eq("user_id", userId);
       const { data, error } = await q;
-      if (error) throw error;
+      if (error) {
+        console.error("Erro ao carregar estatísticas da assinatura", error);
+        return { total: 0, active: 0, expired: 0, expiringSoon: 0, lifetime: 0, nearest: null };
+      }
       const now = Date.now();
       const in30 = now + 30 * 24 * 60 * 60 * 1000;
       let active = 0, expired = 0, expiringSoon = 0, lifetime = 0;

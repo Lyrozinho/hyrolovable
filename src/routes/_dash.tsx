@@ -34,12 +34,12 @@ function DashLayout() {
 }
 
 function DashInner() {
-  const { session, loading } = useAuth();
+  const { session, loading, sessionKey } = useAuth();
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (r) => r.location.pathname });
   const { collapsed, toggleMobile } = useSidebar();
   const qc = useQueryClient();
-  const lastUserRef = useRef<string | null>(null);
+  const lastSessionKeyRef = useRef<string | null>(null);
 
   useEffect(() => {
     installSecurityGuard();
@@ -48,13 +48,12 @@ function DashInner() {
   // ISOLAMENTO RÍGIDO: sempre que a conta muda, zera o cache de queries para
   // evitar que dados da conta anterior vazem visualmente para a nova sessão.
   useEffect(() => {
-    const uid = session?.user.id ?? null;
-    if (lastUserRef.current !== null && lastUserRef.current !== uid) {
+    if (lastSessionKeyRef.current !== null && lastSessionKeyRef.current !== sessionKey) {
       qc.cancelQueries();
       qc.clear();
     }
-    lastUserRef.current = uid;
-  }, [session?.user.id, qc]);
+    lastSessionKeyRef.current = sessionKey;
+  }, [sessionKey, qc]);
 
   useEffect(() => {
     if (!loading && !session) navigate({ to: "/login", replace: true });
@@ -73,7 +72,7 @@ function DashInner() {
   // Saldo de licenças disponíveis para revendedor (badge no header).
   const isReseller = session?.user.role === "client";
   const { data: resellerInfo } = useQuery({
-    queryKey: ["reseller-balance", session?.user.id],
+    queryKey: ["reseller-balance", sessionKey],
     enabled: !!session && isReseller,
     refetchInterval: 30_000,
     staleTime: 15_000,

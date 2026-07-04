@@ -36,7 +36,7 @@ const items: NavItem[] = [
 
 export function AppSidebar() {
   const pathname = useRouterState({ select: (r) => r.location.pathname });
-  const { session, signOut } = useAuth();
+  const { session, sessionKey, signOut } = useAuth();
   const qc = useQueryClient();
   const { collapsed, toggle, mobileOpen, setMobileOpen } = useSidebar();
 
@@ -80,7 +80,7 @@ export function AppSidebar() {
       }
     })();
     return () => { cancelled = true; };
-  }, [role, session?.user.id]);
+  }, [role, sessionKey, session?.user.id]);
 
   const visible = items.filter((i) => {
     if (!i.roles.includes(role)) return false;
