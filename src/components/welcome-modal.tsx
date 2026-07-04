@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useRouterState } from "@tanstack/react-router";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import {
   PartyPopper, Rocket, GraduationCap, ArrowRight, Check,
@@ -97,8 +97,8 @@ export function WelcomeModal() {
 
   const finish = async () => {
     if (!session?.user.email) return;
-    await upsertUserFlags(session.user.email, { welcome_seen: true }).catch(() => {});
     setOpen(false);
+    upsertUserFlags(session.user.email, { welcome_seen: true }).catch(() => {});
     const finalRoute = steps[steps.length - 1].finalRoute!;
     // Só navega se ainda não estiver no destino
     if (pathname !== finalRoute) navigate({ to: finalRoute });
@@ -121,6 +121,8 @@ export function WelcomeModal() {
         onPointerDownOutside={(e) => e.preventDefault()}
         onInteractOutside={(e) => e.preventDefault()}
       >
+        <DialogTitle className="sr-only">{current.title}</DialogTitle>
+        <DialogDescription className="sr-only">{current.body}</DialogDescription>
         <div className="p-8 text-center">
           <div className="mx-auto h-14 w-14 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mb-5">
             <Icon className="h-7 w-7" />
