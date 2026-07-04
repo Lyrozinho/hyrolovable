@@ -41,8 +41,11 @@ export type Database = {
           claimed_user_id: string | null
           created_at: string
           created_by: string
-          license_id: string
+          kind: string
+          license_id: string | null
           locked_ip: string | null
+          reseller_owner_id: string | null
+          reseller_slots: number | null
           slug: string
           target_email: string
           target_name: string | null
@@ -53,8 +56,11 @@ export type Database = {
           claimed_user_id?: string | null
           created_at?: string
           created_by?: string
-          license_id: string
+          kind?: string
+          license_id?: string | null
           locked_ip?: string | null
+          reseller_owner_id?: string | null
+          reseller_slots?: number | null
           slug: string
           target_email: string
           target_name?: string | null
@@ -65,8 +71,11 @@ export type Database = {
           claimed_user_id?: string | null
           created_at?: string
           created_by?: string
-          license_id?: string
+          kind?: string
+          license_id?: string | null
           locked_ip?: string | null
+          reseller_owner_id?: string | null
+          reseller_slots?: number | null
           slug?: string
           target_email?: string
           target_name?: string | null
