@@ -191,13 +191,22 @@ function LicensesPage() {
     qc.invalidateQueries({ queryKey: ["licenses"] });
   };
 
-  const remove = async (l: License) => {
-    if (!confirm("Excluir esta licença permanentemente?")) return;
-    const { error } = await supabase.from("hyro_extension_licenses").delete().eq("id", l.id);
-    if (error) return toast.error(error.message);
-    toast.success("Licença excluída");
-    qc.invalidateQueries({ queryKey: ["licenses"] });
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    try {
+      const { error } = await supabase.from("hyro_extension_licenses").delete().eq("id", deleteTarget.id);
+      if (error) throw error;
+      toast.success("Licença excluída");
+      qc.invalidateQueries({ queryKey: ["licenses"] });
+      setDeleteTarget(null);
+    } catch (e: any) {
+      toast.error(e?.message ?? "Falha ao excluir");
+    } finally {
+      setDeleting(false);
+    }
   };
+
 
   const copyKey = async (key: string) => {
     await navigator.clipboard.writeText(key);
