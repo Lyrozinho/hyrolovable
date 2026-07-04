@@ -31,7 +31,6 @@ export function installSecurityGuard() {
     blockTextSelectionCopy();
     blockDrag();
     setupDevtoolsDetection();
-    hardenGlobals();
   } catch {
     /* fail-open: nunca quebrar a UI por causa de guard */
   }
