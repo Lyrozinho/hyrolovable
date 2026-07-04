@@ -201,13 +201,6 @@ function LoginPage() {
                 </Button>
               </form>
 
-              <div className="mt-5 text-center text-[12.5px] text-muted-foreground">
-                Ainda não tem conta?{" "}
-                <Link to="/signup" className="text-foreground font-medium hover:underline">
-                  Criar cadastro
-                </Link>
-              </div>
-
               {/* Divider */}
               <div className="my-7 flex items-center gap-3">
                 <div className="h-px flex-1 bg-border" />
