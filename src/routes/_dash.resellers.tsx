@@ -550,30 +550,69 @@ function CreateResellerDialog({
   isOwner: boolean;
 }) {
   const qc = useQueryClient();
+  const { session } = useAuth();
+  const [mode, setMode] = useState<"normal" | "personalizado">("normal");
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
   const [password, setPassword] = useState("");
   const [balance, setBalance] = useState("0");
   const [submitting, setSubmitting] = useState(false);
+  const [createdUrl, setCreatedUrl] = useState<string | null>(null);
+  const [copiedLink, setCopiedLink] = useState(false);
+
+  const reset = () => {
+    setEmail(""); setName(""); setPassword(""); setBalance("0");
+    setMode("normal"); setCreatedUrl(null); setCopiedLink(false);
+  };
 
   const submit = async () => {
+    const emailNorm = email.trim().toLowerCase();
+    if (!emailNorm.includes("@")) { toast.error("E-mail inválido."); return; }
+
     setSubmitting(true);
     try {
+      if (mode === "personalizado") {
+        // Link personalizado: cria hyro_redemption_links com kind='reseller'.
+        // O signup pelo /r/:slug irá promover o usuário para role='reseller'
+        // e aplicar o saldo inicial de licenças.
+        const slug = (await import("@/lib/redemption")).generateSlug();
+        const { data, error } = await (supabase as any)
+          .from("hyro_redemption_links")
+          .insert({
+            slug,
+            kind: "reseller",
+            license_id: null,
+            target_email: emailNorm,
+            target_name: name.trim() || null,
+            created_by: session?.user.email ?? "",
+            reseller_slots: Math.max(0, parseInt(balance) || 0),
+            reseller_owner_id: ownerUserId ?? session?.user.id ?? null,
+          })
+          .select("slug")
+          .single();
+        if (error) throw error;
+
+        const url = `https://hyrolovable.lovable.app/r/${(data as any).slug}`;
+        setCreatedUrl(url);
+        toast.success("Link personalizado de revenda criado");
+        qc.invalidateQueries({ queryKey: ["resellers"] });
+        return;
+      }
+
+      // Modo normal — cria direto via RPC.
       const { error } = await supabase.rpc("admin_create_reseller", {
-        p_email: email.trim().toLowerCase(),
+        p_email: emailNorm,
         p_name: name,
         p_password: password,
         p_initial_balance: parseInt(balance) || 0,
       });
       if (error) throw error;
 
-      // Marca o "dono" da revenda (created_by) para permitir filtrar por usuário.
-      // Sem isso, revendedores criados por clientes não seriam listados.
       if (!isOwner && ownerUserId) {
         await supabase
           .from("hyro_extension_users")
           .update({ created_by: ownerUserId })
-          .eq("email", email.trim().toLowerCase())
+          .eq("email", emailNorm)
           .is("created_by", null);
       }
 
@@ -582,10 +621,7 @@ function CreateResellerDialog({
       qc.invalidateQueries({ queryKey: ["my-slots"] });
       qc.invalidateQueries({ queryKey: ["dash-stats"] });
       onOpenChange(false);
-      setEmail("");
-      setName("");
-      setPassword("");
-      setBalance("0");
+      reset();
     } catch (e: any) {
       toast.error(e.message ?? "Erro ao criar");
     } finally {
@@ -593,9 +629,16 @@ function CreateResellerDialog({
     }
   };
 
+  const copyLink = async () => {
+    if (!createdUrl) return;
+    await navigator.clipboard.writeText(createdUrl);
+    setCopiedLink(true);
+    setTimeout(() => setCopiedLink(false), 1600);
+  };
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="glass-panel border-0 sm:max-w-[460px] p-0 overflow-hidden">
+    <Dialog open={open} onOpenChange={(o) => { if (!o) { reset(); } onOpenChange(o); }}>
+      <DialogContent className="glass-panel border-0 sm:max-w-[480px] p-0 overflow-hidden">
         <DialogHeader className="px-6 pt-6 pb-4 border-b border-border/60">
           <div className="flex items-start gap-3">
             <div className="h-9 w-9 rounded-md bg-foreground text-background flex items-center justify-center shrink-0">
@@ -603,39 +646,99 @@ function CreateResellerDialog({
             </div>
             <div>
               <DialogTitle className="text-[15px] font-semibold tracking-tight">Cadastrar revendedor</DialogTitle>
-              <p className="text-[12.5px] text-muted-foreground mt-0.5">Onboard manual de parceiro comercial.</p>
+              <p className="text-[12.5px] text-muted-foreground mt-0.5">Onboard manual ou por link personalizado.</p>
             </div>
           </div>
         </DialogHeader>
-        <div className="px-6 py-5 space-y-4">
-          <div className="space-y-1.5">
-            <Label className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">Nome</Label>
-            <Input value={name} onChange={(e) => setName(e.target.value)} className="h-10 text-[13px]" />
+
+        {createdUrl ? (
+          <div className="px-6 py-6 space-y-4">
+            <div className="rounded-md border border-success/30 bg-success/10 p-4 text-[13px] text-success">
+              Link personalizado gerado. Envie ao futuro revendedor — o IP dele será travado no primeiro acesso.
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">URL de convite</Label>
+              <div className="flex items-center gap-2">
+                <Input readOnly value={createdUrl} className="h-10 text-[12.5px] font-mono" />
+                <Button size="sm" variant="outline" onClick={copyLink} className="h-10 shrink-0">
+                  {copiedLink ? "Copiado" : "Copiar"}
+                </Button>
+              </div>
+              <p className="text-[11px] text-muted-foreground">
+                Pacote reservado: <span className="font-mono text-foreground">{balance}</span> licenças.
+              </p>
+            </div>
+            <DialogFooter className="px-0 pt-2 gap-2">
+              <Button variant="ghost" size="sm" onClick={() => { reset(); }}>
+                Criar outro
+              </Button>
+              <Button size="sm" onClick={() => { reset(); onOpenChange(false); }}>Fechar</Button>
+            </DialogFooter>
           </div>
-          <div className="space-y-1.5">
-            <Label className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">E-mail</Label>
-            <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="h-10 text-[13px]" />
-          </div>
-          <div className="space-y-1.5">
-            <Label className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">Senha inicial</Label>
-            <Input
-              type="password" value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="h-10 text-[13px]"
-            />
-          </div>
-          <div className="space-y-1.5">
-            <Label className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">Saldo inicial de licenças</Label>
-            <Input type="number" min={0} value={balance} onChange={(e) => setBalance(e.target.value)} className="h-10 text-[13px]" />
-          </div>
-        </div>
-        <DialogFooter className="px-6 py-4 border-t border-border/60 bg-muted/30 gap-2">
-          <Button variant="ghost" size="sm" onClick={() => onOpenChange(false)}>Cancelar</Button>
-          <Button size="sm" onClick={submit} disabled={submitting || !email || !password}>
-            {submitting && <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />}
-            Criar
-          </Button>
-        </DialogFooter>
+        ) : (
+          <>
+            <div className="px-6 py-5 space-y-4">
+              <div className="space-y-1.5">
+                <Label className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">Tipo de cadastro</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  {([
+                    { id: "normal", title: "Normal", desc: "Cria a conta diretamente com senha definida por você." },
+                    { id: "personalizado", title: "Personalizado", desc: "Gera link de convite travado por e-mail e IP." },
+                  ] as const).map((opt) => {
+                    const active = mode === opt.id;
+                    return (
+                      <button
+                        key={opt.id}
+                        type="button"
+                        onClick={() => setMode(opt.id)}
+                        className={[
+                          "text-left rounded-md border px-3 py-2.5 transition-colors",
+                          active ? "border-foreground bg-foreground/5" : "border-border hover:border-foreground/40 hover:bg-muted/40",
+                        ].join(" ")}
+                      >
+                        <div className="text-[12.5px] font-medium">{opt.title}</div>
+                        <p className="text-[11px] text-muted-foreground mt-0.5 leading-snug">{opt.desc}</p>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">Nome {mode === "personalizado" && <span className="text-muted-foreground/70 normal-case tracking-normal">(opcional)</span>}</Label>
+                <Input value={name} onChange={(e) => setName(e.target.value)} className="h-10 text-[13px]" />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">E-mail</Label>
+                <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="h-10 text-[13px]" />
+              </div>
+              {mode === "normal" && (
+                <div className="space-y-1.5">
+                  <Label className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">Senha inicial</Label>
+                  <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="h-10 text-[13px]" />
+                </div>
+              )}
+              <div className="space-y-1.5">
+                <Label className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">Pacote de licenças</Label>
+                <Input type="number" min={0} value={balance} onChange={(e) => setBalance(e.target.value)} className="h-10 text-[13px]" />
+                <p className="text-[11px] text-muted-foreground">
+                  Quantas licenças este revendedor poderá criar.
+                </p>
+              </div>
+            </div>
+            <DialogFooter className="px-6 py-4 border-t border-border/60 bg-muted/30 gap-2">
+              <Button variant="ghost" size="sm" onClick={() => { reset(); onOpenChange(false); }}>Cancelar</Button>
+              <Button
+                size="sm"
+                onClick={submit}
+                disabled={submitting || !email || (mode === "normal" && !password)}
+              >
+                {submitting && <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />}
+                {mode === "personalizado" ? "Gerar link" : "Criar"}
+              </Button>
+            </DialogFooter>
+          </>
+        )}
       </DialogContent>
     </Dialog>
   );
