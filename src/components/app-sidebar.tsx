@@ -162,8 +162,8 @@ export function AppSidebar() {
       </div>
 
       {/* Nav */}
-      <nav className={["flex-1 overflow-y-auto pt-2", collapsed ? "px-2" : "px-3"].join(" ")}>
-        {!collapsed && (
+      <nav className={["flex-1 overflow-y-auto pt-2", isCollapsed ? "px-2" : "px-3"].join(" ")}>
+        {!isCollapsed && (
           <div className="px-2 mb-2 text-[10.5px] font-bold text-white/35 uppercase tracking-[0.14em]">
             {role === "client" ? "Sua conta" : "Overview"}
           </div>
@@ -176,17 +176,17 @@ export function AppSidebar() {
               <li key={item.url}>
                 <Link
                   to={item.url}
-                  title={collapsed ? item.title : undefined}
+                  title={isCollapsed ? item.title : undefined}
                   className={[
                     "flex items-center rounded-md text-[13.5px] font-medium transition-colors",
-                    collapsed ? "h-10 w-full justify-center" : "px-3 py-2 gap-3",
+                    isCollapsed ? "h-10 w-full justify-center" : "px-3 py-2 gap-3",
                     active
                       ? "bg-white/10 text-white"
                       : "text-white/60 hover:text-white hover:bg-white/5",
                   ].join(" ")}
                 >
                   <item.icon className="h-[18px] w-[18px] shrink-0" strokeWidth={2} />
-                  {!collapsed && <span>{item.title}</span>}
+                  {!isCollapsed && <span>{item.title}</span>}
                 </Link>
               </li>
             );
@@ -194,33 +194,35 @@ export function AppSidebar() {
         </ul>
       </nav>
 
-      {/* Collapse toggle (inline, no floating) */}
-      <div className={["border-t shrink-0", collapsed ? "px-2 py-2" : "px-3 py-2"].join(" ")} style={{ borderColor: "rgba(255,255,255,0.06)" }}>
-        <button
-          onClick={toggle}
-          className={[
-            "flex items-center rounded-md text-white/50 hover:text-white hover:bg-white/5 transition-colors text-[12px] font-medium",
-            collapsed ? "h-9 w-full justify-center" : "h-9 w-full px-3 gap-2",
-          ].join(" ")}
-          aria-label={collapsed ? "Expandir menu" : "Recolher menu"}
-          title={collapsed ? "Expandir menu" : "Recolher menu"}
-        >
-          {collapsed ? <ChevronsRight className="h-4 w-4" /> : (
-            <>
-              <ChevronsLeft className="h-4 w-4" />
-              <span>Recolher</span>
-            </>
-          )}
-        </button>
-      </div>
+      {/* Collapse toggle — só em desktop */}
+      {!isMobile && (
+        <div className={["border-t shrink-0", isCollapsed ? "px-2 py-2" : "px-3 py-2"].join(" ")} style={{ borderColor: "rgba(255,255,255,0.06)" }}>
+          <button
+            onClick={toggle}
+            className={[
+              "flex items-center rounded-md text-white/50 hover:text-white hover:bg-white/5 transition-colors text-[12px] font-medium",
+              isCollapsed ? "h-9 w-full justify-center" : "h-9 w-full px-3 gap-2",
+            ].join(" ")}
+            aria-label={isCollapsed ? "Expandir menu" : "Recolher menu"}
+            title={isCollapsed ? "Expandir menu" : "Recolher menu"}
+          >
+            {isCollapsed ? <ChevronsRight className="h-4 w-4" /> : (
+              <>
+                <ChevronsLeft className="h-4 w-4" />
+                <span>Recolher</span>
+              </>
+            )}
+          </button>
+        </div>
+      )}
 
       {/* User */}
-      <div className={["border-t shrink-0", collapsed ? "p-2" : "p-3"].join(" ")} style={{ borderColor: "rgba(255,255,255,0.06)" }}>
-        <div className={["flex items-center rounded-lg hover:bg-white/5 transition-colors", collapsed ? "flex-col gap-2 p-1" : "gap-3 p-2"].join(" ")}>
+      <div className={["border-t shrink-0", isCollapsed ? "p-2" : "p-3"].join(" ")} style={{ borderColor: "rgba(255,255,255,0.06)" }}>
+        <div className={["flex items-center rounded-lg hover:bg-white/5 transition-colors", isCollapsed ? "flex-col gap-2 p-1" : "gap-3 p-2"].join(" ")}>
           <div className="h-9 w-9 rounded-full bg-white/10 border border-white/10 flex items-center justify-center text-[12px] font-semibold text-white shrink-0">
             {initial}
           </div>
-          {!collapsed && (
+          {!isCollapsed && (
             <div className="flex-1 min-w-0">
               <div className="text-[13px] font-medium truncate text-white leading-tight">
                 {session?.user.name ?? (role === "client" ? "Cliente" : "Administrador")}
@@ -234,7 +236,7 @@ export function AppSidebar() {
             onClick={() => signOut()}
             className={[
               "rounded-md text-white/55 hover:text-white hover:bg-white/10 flex items-center justify-center transition-colors shrink-0",
-              collapsed ? "h-8 w-8" : "h-7 w-7",
+              isCollapsed ? "h-8 w-8" : "h-7 w-7",
             ].join(" ")}
             aria-label="Sair"
             title="Sair"
