@@ -1097,33 +1097,52 @@ function EditLicenseDialog({
   const qc = useQueryClient();
   const [email, setEmail] = useState("");
   const [expires, setExpires] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPwd, setShowPwd] = useState(false);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (license) {
       setEmail(license.user_email ?? "");
       setExpires(license.expires_at.slice(0, 10));
+      setPassword("");
+      setShowPwd(false);
     }
   }, [license]);
 
   if (!license) return null;
 
   const save = async () => {
+    if (password && password.length < 6) {
+      toast.error("A senha deve ter no mínimo 6 caracteres.");
+      return;
+    }
     setSaving(true);
     try {
       let user_id = license.user_id;
-      if (email && email !== license.user_email) {
+      const emailNorm = email.trim().toLowerCase();
+      if (emailNorm && emailNorm !== (license.user_email ?? "").toLowerCase()) {
         const { data: u, error } = await supabase
           .from("hyro_extension_users")
           .select("id")
-          .eq("email", email.trim().toLowerCase())
+          .eq("email", emailNorm)
           .maybeSingle();
         if (error) throw error;
         if (!u) {
           toast.error("Usuário não encontrado");
+          setSaving(false);
           return;
         }
         user_id = u.id;
+      }
+      // Atualiza senha (se informada) no usuário vinculado
+      if (password && user_id) {
+        const passwordHash = await sha256Hex(password);
+        const { error: pErr } = await supabase
+          .from("hyro_extension_users")
+          .update({ password_hash: passwordHash, active: true })
+          .eq("id", user_id);
+        if (pErr) throw pErr;
       }
       const { error } = await supabase
         .from("hyro_extension_licenses")
@@ -1133,7 +1152,7 @@ function EditLicenseDialog({
         })
         .eq("id", license.id);
       if (error) throw error;
-      toast.success("Licença atualizada");
+      toast.success(password ? "Licença atualizada e senha redefinida" : "Licença atualizada");
       qc.invalidateQueries({ queryKey: ["licenses"] });
       onClose();
     } catch (e: any) {
@@ -1195,7 +1214,35 @@ function EditLicenseDialog({
               className="h-10 text-[13px]"
             />
           </div>
+          <div className="space-y-1.5">
+            <Label className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">
+              Redefinir senha do painel <span className="text-muted-foreground/70 normal-case tracking-normal">(opcional)</span>
+            </Label>
+            <div className="relative">
+              <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+              <Input
+                type={showPwd ? "text" : "password"}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Deixe em branco para não alterar"
+                className="h-10 pl-9 pr-10 text-[13px]"
+                autoComplete="new-password"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPwd((v) => !v)}
+                className="absolute right-2 top-1/2 -translate-y-1/2 h-7 w-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted"
+                aria-label={showPwd ? "Ocultar senha" : "Mostrar senha"}
+              >
+                {showPwd ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+              </button>
+            </div>
+            <p className="text-[11px] text-muted-foreground">
+              Ao definir, a nova senha substitui a atual e a conta é reativada.
+            </p>
+          </div>
         </div>
+
 
         <DialogFooter className="px-6 py-4 border-t border-border/60 bg-muted/30 gap-2">
           <Button variant="ghost" size="sm" onClick={onClose}>

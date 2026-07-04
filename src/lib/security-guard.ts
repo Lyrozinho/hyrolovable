@@ -31,7 +31,6 @@ export function installSecurityGuard() {
     blockTextSelectionCopy();
     blockDrag();
     setupDevtoolsDetection();
-    hardenGlobals();
   } catch {
     /* fail-open: nunca quebrar a UI por causa de guard */
   }
@@ -51,8 +50,6 @@ function hardenConsole() {
     for (const m of methods) {
       try { (console as any)[m] = noop; } catch { /* ignore */ }
     }
-    // Freezar para dificultar re-atribuição via console
-    try { Object.freeze(console); } catch { /* ignore */ }
   } catch { /* ignore */ }
 }
 
@@ -161,15 +158,18 @@ function setupDevtoolsDetection() {
     setInterval(() => { try { bait + ""; } catch { /* ignore */ } }, 1500);
   } catch { /* ignore */ }
 
-  // Heurística 3: timing com `debugger` — pausa apenas quando DevTools está aberto
+  // Heurística 3: timing com `debugger` — pausa apenas quando DevTools está aberto.
+  // Requer 3 leituras consecutivas > 300ms para evitar falso-positivo em abas ocupadas.
   try {
     const probe = new Function("debugger;");
+    let strikes = 0;
     setInterval(() => {
       const t0 = performance.now();
       try { probe(); } catch { /* ignore */ }
       const dt = performance.now() - t0;
-      if (dt > 120) warn();
-    }, 1200);
+      if (dt > 300) { strikes++; if (strikes >= 3) warn(); }
+      else { strikes = 0; }
+    }, 1500);
   } catch { /* ignore */ }
 
   // Heurística 4: getter em RegExp.toString — Firefox/Chrome disparam ao inspecionar
@@ -190,22 +190,3 @@ function isDevtoolsOpen(): boolean {
   return w > threshold || h > threshold;
 }
 
-/* ---------- 7) Endurecer globais ---------- */
-function hardenGlobals() {
-  try {
-    // Impede que scripts do console reescrevam alguns globais críticos
-    const freezeKeys = ["fetch", "XMLHttpRequest"];
-    for (const k of freezeKeys) {
-      try {
-        const val = (window as any)[k];
-        if (val) {
-          Object.defineProperty(window, k, {
-            value: val,
-            writable: false,
-            configurable: false,
-          });
-        }
-      } catch { /* ignore */ }
-    }
-  } catch { /* ignore */ }
-}
