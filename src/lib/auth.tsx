@@ -9,6 +9,7 @@ type AuthCtx = {
   session: Session | null;
   loading: boolean;
   sessionKey: string;
+  authReady: boolean;
   signIn: (email: string, password: string) => Promise<{ error?: string; redirectTo?: "/dashboard" | "/subscription" }>;
   signOut: () => Promise<void>;
 };
@@ -61,6 +62,7 @@ export function getSessionHome(session: Session | null): "/dashboard" | "/subscr
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [authReady, setAuthReady] = useState(false);
   const sessionKey = useMemo(() => {
     if (!session?.user.id) return "anon";
     return `${session.user.role}:${session.user.id}:${session.user.email.trim().toLowerCase()}`;
@@ -68,17 +70,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const { data: sub } = cloud.auth.onAuthStateChange((_ev, s) => {
-      const admin = toAdminSession(s as any);
-      if (admin) {
-        localStorage.removeItem(CLIENT_KEY);
-        setSession(admin);
-      } else {
-        setSession(readClientSession());
-      }
+      queueMicrotask(() => {
+        const admin = toAdminSession(s as any);
+        if (admin) {
+          localStorage.removeItem(CLIENT_KEY);
+          setSession(admin);
+        } else {
+          setSession(readClientSession());
+        }
+        setAuthReady(true);
+        setLoading(false);
+      });
     });
     cloud.auth.getSession().then(({ data }) => {
       const admin = toAdminSession(data.session as any);
       setSession(admin ?? readClientSession());
+      setAuthReady(true);
+      setLoading(false);
+    }).catch(() => {
+      setSession(readClientSession());
+      setAuthReady(true);
       setLoading(false);
     });
     return () => sub.subscription.unsubscribe();
@@ -141,7 +152,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setSession(null);
   };
 
-  return <Ctx.Provider value={{ session, loading, sessionKey, signIn, signOut }}>{children}</Ctx.Provider>;
+  return <Ctx.Provider value={{ session, loading, sessionKey, authReady, signIn, signOut }}>{children}</Ctx.Provider>;
 }
 
 export function useAuth() {
