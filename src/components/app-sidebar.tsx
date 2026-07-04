@@ -78,8 +78,8 @@ export function AppSidebar() {
     if (!i.roles.includes(role)) return false;
     if (role === "admin") return true;
     if (!i.permKey) return true;
-    // Enquanto perms ainda não carregou, esconde apenas Revendedores (para não vazar aba)
-    if (!clientPerms) return i.permKey !== "resellers";
+    // Enquanto perms ainda não carregou, esconde abas sensíveis (não vazar)
+    if (!clientPerms) return i.permKey !== "resellers" && i.permKey !== "licenses";
     return !!clientPerms[i.permKey];
   });
   void isOwnerAdmin;
@@ -96,8 +96,19 @@ export function AppSidebar() {
     setMobileOpen(false);
   }, [pathname, setMobileOpen]);
 
-  // On mobile, force expanded look (never collapsed) while drawer is open
-  const isCollapsed = collapsed;
+  // Detect mobile viewport → no collapse allowed
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const mql = window.matchMedia("(max-width: 767px)");
+    const update = () => setIsMobile(mql.matches);
+    update();
+    mql.addEventListener("change", update);
+    return () => mql.removeEventListener("change", update);
+  }, []);
+
+  // On mobile, never render as collapsed (drawer is always expanded).
+  const isCollapsed = collapsed && !isMobile;
 
   return (
     <>
