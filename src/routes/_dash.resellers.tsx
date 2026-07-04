@@ -196,7 +196,7 @@ function ResellersPage() {
         .eq("kind", "reseller");
       for (const invite of (invites ?? []) as Array<Partial<ResellerInvite>>) {
         if (!inviteBelongsToSession(invite as ResellerInvite, session!.user.id, session!.user.email)) continue;
-        uniq.add(invite.claimed_user_id ? `user:${invite.claimed_user_id}` : `invite:${invite.slug}`);
+        uniq.add(invite.claimed_user_id ? `user:${invite.claimed_user_id}` : `invite:${normEmail((invite as any).target_email) || invite.slug}`);
       }
       return { unlimited: perms.unlimited, total: perms.package_slots || 0, used: uniq.size };
     },
@@ -283,8 +283,15 @@ function ResellersPage() {
 
       const knownIds = new Set(enriched.map((r) => r.id));
       const knownEmails = new Set(enriched.map((r) => normEmail(r.email)));
+      const pendingSeen = new Set<string>();
       const pending = scopedInvites
         .filter((invite) => !knownIds.has(invite.claimed_user_id ?? "") && !knownEmails.has(normEmail(invite.target_email)))
+        .filter((invite) => {
+          const key = normEmail(invite.target_email) || invite.slug;
+          if (pendingSeen.has(key)) return false;
+          pendingSeen.add(key);
+          return true;
+        })
         .map((invite) => {
           const slots = Number(invite.reseller_slots ?? 0) || 0;
           return {
@@ -700,6 +707,25 @@ function CreateResellerDialog({
         // Link personalizado: cria hyro_redemption_links com kind='reseller'.
         // O signup pelo /r/:slug irá promover o usuário para role='reseller'
         // e aplicar o saldo inicial de licenças.
+        const { data: existingInvite } = await (cloud as any)
+          .from("hyro_redemption_links")
+          .select("slug, created_by, reseller_owner_id")
+          .eq("kind", "reseller")
+          .eq("target_email", emailNorm)
+          .is("claimed_user_id", null)
+          .order("created_at", { ascending: false })
+          .limit(5);
+        const reusable = ((existingInvite ?? []) as ResellerInvite[]).find((invite) =>
+          inviteBelongsToSession(invite, ownerUserId ?? session?.user.id, session?.user.email)
+        );
+        if (reusable?.slug) {
+          setCreatedUrl(inviteUrl(reusable.slug));
+          toast.success("Link personalizado de revenda já existente");
+          qc.invalidateQueries({ queryKey: ["resellers"] });
+          qc.invalidateQueries({ queryKey: ["my-slots"] });
+          return;
+        }
+
         const slug = (await import("@/lib/redemption")).generateSlug();
         const { data, error } = await (cloud as any)
           .from("hyro_redemption_links")
