@@ -25,6 +25,7 @@ import {
   Check, ArrowRight, Users, ShieldCheck, TrendingUp, Handshake,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import { supabase as cloud } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth";
 import { OWNER_EMAIL, fetchPrimaryLicenseForUser, fetchLicensePerms } from "@/lib/permissions";
@@ -576,7 +577,7 @@ function CreateResellerDialog({
         // O signup pelo /r/:slug irá promover o usuário para role='reseller'
         // e aplicar o saldo inicial de licenças.
         const slug = (await import("@/lib/redemption")).generateSlug();
-        const { data, error } = await (supabase as any)
+        const { data, error } = await (cloud as any)
           .from("hyro_redemption_links")
           .insert({
             slug,
