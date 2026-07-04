@@ -37,7 +37,14 @@ const items: NavItem[] = [
 export function AppSidebar() {
   const pathname = useRouterState({ select: (r) => r.location.pathname });
   const { session, signOut } = useAuth();
+  const qc = useQueryClient();
   const { collapsed, toggle, mobileOpen, setMobileOpen } = useSidebar();
+
+  const handleSignOut = async () => {
+    await qc.cancelQueries();
+    qc.clear();
+    await signOut();
+  };
 
   const role = (session?.user.role === "client" ? "client" : "admin") as "admin" | "client";
   const isOwnerAdmin = role === "admin" && session?.user.email?.toLowerCase() === OWNER_EMAIL;
