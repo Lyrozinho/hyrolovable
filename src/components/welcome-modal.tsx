@@ -69,7 +69,7 @@ function markWelcomeSeenLocally(email: string) {
 }
 
 export function WelcomeModal() {
-  const { session } = useAuth();
+  const { session, authReady } = useAuth();
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (r) => r.location.pathname });
   const [open, setOpen] = useState(false);
@@ -79,7 +79,7 @@ export function WelcomeModal() {
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      if (!session?.user.email) return;
+      if (!authReady || !session?.user.email) return;
       if (wasWelcomeSeenLocally(session.user.email)) return;
       // Detecta se é revendedor
       let reseller = false;
@@ -106,7 +106,7 @@ export function WelcomeModal() {
       }
     })();
     return () => { cancelled = true; };
-  }, [session?.user.email, session?.user.id]);
+  }, [authReady, session?.user.email, session?.user.id]);
 
   const steps = isReseller ? RESELLER_STEPS : OWNER_STEPS;
 

@@ -36,7 +36,7 @@ const items: NavItem[] = [
 
 export function AppSidebar() {
   const pathname = useRouterState({ select: (r) => r.location.pathname });
-  const { session, sessionKey, signOut } = useAuth();
+  const { session, sessionKey, authReady, signOut } = useAuth();
   const qc = useQueryClient();
   const { collapsed, toggle, mobileOpen, setMobileOpen } = useSidebar();
 
@@ -53,7 +53,7 @@ export function AppSidebar() {
   const [clientPerms, setClientPerms] = useState<SidePerms | null>(null);
   useEffect(() => {
     let cancelled = false;
-    if (role !== "client" || !session?.user.id) {
+    if (!authReady || role !== "client" || !session?.user.id) {
       setClientPerms(null);
       return;
     }
@@ -81,7 +81,7 @@ export function AppSidebar() {
       }
     })();
     return () => { cancelled = true; };
-  }, [role, sessionKey, session?.user.id]);
+  }, [authReady, role, sessionKey, session?.user.id]);
 
   const visible = items.filter((i) => {
     if (!i.roles.includes(role)) return false;
