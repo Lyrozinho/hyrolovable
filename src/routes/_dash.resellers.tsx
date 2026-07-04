@@ -148,12 +148,14 @@ function ResellersPage() {
       const licId = await fetchPrimaryLicenseForUser(session!.user.id);
       if (!licId) return { unlimited: false, total: 0, used: 0 };
       const perms = await fetchLicensePerms(licId);
-      const { count } = await supabase
-        .from("hyro_extension_users")
-        .select("id", { count: "exact", head: true })
-        .eq("role", "reseller")
-        .eq("created_by", session!.user.id);
-      return { unlimited: perms.unlimited, total: perms.package_slots || 0, used: count || 0 };
+      // Conta revendedores derivados das licenças criadas por este dono
+      const { data: mine } = await supabase
+        .from("hyro_extension_licenses")
+        .select("reseller_id")
+        .eq("created_by", session!.user.id)
+        .not("reseller_id", "is", null);
+      const uniq = new Set((mine ?? []).map((l: any) => l.reseller_id));
+      return { unlimited: perms.unlimited, total: perms.package_slots || 0, used: uniq.size };
     },
   });
 
