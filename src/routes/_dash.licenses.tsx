@@ -39,6 +39,10 @@ import { RedemptionLinkDialog } from "@/components/redemption-link-dialog";
 import { createLink as createRedemptionLink } from "@/lib/redemption";
 import { generateLicenseKey } from "@/lib/license-key";
 import { sha256Hex, useAuth } from "@/lib/auth";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const OWNER_EMAIL = "adminpainel@gmail.com";
 import { toast } from "sonner";
@@ -106,6 +110,10 @@ function LicensesPage() {
   const [revealed, setRevealed] = useState<Record<string, boolean>>({});
   const [revealAll, setRevealAll] = useState(false);
   const { session } = useAuth();
+  const isReseller = session?.user.role === "client";
+  const [deleteTarget, setDeleteTarget] = useState<License | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
 
   const { data, isLoading, refetch, isFetching, error } = useQuery({
     queryKey: ["licenses", search, status, page],
@@ -183,13 +191,22 @@ function LicensesPage() {
     qc.invalidateQueries({ queryKey: ["licenses"] });
   };
 
-  const remove = async (l: License) => {
-    if (!confirm("Excluir esta licença permanentemente?")) return;
-    const { error } = await supabase.from("hyro_extension_licenses").delete().eq("id", l.id);
-    if (error) return toast.error(error.message);
-    toast.success("Licença excluída");
-    qc.invalidateQueries({ queryKey: ["licenses"] });
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    try {
+      const { error } = await supabase.from("hyro_extension_licenses").delete().eq("id", deleteTarget.id);
+      if (error) throw error;
+      toast.success("Licença excluída");
+      qc.invalidateQueries({ queryKey: ["licenses"] });
+      setDeleteTarget(null);
+    } catch (e: any) {
+      toast.error(e?.message ?? "Falha ao excluir");
+    } finally {
+      setDeleting(false);
+    }
   };
+
 
   const copyKey = async (key: string) => {
     await navigator.clipboard.writeText(key);
@@ -252,6 +269,8 @@ function LicensesPage() {
             size="sm"
             className="h-9"
             onClick={() => setTestOpen(true)}
+            disabled={isReseller}
+            title={isReseller ? "Somente administradores podem gerar testes" : undefined}
           >
             <FlaskConical className="h-3.5 w-3.5 md:mr-1.5" />
             <span className="hidden md:inline">Gerar teste</span>
@@ -400,10 +419,18 @@ function LicensesPage() {
                         <IconAction label="Link personalizado" onClick={() => setLinkFor(l)}>
                           <Link2 className="h-3.5 w-3.5" />
                         </IconAction>
-                        <IconAction label="Permissões" onClick={() => setPermsFor(l)}>
+                        <IconAction
+                          label={isReseller ? "Somente administradores podem alterar permissões" : "Permissões"}
+                          onClick={() => setPermsFor(l)}
+                          disabled={isReseller}
+                        >
                           <ShieldCheck className="h-3.5 w-3.5" />
                         </IconAction>
-                        <IconAction label="Editar" onClick={() => setEditing(l)}>
+                        <IconAction
+                          label={isReseller ? "Revendedor não pode editar licenças" : "Editar"}
+                          onClick={() => setEditing(l)}
+                          disabled={isReseller}
+                        >
                           <Pencil className="h-3.5 w-3.5" />
                         </IconAction>
                         <IconAction
@@ -416,7 +443,7 @@ function LicensesPage() {
                             <CheckCircle2 className="h-3.5 w-3.5" />
                           )}
                         </IconAction>
-                        <IconAction label="Excluir" onClick={() => remove(l)} danger>
+                        <IconAction label="Excluir" onClick={() => setDeleteTarget(l)} danger>
                           <Trash2 className="h-3.5 w-3.5" />
                         </IconAction>
                       </div>
@@ -470,6 +497,30 @@ function LicensesPage() {
         open={!!linkFor}
         onOpenChange={(o) => !o && setLinkFor(null)}
       />
+
+      <AlertDialog open={!!deleteTarget} onOpenChange={(o) => !o && !deleting && setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir licença?</AlertDialogTitle>
+            <AlertDialogDescription>
+              A chave <span className="font-mono text-foreground">{deleteTarget?.id}</span>
+              {deleteTarget?.user_email ? <> vinculada a <span className="text-foreground">{deleteTarget.user_email}</span></> : null}
+              {" "}será removida permanentemente. Essa ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => { e.preventDefault(); confirmDelete(); }}
+              disabled={deleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleting && <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />}
+              Excluir licença
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
@@ -505,22 +556,26 @@ function StatusBadge({ status }: { status: string }) {
 }
 
 function IconAction({
-  children, onClick, label, danger,
+  children, onClick, label, danger, disabled,
 }: {
   children: React.ReactNode;
   onClick: () => void;
   label: string;
   danger?: boolean;
+  disabled?: boolean;
 }) {
   return (
     <button
-      onClick={onClick}
+      onClick={disabled ? undefined : onClick}
+      disabled={disabled}
       title={label}
       aria-label={label}
+      aria-disabled={disabled || undefined}
       className={[
         "h-8 w-8 rounded-md flex items-center justify-center transition-colors",
-        "text-muted-foreground hover:bg-muted",
-        danger ? "hover:text-destructive" : "hover:text-foreground",
+        disabled
+          ? "text-muted-foreground/40 cursor-not-allowed"
+          : ["text-muted-foreground hover:bg-muted", danger ? "hover:text-destructive" : "hover:text-foreground"].join(" "),
       ].join(" ")}
     >
       {children}

@@ -13,6 +13,7 @@ import {
   type SidePerms,
 } from "@/lib/permissions";
 import { supabase as ext } from "@/lib/supabase";
+import hyroLogo from "@/assets/hyro-logo.png";
 
 type NavItem = {
   title: string;
@@ -24,7 +25,8 @@ type NavItem = {
 
 const items: NavItem[] = [
   { title: "Visão geral", url: "/dashboard", icon: LayoutDashboard, roles: ["admin"] },
-  { title: "Licenças", url: "/licenses", icon: KeyRound, roles: ["admin"] },
+  // Licenças: admin sempre; cliente/revendedor só se permissão "licenses" estiver ativa.
+  { title: "Licenças", url: "/licenses", icon: KeyRound, roles: ["admin", "client"], permKey: "licenses" },
   { title: "Revendedores", url: "/resellers", icon: Users, roles: ["admin", "client"], permKey: "resellers" },
   { title: "Assinatura", url: "/subscription", icon: Sparkles, roles: ["admin", "client"], permKey: "subscription" },
   { title: "Tutoriais", url: "/tutorials", icon: GraduationCap, roles: ["admin", "client"], permKey: "tutorials" },
@@ -76,8 +78,8 @@ export function AppSidebar() {
     if (!i.roles.includes(role)) return false;
     if (role === "admin") return true;
     if (!i.permKey) return true;
-    // Enquanto perms ainda não carregou, esconde apenas Revendedores (para não vazar aba)
-    if (!clientPerms) return i.permKey !== "resellers";
+    // Enquanto perms ainda não carregou, esconde abas sensíveis (não vazar)
+    if (!clientPerms) return i.permKey !== "resellers" && i.permKey !== "licenses";
     return !!clientPerms[i.permKey];
   });
   void isOwnerAdmin;
@@ -94,8 +96,19 @@ export function AppSidebar() {
     setMobileOpen(false);
   }, [pathname, setMobileOpen]);
 
-  // On mobile, force expanded look (never collapsed) while drawer is open
-  const isCollapsed = collapsed;
+  // Detect mobile viewport → no collapse allowed
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const mql = window.matchMedia("(max-width: 767px)");
+    const update = () => setIsMobile(mql.matches);
+    update();
+    mql.addEventListener("change", update);
+    return () => mql.removeEventListener("change", update);
+  }, []);
+
+  // On mobile, never render as collapsed (drawer is always expanded).
+  const isCollapsed = collapsed && !isMobile;
 
   return (
     <>
@@ -127,13 +140,18 @@ export function AppSidebar() {
       <div
         className={[
           "flex items-center py-5 shrink-0",
-          collapsed ? "px-0 justify-center" : "px-5 gap-3",
+          isCollapsed ? "px-0 justify-center" : "px-5 gap-3",
         ].join(" ")}
       >
-        <div className="h-9 w-9 rounded-lg bg-white flex items-center justify-center shrink-0">
-          <div className="h-3.5 w-3.5 border-2 border-zinc-900 rounded-[2px] rotate-45" />
+        <div className="h-10 w-10 rounded-lg flex items-center justify-center shrink-0">
+          <img
+            src={hyroLogo}
+            alt="Hyro"
+            draggable={false}
+            className="h-10 w-10 object-contain select-none pointer-events-none"
+          />
         </div>
-        {!collapsed && (
+        {!isCollapsed && (
           <div className="flex flex-col leading-none flex-1 min-w-0">
             <span className="text-[15px] font-semibold tracking-tight text-white">Hyro</span>
             <span className="text-[10px] font-medium text-white/45 uppercase tracking-[0.14em] mt-1">
@@ -144,8 +162,8 @@ export function AppSidebar() {
       </div>
 
       {/* Nav */}
-      <nav className={["flex-1 overflow-y-auto pt-2", collapsed ? "px-2" : "px-3"].join(" ")}>
-        {!collapsed && (
+      <nav className={["flex-1 overflow-y-auto pt-2", isCollapsed ? "px-2" : "px-3"].join(" ")}>
+        {!isCollapsed && (
           <div className="px-2 mb-2 text-[10.5px] font-bold text-white/35 uppercase tracking-[0.14em]">
             {role === "client" ? "Sua conta" : "Overview"}
           </div>
@@ -158,17 +176,17 @@ export function AppSidebar() {
               <li key={item.url}>
                 <Link
                   to={item.url}
-                  title={collapsed ? item.title : undefined}
+                  title={isCollapsed ? item.title : undefined}
                   className={[
                     "flex items-center rounded-md text-[13.5px] font-medium transition-colors",
-                    collapsed ? "h-10 w-full justify-center" : "px-3 py-2 gap-3",
+                    isCollapsed ? "h-10 w-full justify-center" : "px-3 py-2 gap-3",
                     active
                       ? "bg-white/10 text-white"
                       : "text-white/60 hover:text-white hover:bg-white/5",
                   ].join(" ")}
                 >
                   <item.icon className="h-[18px] w-[18px] shrink-0" strokeWidth={2} />
-                  {!collapsed && <span>{item.title}</span>}
+                  {!isCollapsed && <span>{item.title}</span>}
                 </Link>
               </li>
             );
@@ -176,33 +194,35 @@ export function AppSidebar() {
         </ul>
       </nav>
 
-      {/* Collapse toggle (inline, no floating) */}
-      <div className={["border-t shrink-0", collapsed ? "px-2 py-2" : "px-3 py-2"].join(" ")} style={{ borderColor: "rgba(255,255,255,0.06)" }}>
-        <button
-          onClick={toggle}
-          className={[
-            "flex items-center rounded-md text-white/50 hover:text-white hover:bg-white/5 transition-colors text-[12px] font-medium",
-            collapsed ? "h-9 w-full justify-center" : "h-9 w-full px-3 gap-2",
-          ].join(" ")}
-          aria-label={collapsed ? "Expandir menu" : "Recolher menu"}
-          title={collapsed ? "Expandir menu" : "Recolher menu"}
-        >
-          {collapsed ? <ChevronsRight className="h-4 w-4" /> : (
-            <>
-              <ChevronsLeft className="h-4 w-4" />
-              <span>Recolher</span>
-            </>
-          )}
-        </button>
-      </div>
+      {/* Collapse toggle — só em desktop */}
+      {!isMobile && (
+        <div className={["border-t shrink-0", isCollapsed ? "px-2 py-2" : "px-3 py-2"].join(" ")} style={{ borderColor: "rgba(255,255,255,0.06)" }}>
+          <button
+            onClick={toggle}
+            className={[
+              "flex items-center rounded-md text-white/50 hover:text-white hover:bg-white/5 transition-colors text-[12px] font-medium",
+              isCollapsed ? "h-9 w-full justify-center" : "h-9 w-full px-3 gap-2",
+            ].join(" ")}
+            aria-label={isCollapsed ? "Expandir menu" : "Recolher menu"}
+            title={isCollapsed ? "Expandir menu" : "Recolher menu"}
+          >
+            {isCollapsed ? <ChevronsRight className="h-4 w-4" /> : (
+              <>
+                <ChevronsLeft className="h-4 w-4" />
+                <span>Recolher</span>
+              </>
+            )}
+          </button>
+        </div>
+      )}
 
       {/* User */}
-      <div className={["border-t shrink-0", collapsed ? "p-2" : "p-3"].join(" ")} style={{ borderColor: "rgba(255,255,255,0.06)" }}>
-        <div className={["flex items-center rounded-lg hover:bg-white/5 transition-colors", collapsed ? "flex-col gap-2 p-1" : "gap-3 p-2"].join(" ")}>
+      <div className={["border-t shrink-0", isCollapsed ? "p-2" : "p-3"].join(" ")} style={{ borderColor: "rgba(255,255,255,0.06)" }}>
+        <div className={["flex items-center rounded-lg hover:bg-white/5 transition-colors", isCollapsed ? "flex-col gap-2 p-1" : "gap-3 p-2"].join(" ")}>
           <div className="h-9 w-9 rounded-full bg-white/10 border border-white/10 flex items-center justify-center text-[12px] font-semibold text-white shrink-0">
             {initial}
           </div>
-          {!collapsed && (
+          {!isCollapsed && (
             <div className="flex-1 min-w-0">
               <div className="text-[13px] font-medium truncate text-white leading-tight">
                 {session?.user.name ?? (role === "client" ? "Cliente" : "Administrador")}
@@ -216,7 +236,7 @@ export function AppSidebar() {
             onClick={() => signOut()}
             className={[
               "rounded-md text-white/55 hover:text-white hover:bg-white/10 flex items-center justify-center transition-colors shrink-0",
-              collapsed ? "h-8 w-8" : "h-7 w-7",
+              isCollapsed ? "h-8 w-8" : "h-7 w-7",
             ].join(" ")}
             aria-label="Sair"
             title="Sair"

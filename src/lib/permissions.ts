@@ -4,9 +4,10 @@ import { supabase as ext } from "@/lib/supabase";
 
 export const OWNER_EMAIL = "adminpainel@gmail.com";
 
-export type MenuKey = "resellers" | "subscription" | "tutorials";
+export type MenuKey = "licenses" | "resellers" | "subscription" | "tutorials";
 
 export type SidePerms = {
+  licenses: boolean;
   resellers: boolean;
   subscription: boolean;
   tutorials: boolean;
@@ -22,8 +23,9 @@ export type LicensePerms = {
 export const DEFAULT_PERMS: LicensePerms = {
   package_slots: 0,
   unlimited: false,
-  owner: { resellers: false, subscription: true, tutorials: true },
-  resellers: { resellers: false, subscription: true, tutorials: true },
+  owner: { licenses: false, resellers: false, subscription: true, tutorials: true },
+  // Revendedor: agora enxerga a aba Licenças por padrão (para criar/gerenciar as próprias).
+  resellers: { licenses: true, resellers: false, subscription: true, tutorials: true },
 };
 
 export function mergePerms(raw: unknown): LicensePerms {

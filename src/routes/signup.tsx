@@ -12,6 +12,7 @@ import {
   getClientIP, bindOrCheckIP, fetchLink, markLinkClaimed,
   type RedemptionLink,
 } from "@/lib/redemption";
+import hyroLogo from "@/assets/hyro-logo.png";
 
 type SignupSearch = { ref?: string };
 
@@ -114,11 +115,14 @@ function SignupPage() {
         if (upErr) throw upErr;
         userId = existing.id;
       } else {
+        const isResellerInvite = (boundLink as any)?.kind === "reseller";
         const { data: created, error: cErr } = await ext
           .from("hyro_extension_users")
           .insert({
-            email: em, name: fullName, role: "user",
+            email: em, name: fullName,
+            role: isResellerInvite ? "reseller" : "user",
             password_hash: passwordHash, active: true,
+            created_by: (boundLink as any)?.reseller_owner_id ?? null,
           })
           .select("id")
           .single();
@@ -126,14 +130,31 @@ function SignupPage() {
         userId = created.id;
       }
 
-      // Se veio de link, associa a licença e marca resgatado
+      // Se veio de link:
+      //   - Licença (kind='license'): vincula a licença existente
+      //   - Revenda (kind='reseller'): aplica saldo inicial via RPC (se disponível)
       if (boundLink) {
-        await ext
-          .from("hyro_extension_licenses")
-          .update({ user_id: userId, status: "ativa" })
-          .eq("id", boundLink.license_id);
+        const kind = (boundLink as any).kind ?? "license";
+        if (kind === "reseller") {
+          const slots = (boundLink as any).reseller_slots ?? 0;
+          if (slots > 0) {
+            try {
+              await ext.rpc("admin_adjust_reseller_balance" as any, {
+                p_reseller_id: userId,
+                p_delta: slots,
+                p_note: `Pacote inicial via link ${boundLink.slug}`,
+              });
+            } catch { /* fail-open — o admin pode ajustar depois */ }
+          }
+        } else if (boundLink.license_id) {
+          await ext
+            .from("hyro_extension_licenses")
+            .update({ user_id: userId, status: "ativa" })
+            .eq("id", boundLink.license_id);
+        }
         await markLinkClaimed(boundLink.slug, userId);
       }
+
 
       toast.success("Conta criada! Faça login para continuar.");
       navigate({ to: "/login", replace: true });
@@ -150,9 +171,7 @@ function SignupPage() {
     <div className="min-h-screen bg-background text-foreground flex flex-col">
       <header className="h-14 flex items-center px-6 border-b border-border/60">
         <div className="flex items-center gap-2.5">
-          <div className="h-7 w-7 rounded-md bg-foreground flex items-center justify-center">
-            <span className="text-[11px] font-bold text-background">H</span>
-          </div>
+          <img src={hyroLogo} alt="Hyro" className="h-8 w-8 object-contain select-none" draggable={false} />
           <span className="text-sm font-semibold tracking-tight">Hyro</span>
           <span className="text-[11px] text-muted-foreground uppercase tracking-[0.14em]">Cadastro</span>
         </div>

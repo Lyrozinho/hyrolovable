@@ -45,11 +45,12 @@ function DashInner() {
     if (!loading && !session) navigate({ to: "/login", replace: true });
   }, [loading, session, navigate]);
 
-  // Role-based route gating
+  // Role-based route gating — /dashboard e / são só de admin.
+  // /licenses agora pode ser acessado por revendedor (permissão controlada na sidebar).
   useEffect(() => {
     if (!session) return;
     if (session.user.role === "client") {
-      if (pathname === "/dashboard" || pathname === "/licenses" || pathname === "/") {
+      if (pathname === "/dashboard" || pathname === "/") {
         navigate({ to: "/subscription", replace: true });
       }
     }
