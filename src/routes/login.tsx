@@ -4,7 +4,7 @@ import { Loader2, ArrowRight, Mail, Lock, Eye, EyeOff, ShieldCheck } from "lucid
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useAuth } from "@/lib/auth";
+import { getSessionHome, useAuth } from "@/lib/auth";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { toast } from "sonner";
 
@@ -22,20 +22,20 @@ function LoginPage() {
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    if (!loading && session) navigate({ to: "/dashboard", replace: true });
+    if (!loading && session) navigate({ to: getSessionHome(session), replace: true });
   }, [loading, session, navigate]);
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
-    const { error } = await signIn(email, password);
+    const { error, redirectTo } = await signIn(email, password);
     setSubmitting(false);
     if (error) {
       toast.error(error);
       return;
     }
     toast.success("Bem-vindo!");
-    navigate({ to: "/dashboard", replace: true });
+    navigate({ to: redirectTo ?? getSessionHome(session), replace: true });
   };
 
   return (
