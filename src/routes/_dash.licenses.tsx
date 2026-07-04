@@ -39,6 +39,10 @@ import { RedemptionLinkDialog } from "@/components/redemption-link-dialog";
 import { createLink as createRedemptionLink } from "@/lib/redemption";
 import { generateLicenseKey } from "@/lib/license-key";
 import { sha256Hex, useAuth } from "@/lib/auth";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const OWNER_EMAIL = "adminpainel@gmail.com";
 import { toast } from "sonner";
