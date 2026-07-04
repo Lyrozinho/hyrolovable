@@ -57,6 +57,7 @@ export function AppSidebar() {
       setClientPerms(null);
       return;
     }
+    setClientPerms(null);
     (async () => {
       try {
         // descobre se é reseller
