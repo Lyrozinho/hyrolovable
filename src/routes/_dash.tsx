@@ -1,13 +1,15 @@
 import { createFileRoute, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth";
 import { AppSidebar } from "@/components/app-sidebar";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { WelcomeModal } from "@/components/welcome-modal";
-import { Menu, Search } from "lucide-react";
+import { Menu, Search, Coins } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { SidebarProvider, useSidebar } from "@/lib/sidebar";
 import { installSecurityGuard } from "@/lib/security-guard";
+import { supabase as ext } from "@/lib/supabase";
 
 export const Route = createFileRoute("/_dash")({
   ssr: false,
