@@ -8,7 +8,7 @@ type Session = { token: string; user: AdminUser };
 type AuthCtx = {
   session: Session | null;
   loading: boolean;
-  signIn: (email: string, password: string) => Promise<{ error?: string }>;
+  signIn: (email: string, password: string) => Promise<{ error?: string; redirectTo?: "/dashboard" | "/subscription" }>;
   signOut: () => Promise<void>;
 };
 
@@ -53,6 +53,10 @@ function readClientSession(): Session | null {
   }
 }
 
+export function getSessionHome(session: Session | null): "/dashboard" | "/subscription" {
+  return session?.user.role === "client" ? "/subscription" : "/dashboard";
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
@@ -79,7 +83,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const emailNorm = email.trim().toLowerCase();
     // 1) Try admin (Lovable Auth) first
     const { error } = await cloud.auth.signInWithPassword({ email: emailNorm, password });
-    if (!error) return {};
+    if (!error) return { redirectTo: "/dashboard" };
 
     // 2) Fallback — client login via hyro_extension_users (license holders)
     try {
@@ -120,7 +124,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       };
       localStorage.setItem(CLIENT_KEY, JSON.stringify(clientSess));
       setSession({ token: clientSess.token, user: clientSess.user });
-      return {};
+      return { redirectTo: "/subscription" };
     } catch (e: any) {
       return { error: error.message === "Invalid login credentials" ? "Credenciais inválidas" : (e?.message ?? error.message) };
     }
