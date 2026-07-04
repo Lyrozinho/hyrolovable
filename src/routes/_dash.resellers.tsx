@@ -29,7 +29,7 @@ import { supabase as cloud } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { sha256Hex, useAuth } from "@/lib/auth";
 import { OWNER_EMAIL, fetchPrimaryLicenseForUser, fetchLicensePerms } from "@/lib/permissions";
-import { adjustResellerBalance, setResellerBalance } from "@/lib/reseller-balance";
+import { adjustResellerBalance, getResellerBalance, setResellerBalance } from "@/lib/reseller-balance";
 
 export const Route = createFileRoute("/_dash/resellers")({
   component: ResellersPage,
@@ -238,7 +238,7 @@ function ResellersPage() {
 
       let resellers = (data ?? []).map((r: any) => ({
         ...r,
-        balance: r.hyro_reseller_balances?.[0]?.balance ?? 0,
+        balance: 0,
       })) as Reseller[];
 
       // Non-owner: mostra apenas revendedores cujas licenças foram criadas por mim.
@@ -256,6 +256,12 @@ function ResellersPage() {
           allowed.has(r.id) || inviteIds.has(r.id) || inviteEmails.has(normEmail(r.email))
         );
       }
+
+      const balancePairs = await Promise.all(
+        resellers.map(async (r) => [r.id, await getResellerBalance(r.id).catch(() => 0)] as const),
+      );
+      const balanceMap = new Map(balancePairs);
+      resellers = resellers.map((r) => ({ ...r, balance: balanceMap.get(r.id) ?? 0 }));
 
       // Contagem RÍGIDA de licenças criadas por cada revendedor
       const ids = resellers.map((r) => r.id);

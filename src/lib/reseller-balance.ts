@@ -7,13 +7,20 @@ function asInt(value: unknown): number {
 
 export async function getResellerBalance(resellerId: string): Promise<number> {
   if (!resellerId) return 0;
-  const { data, error } = await supabase
+  const { data, error } = await supabase.rpc("admin_adjust_reseller_balance", {
+    p_reseller_id: resellerId,
+    p_delta: 0,
+    p_note: "Leitura de saldo",
+  });
+  if (!error) return Math.max(0, asInt(data));
+
+  const { data: row, error: readError } = await supabase
     .from("hyro_reseller_balances")
     .select("balance")
     .eq("reseller_id", resellerId)
     .maybeSingle();
-  if (error) throw error;
-  return Math.max(0, asInt((data as any)?.balance));
+  if (readError) throw readError;
+  return Math.max(0, asInt((row as any)?.balance));
 }
 
 async function writeResellerBalance(resellerId: string, balance: number) {
@@ -30,19 +37,21 @@ async function writeResellerBalance(resellerId: string, balance: number) {
 
 export async function setResellerBalance(resellerId: string, targetBalance: number, note?: string | null) {
   const target = Math.max(0, asInt(targetBalance));
+  const current = await getResellerBalance(resellerId).catch(() => 0);
+  const delta = target - current;
+  if (delta === 0) return current;
+
+  const { data, error } = await supabase.rpc("admin_adjust_reseller_balance", {
+    p_reseller_id: resellerId,
+    p_delta: delta,
+    p_note: note ?? null,
+  });
+  if (!error) return Math.max(0, asInt(data));
+
   try {
     return await writeResellerBalance(resellerId, target);
-  } catch (directError) {
-    const current = await getResellerBalance(resellerId).catch(() => 0);
-    const delta = target - current;
-    if (delta === 0) return current;
-    const { error } = await supabase.rpc("admin_adjust_reseller_balance", {
-      p_reseller_id: resellerId,
-      p_delta: delta,
-      p_note: note ?? null,
-    });
-    if (error) throw directError;
-    return getResellerBalance(resellerId).catch(() => target);
+  } catch {
+    throw error;
   }
 }
 
@@ -62,19 +71,17 @@ export async function adjustResellerBalance(input: {
 
   const target = before + delta;
 
+  const { data, error } = await supabase.rpc("admin_adjust_reseller_balance", {
+    p_reseller_id: input.resellerId,
+    p_delta: delta,
+    p_note: input.note ?? null,
+  });
+  if (!error) return Math.max(0, asInt(data));
+
   try {
     return await writeResellerBalance(input.resellerId, target);
-  } catch (directError) {
-    const { error } = await supabase.rpc("admin_adjust_reseller_balance", {
-      p_reseller_id: input.resellerId,
-      p_delta: delta,
-      p_note: input.note ?? null,
-    });
-    if (error) throw directError;
-
-    const afterRpc = await getResellerBalance(input.resellerId).catch(() => before);
-    if (afterRpc !== target) throw directError;
-    return afterRpc;
+  } catch {
+    throw error;
   }
 }
 
