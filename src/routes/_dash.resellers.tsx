@@ -621,13 +621,9 @@ function CreateResellerDialog({
       });
       if (error) throw error;
 
-      if (!isOwner && ownerUserId) {
-        await supabase
-          .from("hyro_extension_users")
-          .update({ created_by: ownerUserId })
-          .eq("email", emailNorm)
-          .is("created_by", null);
-      }
+      // hyro_extension_users não possui coluna created_by — a atribuição de
+      // "dono" do revendedor é derivada de hyro_extension_licenses.created_by
+      // (licenças criadas por este dono). Nenhum update adicional necessário.
 
       toast.success("Revendedor criado");
       qc.invalidateQueries({ queryKey: ["resellers"] });
