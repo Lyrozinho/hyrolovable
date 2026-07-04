@@ -137,7 +137,7 @@ function DashInner() {
             <ThemeToggle />
           </div>
         </header>
-        <main className="px-4 md:px-6 lg:px-8 xl:px-10 py-5 md:py-6 mx-auto w-full max-w-[1600px]">
+        <main key={sessionKey} className="px-4 md:px-6 lg:px-8 xl:px-10 py-5 md:py-6 mx-auto w-full max-w-[1600px]">
           <Outlet />
         </main>
       </div>
