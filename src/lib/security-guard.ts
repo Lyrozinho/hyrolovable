@@ -50,8 +50,6 @@ function hardenConsole() {
     for (const m of methods) {
       try { (console as any)[m] = noop; } catch { /* ignore */ }
     }
-    // Freezar para dificultar re-atribuição via console
-    try { Object.freeze(console); } catch { /* ignore */ }
   } catch { /* ignore */ }
 }
 
