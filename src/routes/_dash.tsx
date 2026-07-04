@@ -114,6 +114,19 @@ function DashInner() {
             <span className="text-foreground font-medium truncate">{title}</span>
           </div>
           <div className="ml-auto flex items-center gap-2">
+            {resellerInfo && (
+              <div
+                className="inline-flex items-center gap-1.5 h-9 px-3 rounded-full border border-border bg-muted/40 text-[12px] font-medium"
+                title="Licenças disponíveis para você criar"
+              >
+                <Coins className="h-3.5 w-3.5 text-foreground/70" />
+                <span className="hidden sm:inline text-muted-foreground">Licenças disponíveis:</span>
+                <span className="sm:hidden text-muted-foreground">Disp.:</span>
+                <span className="font-mono tabular-nums text-foreground">
+                  {resellerInfo.balance}
+                </span>
+              </div>
+            )}
             <div className="relative hidden md:block">
               <Search className="h-3.5 w-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
               <Input
