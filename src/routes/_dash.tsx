@@ -38,17 +38,29 @@ function DashInner() {
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (r) => r.location.pathname });
   const { collapsed, toggleMobile } = useSidebar();
+  const qc = useQueryClient();
+  const lastUserRef = useRef<string | null>(null);
 
   useEffect(() => {
     installSecurityGuard();
   }, []);
+
+  // ISOLAMENTO RÍGIDO: sempre que a conta muda, zera o cache de queries para
+  // evitar que dados da conta anterior vazem visualmente para a nova sessão.
+  useEffect(() => {
+    const uid = session?.user.id ?? null;
+    if (lastUserRef.current !== null && lastUserRef.current !== uid) {
+      qc.cancelQueries();
+      qc.clear();
+    }
+    lastUserRef.current = uid;
+  }, [session?.user.id, qc]);
 
   useEffect(() => {
     if (!loading && !session) navigate({ to: "/login", replace: true });
   }, [loading, session, navigate]);
 
   // Role-based route gating — /dashboard e / são só de admin.
-  // /licenses agora pode ser acessado por revendedor (permissão controlada na sidebar).
   useEffect(() => {
     if (!session) return;
     if (session.user.role === "client") {
@@ -57,6 +69,25 @@ function DashInner() {
       }
     }
   }, [session, pathname, navigate]);
+
+  // Saldo de licenças disponíveis para revendedor (badge no header).
+  const isReseller = session?.user.role === "client";
+  const { data: resellerInfo } = useQuery({
+    queryKey: ["reseller-balance", session?.user.id],
+    enabled: !!session && isReseller,
+    refetchInterval: 30_000,
+    staleTime: 15_000,
+    queryFn: async () => {
+      const uid = session!.user.id;
+      const [{ data: u }, { data: bal }] = await Promise.all([
+        ext.from("hyro_extension_users").select("role").eq("id", uid).maybeSingle(),
+        ext.from("hyro_reseller_balances").select("balance").eq("reseller_id", uid).maybeSingle(),
+      ]);
+      const role = (u as any)?.role;
+      if (role !== "reseller") return null;
+      return { balance: Number((bal as any)?.balance ?? 0) };
+    },
+  });
 
   if (loading || !session) {
     return <div className="min-h-screen bg-background" />;
