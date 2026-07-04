@@ -13,6 +13,7 @@ import {
   type SidePerms,
 } from "@/lib/permissions";
 import { supabase as ext } from "@/lib/supabase";
+import hyroLogo from "@/assets/hyro-logo.png";
 
 type NavItem = {
   title: string;
@@ -24,7 +25,8 @@ type NavItem = {
 
 const items: NavItem[] = [
   { title: "Visão geral", url: "/dashboard", icon: LayoutDashboard, roles: ["admin"] },
-  { title: "Licenças", url: "/licenses", icon: KeyRound, roles: ["admin"] },
+  // Licenças: admin sempre; cliente/revendedor só se permissão "licenses" estiver ativa.
+  { title: "Licenças", url: "/licenses", icon: KeyRound, roles: ["admin", "client"], permKey: "licenses" },
   { title: "Revendedores", url: "/resellers", icon: Users, roles: ["admin", "client"], permKey: "resellers" },
   { title: "Assinatura", url: "/subscription", icon: Sparkles, roles: ["admin", "client"], permKey: "subscription" },
   { title: "Tutoriais", url: "/tutorials", icon: GraduationCap, roles: ["admin", "client"], permKey: "tutorials" },
