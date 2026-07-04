@@ -110,6 +110,10 @@ function LicensesPage() {
   const [revealed, setRevealed] = useState<Record<string, boolean>>({});
   const [revealAll, setRevealAll] = useState(false);
   const { session } = useAuth();
+  const isReseller = session?.user.role === "client";
+  const [deleteTarget, setDeleteTarget] = useState<License | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
 
   const { data, isLoading, refetch, isFetching, error } = useQuery({
     queryKey: ["licenses", search, status, page],
