@@ -4,6 +4,7 @@ import { Loader2, ShieldAlert, KeyRound, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { getClientIP, bindOrCheckIP, type RedemptionLink } from "@/lib/redemption";
+import hyroLogo from "@/assets/hyro-logo.png";
 
 export const Route = createFileRoute("/r/$slug")({
   ssr: false,
