@@ -497,6 +497,30 @@ function LicensesPage() {
         open={!!linkFor}
         onOpenChange={(o) => !o && setLinkFor(null)}
       />
+
+      <AlertDialog open={!!deleteTarget} onOpenChange={(o) => !o && !deleting && setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir licença?</AlertDialogTitle>
+            <AlertDialogDescription>
+              A chave <span className="font-mono text-foreground">{deleteTarget?.id}</span>
+              {deleteTarget?.user_email ? <> vinculada a <span className="text-foreground">{deleteTarget.user_email}</span></> : null}
+              {" "}será removida permanentemente. Essa ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => { e.preventDefault(); confirmDelete(); }}
+              disabled={deleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleting && <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />}
+              Excluir licença
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
