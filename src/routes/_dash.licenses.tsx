@@ -109,14 +109,15 @@ function LicensesPage() {
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [revealed, setRevealed] = useState<Record<string, boolean>>({});
   const [revealAll, setRevealAll] = useState(false);
-  const { session } = useAuth();
+  const { session, sessionKey } = useAuth();
   const isReseller = session?.user.role === "client";
   const [deleteTarget, setDeleteTarget] = useState<License | null>(null);
   const [deleting, setDeleting] = useState(false);
 
 
   const { data, isLoading, refetch, isFetching, error } = useQuery({
-    queryKey: ["licenses", session?.user.id ?? "anon", search, status, page],
+    queryKey: ["licenses", sessionKey, search, status, page],
+    enabled: !!session,
     staleTime: 15_000,
     queryFn: async () => {
       const term = search.trim();
@@ -227,6 +228,7 @@ function LicensesPage() {
 
   // Periodic sweep to auto-remove expired test licenses in near real-time.
   useEffect(() => {
+    if (!session || isReseller) return;
     // run once on mount
     sweepExpiredTestLicenses().then(() => {
       qc.invalidateQueries({ queryKey: ["licenses"] });
@@ -238,7 +240,7 @@ function LicensesPage() {
       });
     }, 60_000);
     return () => clearInterval(t);
-  }, [qc]);
+  }, [qc, session?.user.id, isReseller]);
 
 
 

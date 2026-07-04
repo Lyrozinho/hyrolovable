@@ -167,7 +167,7 @@ function buildPartnerWhatsapp(plan: PartnerPlan) {
 }
 
 function ResellersPage() {
-  const { session } = useAuth();
+  const { session, sessionKey, authReady } = useAuth();
   const isCloudAdmin = session?.user.role !== "client";
   const isOwner = isCloudAdmin && session?.user.email?.toLowerCase() === OWNER_EMAIL;
   const [createOpen, setCreateOpen] = useState(false);
@@ -176,8 +176,8 @@ function ResellersPage() {
 
   // Slots contratados/dispon\u00edveis do dono da licen\u00e7a (apenas para clientes)
   const { data: mySlots } = useQuery({
-    queryKey: ["my-slots", session?.user.id],
-    enabled: !!session && !isCloudAdmin,
+    queryKey: ["my-slots", sessionKey],
+    enabled: authReady && !!session && !isCloudAdmin,
     queryFn: async () => {
       const licId = await fetchPrimaryLicenseForUser(session!.user.id);
       if (!licId) return { unlimited: false, total: 0, used: 0 };
@@ -203,8 +203,8 @@ function ResellersPage() {
   });
 
   const { data, isLoading } = useQuery({
-    queryKey: ["resellers", isOwner ? "all" : session?.user.id],
-    enabled: isCloudAdmin || !!session,
+    queryKey: ["resellers", sessionKey, isOwner ? "all" : "scoped"],
+    enabled: authReady && !!session,
     refetchInterval: 30_000,
     queryFn: async () => {
       const { data: inviteRows, error: inviteError } = await (cloud as any)

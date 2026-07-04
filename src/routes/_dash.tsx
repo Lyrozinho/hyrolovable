@@ -34,7 +34,7 @@ function DashLayout() {
 }
 
 function DashInner() {
-  const { session, loading, sessionKey } = useAuth();
+  const { session, loading, sessionKey, authReady } = useAuth();
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (r) => r.location.pathname });
   const { collapsed, toggleMobile } = useSidebar();
@@ -88,14 +88,14 @@ function DashInner() {
     },
   });
 
-  if (loading || !session) {
+  if (!authReady || loading || !session) {
     return <div className="min-h-screen bg-background" />;
   }
 
   const title = titles[pathname] ?? "Painel";
 
   return (
-    <div className="min-h-screen bg-background">
+    <div key={sessionKey} className="min-h-screen bg-background">
       <AppSidebar />
       <div className={collapsed ? "md:pl-[72px] transition-[padding] duration-200" : "md:pl-64 transition-[padding] duration-200"}>
         <header className="h-14 md:h-16 sticky top-0 z-30 border-b border-border bg-card flex items-center px-3 md:px-6 gap-2 md:gap-4">

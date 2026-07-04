@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { KeyRound, ArrowUpRight } from "lucide-react";
+import { useAuth } from "@/lib/auth";
 import {
   ResponsiveContainer,
   AreaChart,
@@ -101,7 +102,16 @@ function StatCard({
 }
 
 function DashboardPage() {
-  const { data, isLoading } = useQuery({ queryKey: ["dash-stats"], queryFn: fetchStats, staleTime: 60_000 });
+  const { session, sessionKey } = useAuth();
+  const isAdmin = !!session && session.user.role !== "client";
+  const { data, isLoading } = useQuery({
+    queryKey: ["dash-stats", sessionKey],
+    queryFn: fetchStats,
+    staleTime: 60_000,
+    enabled: isAdmin,
+  });
+
+  if (!isAdmin) return null;
 
   const total30 = data?.chart.reduce((a, b) => a + b.count, 0) ?? 0;
   const total15 = data?.chart.slice(-15).reduce((a, b) => a + b.count, 0) ?? 0;

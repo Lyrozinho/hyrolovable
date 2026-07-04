@@ -120,10 +120,20 @@ function SubscriptionPage() {
   const userId = session?.user.id ?? null;
   const { data: stats } = useQuery({
     queryKey: ["subscription-license-stats", sessionKey, isClient ? userId : "admin-all"],
-    enabled: !isClient || !!userId,
+    enabled: !!session && (!isClient || !!userId),
     queryFn: async () => {
-      let q = supabase.from("hyro_extension_licenses").select("id,status,expires_at,user_id");
-      if (isClient && userId) q = q.eq("user_id", userId);
+      let q = supabase.from("hyro_extension_licenses").select("id,status,expires_at,user_id,created_by,reseller_id");
+      if (isClient && userId) {
+        const { data: u } = await supabase
+          .from("hyro_extension_users")
+          .select("role")
+          .eq("id", userId)
+          .maybeSingle();
+        const role = (u as any)?.role;
+        q = role === "reseller"
+          ? q.or(`created_by.eq.${userId},reseller_id.eq.${userId}`)
+          : q.eq("user_id", userId);
+      }
       const { data, error } = await q;
       if (error) {
         console.error("Erro ao carregar estatísticas da assinatura", error);
