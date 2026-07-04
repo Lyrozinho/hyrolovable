@@ -1214,7 +1214,35 @@ function EditLicenseDialog({
               className="h-10 text-[13px]"
             />
           </div>
+          <div className="space-y-1.5">
+            <Label className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">
+              Redefinir senha do painel <span className="text-muted-foreground/70 normal-case tracking-normal">(opcional)</span>
+            </Label>
+            <div className="relative">
+              <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+              <Input
+                type={showPwd ? "text" : "password"}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Deixe em branco para não alterar"
+                className="h-10 pl-9 pr-10 text-[13px]"
+                autoComplete="new-password"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPwd((v) => !v)}
+                className="absolute right-2 top-1/2 -translate-y-1/2 h-7 w-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted"
+                aria-label={showPwd ? "Ocultar senha" : "Mostrar senha"}
+              >
+                {showPwd ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+              </button>
+            </div>
+            <p className="text-[11px] text-muted-foreground">
+              Ao definir, a nova senha substitui a atual e a conta é reativada.
+            </p>
+          </div>
         </div>
+
 
         <DialogFooter className="px-6 py-4 border-t border-border/60 bg-muted/30 gap-2">
           <Button variant="ghost" size="sm" onClick={onClose}>
