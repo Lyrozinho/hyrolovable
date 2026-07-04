@@ -269,6 +269,8 @@ function LicensesPage() {
             size="sm"
             className="h-9"
             onClick={() => setTestOpen(true)}
+            disabled={isReseller}
+            title={isReseller ? "Somente administradores podem gerar testes" : undefined}
           >
             <FlaskConical className="h-3.5 w-3.5 md:mr-1.5" />
             <span className="hidden md:inline">Gerar teste</span>
