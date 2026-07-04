@@ -158,15 +158,18 @@ function setupDevtoolsDetection() {
     setInterval(() => { try { bait + ""; } catch { /* ignore */ } }, 1500);
   } catch { /* ignore */ }
 
-  // Heurística 3: timing com `debugger` — pausa apenas quando DevTools está aberto
+  // Heurística 3: timing com `debugger` — pausa apenas quando DevTools está aberto.
+  // Requer 3 leituras consecutivas > 300ms para evitar falso-positivo em abas ocupadas.
   try {
     const probe = new Function("debugger;");
+    let strikes = 0;
     setInterval(() => {
       const t0 = performance.now();
       try { probe(); } catch { /* ignore */ }
       const dt = performance.now() - t0;
-      if (dt > 120) warn();
-    }, 1200);
+      if (dt > 300) { strikes++; if (strikes >= 3) warn(); }
+      else { strikes = 0; }
+    }, 1500);
   } catch { /* ignore */ }
 
   // Heurística 4: getter em RegExp.toString — Firefox/Chrome disparam ao inspecionar
