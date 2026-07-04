@@ -230,7 +230,7 @@ function ResellersPage() {
       // é feito via hyro_extension_licenses.reseller_id/created_by mais abaixo.
       const q = supabase
         .from("hyro_extension_users")
-        .select("id, email, name, role, active, created_at, hyro_reseller_balances(balance)")
+        .select("id, email, name, role, active, created_at")
         .eq("role", "reseller")
         .order("created_at", { ascending: false });
       const { data, error } = await q;
