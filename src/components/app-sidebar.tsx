@@ -1,6 +1,7 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { LayoutDashboard, KeyRound, Users, LogOut, Sparkles, ChevronsLeft, ChevronsRight, GraduationCap, Rocket } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth";
 import { useSidebar } from "@/lib/sidebar";
 import {
@@ -36,7 +37,14 @@ const items: NavItem[] = [
 export function AppSidebar() {
   const pathname = useRouterState({ select: (r) => r.location.pathname });
   const { session, signOut } = useAuth();
+  const qc = useQueryClient();
   const { collapsed, toggle, mobileOpen, setMobileOpen } = useSidebar();
+
+  const handleSignOut = async () => {
+    await qc.cancelQueries();
+    qc.clear();
+    await signOut();
+  };
 
   const role = (session?.user.role === "client" ? "client" : "admin") as "admin" | "client";
   const isOwnerAdmin = role === "admin" && session?.user.email?.toLowerCase() === OWNER_EMAIL;
@@ -233,7 +241,7 @@ export function AppSidebar() {
             </div>
           )}
           <button
-            onClick={() => signOut()}
+            onClick={handleSignOut}
             className={[
               "rounded-md text-white/55 hover:text-white hover:bg-white/10 flex items-center justify-center transition-colors shrink-0",
               isCollapsed ? "h-8 w-8" : "h-7 w-7",
