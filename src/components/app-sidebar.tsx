@@ -1,6 +1,7 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { LayoutDashboard, KeyRound, Users, LogOut, Sparkles, ChevronsLeft, ChevronsRight, GraduationCap, Rocket } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth";
 import { useSidebar } from "@/lib/sidebar";
 import {
