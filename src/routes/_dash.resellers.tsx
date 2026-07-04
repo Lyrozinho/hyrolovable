@@ -1002,8 +1002,9 @@ function AdjustBalanceDialog({
         note: note || null,
       });
       toast.success("Saldo atualizado");
-      qc.invalidateQueries({ queryKey: ["resellers"] });
-      qc.invalidateQueries({ queryKey: ["reseller-balance"] });
+      await qc.invalidateQueries({ queryKey: ["resellers"] });
+      await qc.refetchQueries({ queryKey: ["resellers"], type: "active" });
+      await qc.invalidateQueries({ queryKey: ["reseller-balance"] });
       onClose();
     } catch (e: any) {
       toast.error(e.message ?? "Erro");
