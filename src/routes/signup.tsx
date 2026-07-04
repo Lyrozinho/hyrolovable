@@ -12,6 +12,7 @@ import {
   getClientIP, bindOrCheckIP, fetchLink, markLinkClaimed,
   type RedemptionLink,
 } from "@/lib/redemption";
+import hyroLogo from "@/assets/hyro-logo.png";
 
 type SignupSearch = { ref?: string };
 
