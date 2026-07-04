@@ -106,7 +106,7 @@ function UpgradeAdminPage() {
   };
 
   return (
-    <div className="space-y-6 max-w-3xl">
+    <div className="space-y-6 w-full max-w-4xl mx-auto">
       {/* Header */}
       <div className="flex items-start gap-3">
         <div className="h-10 w-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
