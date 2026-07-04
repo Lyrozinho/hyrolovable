@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase as ext } from "@/lib/supabase";
-import { sha256Hex, useAuth } from "@/lib/auth";
+import { getSessionHome, sha256Hex, useAuth } from "@/lib/auth";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { toast } from "sonner";
 import {
@@ -41,7 +41,7 @@ function SignupPage() {
   const [initializing, setInitializing] = useState(!!ref);
 
   useEffect(() => {
-    if (!loading && session) navigate({ to: "/dashboard", replace: true });
+    if (!loading && session) navigate({ to: getSessionHome(session), replace: true });
   }, [loading, session, navigate]);
 
   useEffect(() => {
