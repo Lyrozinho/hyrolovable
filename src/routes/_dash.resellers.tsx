@@ -27,8 +27,9 @@ import {
 import { supabase } from "@/lib/supabase";
 import { supabase as cloud } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { useAuth } from "@/lib/auth";
+import { sha256Hex, useAuth } from "@/lib/auth";
 import { OWNER_EMAIL, fetchPrimaryLicenseForUser, fetchLicensePerms } from "@/lib/permissions";
+import { adjustResellerBalance, getResellerBalance, setResellerBalance } from "@/lib/reseller-balance";
 
 export const Route = createFileRoute("/_dash/resellers")({
   component: ResellersPage,
@@ -179,26 +180,33 @@ function ResellersPage() {
     queryKey: ["my-slots", sessionKey],
     enabled: authReady && !!session && !isCloudAdmin,
     queryFn: async () => {
-      const licId = await fetchPrimaryLicenseForUser(session!.user.id);
-      if (!licId) return { unlimited: false, total: 0, used: 0 };
-      const perms = await fetchLicensePerms(licId);
-      // Conta revendedores derivados das licenças criadas por este dono
-      const { data: mine } = await supabase
-        .from("hyro_extension_licenses")
-        .select("reseller_id")
-        .eq("created_by", session!.user.id)
-        .not("reseller_id", "is", null);
-      const uniq = new Set((mine ?? []).map((l: any) => `user:${l.reseller_id}`));
+      try {
+        const licId = await fetchPrimaryLicenseForUser(session!.user.id);
+        if (!licId) return { unlimited: false, total: 0, used: 0 };
+        const perms = await fetchLicensePerms(licId);
+        // Conta revendedores derivados das licenças criadas por este dono
+        const { data: mine, error: mineError } = await supabase
+          .from("hyro_extension_licenses")
+          .select("reseller_id")
+          .eq("created_by", session!.user.id)
+          .not("reseller_id", "is", null);
+        if (mineError) throw mineError;
+        const uniq = new Set((mine ?? []).map((l: any) => `user:${l.reseller_id}`));
 
-      const { data: invites } = await (cloud as any)
-        .from("hyro_redemption_links")
-        .select("slug, created_by, reseller_owner_id, claimed_user_id")
-        .eq("kind", "reseller");
-      for (const invite of (invites ?? []) as Array<Partial<ResellerInvite>>) {
-        if (!inviteBelongsToSession(invite as ResellerInvite, session!.user.id, session!.user.email)) continue;
-        uniq.add(invite.claimed_user_id ? `user:${invite.claimed_user_id}` : `invite:${normEmail((invite as any).target_email) || invite.slug}`);
+        const { data: invites, error: inviteError } = await (cloud as any)
+          .from("hyro_redemption_links")
+          .select("slug, created_by, reseller_owner_id, claimed_user_id, target_email")
+          .eq("kind", "reseller");
+        if (inviteError) throw inviteError;
+        for (const invite of (invites ?? []) as Array<Partial<ResellerInvite>>) {
+          if (!inviteBelongsToSession(invite as ResellerInvite, session!.user.id, session!.user.email)) continue;
+          uniq.add(invite.claimed_user_id ? `user:${invite.claimed_user_id}` : `invite:${normEmail((invite as any).target_email) || invite.slug}`);
+        }
+        return { unlimited: perms.unlimited, total: perms.package_slots || 0, used: uniq.size };
+      } catch (error) {
+        console.error("Erro ao calcular pacote de revenda", error);
+        return { unlimited: false, total: 0, used: 0 };
       }
-      return { unlimited: perms.unlimited, total: perms.package_slots || 0, used: uniq.size };
     },
   });
 
@@ -207,12 +215,13 @@ function ResellersPage() {
     enabled: authReady && !!session,
     refetchInterval: 30_000,
     queryFn: async () => {
+      try {
       const { data: inviteRows, error: inviteError } = await (cloud as any)
         .from("hyro_redemption_links")
         .select("slug, target_email, target_name, created_by, created_at, reseller_slots, reseller_owner_id, claimed_user_id, claimed_at")
         .eq("kind", "reseller")
         .order("created_at", { ascending: false });
-      if (inviteError) console.error("Erro ao carregar convites de revenda", inviteError);
+      if (inviteError) throw inviteError;
       const scopedInvites = (((inviteRows ?? []) as ResellerInvite[]).filter((invite) =>
         isOwner || inviteBelongsToSession(invite, session?.user.id, session?.user.email)
       ));
@@ -221,24 +230,25 @@ function ResellersPage() {
       // é feito via hyro_extension_licenses.reseller_id/created_by mais abaixo.
       const q = supabase
         .from("hyro_extension_users")
-        .select("id, email, name, role, active, created_at, hyro_reseller_balances(balance)")
+        .select("id, email, name, role, active, created_at")
         .eq("role", "reseller")
         .order("created_at", { ascending: false });
       const { data, error } = await q;
-      if (error) console.error("Erro ao carregar revendedores", error);
+      if (error) throw error;
 
       let resellers = (data ?? []).map((r: any) => ({
         ...r,
-        balance: r.hyro_reseller_balances?.[0]?.balance ?? 0,
+        balance: 0,
       })) as Reseller[];
 
       // Non-owner: mostra apenas revendedores cujas licenças foram criadas por mim.
       if (!isOwner && session) {
-        const { data: mine } = await supabase
+        const { data: mine, error: mineError } = await supabase
           .from("hyro_extension_licenses")
           .select("reseller_id")
           .eq("created_by", session.user.id)
           .not("reseller_id", "is", null);
+        if (mineError) throw mineError;
         const allowed = new Set((mine ?? []).map((l: any) => l.reseller_id));
         const inviteIds = new Set(scopedInvites.map((invite) => invite.claimed_user_id).filter(Boolean));
         const inviteEmails = new Set(scopedInvites.map((invite) => normEmail(invite.target_email)).filter(Boolean));
@@ -247,14 +257,21 @@ function ResellersPage() {
         );
       }
 
+      const balancePairs = await Promise.all(
+        resellers.map(async (r) => [r.id, await getResellerBalance(r.id).catch(() => 0)] as const),
+      );
+      const balanceMap = new Map(balancePairs);
+      resellers = resellers.map((r) => ({ ...r, balance: balanceMap.get(r.id) ?? 0 }));
+
       // Contagem RÍGIDA de licenças criadas por cada revendedor
       const ids = resellers.map((r) => r.id);
       const usedMap: Record<string, number> = {};
       if (ids.length) {
-        const { data: lic } = await supabase
+        const { data: lic, error: licError } = await supabase
           .from("hyro_extension_licenses")
           .select("id, created_by")
           .in("created_by", ids);
+        if (licError) throw licError;
         for (const row of lic ?? []) {
           const k = (row as any).created_by as string;
           if (!k) continue;
@@ -315,6 +332,11 @@ function ResellersPage() {
       return [...enriched, ...pending].sort(
         (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
       );
+      } catch (error) {
+        console.error("Erro ao carregar aba de revendedores", error);
+        toast.error("Falha ao sincronizar revendedores. Tente atualizar em instantes.");
+        return [];
+      }
     },
   });
 
@@ -752,13 +774,49 @@ function CreateResellerDialog({
       }
 
       // Modo normal — cria direto via RPC.
-      const { error } = await supabase.rpc("admin_create_reseller", {
-        p_email: emailNorm,
-        p_name: name,
-        p_password: password,
-        p_initial_balance: parseInt(balance) || 0,
-      });
-      if (error) throw error;
+      if (password.length < 6) {
+        toast.error("A senha deve ter no mínimo 6 caracteres.");
+        return;
+      }
+      const passwordHash = await sha256Hex(password);
+      const initialBalance = Math.max(0, parseInt(balance) || 0);
+
+      const { data: existingUser, error: existingError } = await supabase
+        .from("hyro_extension_users")
+        .select("id")
+        .eq("email", emailNorm)
+        .maybeSingle();
+      if (existingError) throw existingError;
+
+      let resellerId = (existingUser as any)?.id as string | undefined;
+      if (resellerId) {
+        const { error: updateError } = await supabase
+          .from("hyro_extension_users")
+          .update({
+            name: name.trim() || emailNorm.split("@")[0],
+            role: "reseller",
+            password_hash: passwordHash,
+            active: true,
+          })
+          .eq("id", resellerId);
+        if (updateError) throw updateError;
+      } else {
+        const { data: newUser, error: insertError } = await supabase
+          .from("hyro_extension_users")
+          .insert({
+            email: emailNorm,
+            name: name.trim() || emailNorm.split("@")[0],
+            role: "reseller",
+            password_hash: passwordHash,
+            active: true,
+          })
+          .select("id")
+          .single();
+        if (insertError) throw insertError;
+        resellerId = (newUser as any).id;
+      }
+
+      await setResellerBalance(resellerId!, initialBalance, "Saldo inicial do revendedor");
 
       const { data: createdUser } = await supabase
         .from("hyro_extension_users")
@@ -776,8 +834,8 @@ function CreateResellerDialog({
           created_by: session?.user.email ?? session?.user.id ?? "",
           reseller_slots: Math.max(0, parseInt(balance) || 0),
           reseller_owner_id: ownerUserId ?? session?.user.id ?? null,
-          claimed_user_id: (createdUser as any)?.id ?? null,
-          claimed_at: (createdUser as any)?.id ? new Date().toISOString() : null,
+          claimed_user_id: resellerId ?? (createdUser as any)?.id ?? null,
+          claimed_at: resellerId || (createdUser as any)?.id ? new Date().toISOString() : null,
         });
       } catch (ledgerError) {
         console.error("Revendedor criado, mas o vínculo da lista falhou", ledgerError);
@@ -791,6 +849,7 @@ function CreateResellerDialog({
       qc.invalidateQueries({ queryKey: ["resellers"] });
       qc.invalidateQueries({ queryKey: ["my-slots"] });
       qc.invalidateQueries({ queryKey: ["dash-stats"] });
+      qc.invalidateQueries({ queryKey: ["reseller-balance"] });
       onOpenChange(false);
       reset();
     } catch (e: any) {
@@ -930,16 +989,22 @@ function AdjustBalanceDialog({
   if (!reseller) return null;
 
   const save = async () => {
+    const parsedDelta = parseInt(delta) || 0;
+    if (parsedDelta === 0) {
+      toast.error("Informe uma variação diferente de zero.");
+      return;
+    }
     setSaving(true);
     try {
-      const { error } = await supabase.rpc("admin_adjust_reseller_balance", {
-        p_reseller_id: reseller.id,
-        p_delta: parseInt(delta) || 0,
-        p_note: note || null,
+      await adjustResellerBalance({
+        resellerId: reseller.id,
+        delta: parsedDelta,
+        note: note || null,
       });
-      if (error) throw error;
       toast.success("Saldo atualizado");
-      qc.invalidateQueries({ queryKey: ["resellers"] });
+      await qc.invalidateQueries({ queryKey: ["resellers"] });
+      await qc.refetchQueries({ queryKey: ["resellers"], type: "active" });
+      await qc.invalidateQueries({ queryKey: ["reseller-balance"] });
       onClose();
     } catch (e: any) {
       toast.error(e.message ?? "Erro");

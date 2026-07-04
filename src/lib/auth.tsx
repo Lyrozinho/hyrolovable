@@ -134,7 +134,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           id: user.id,
           email: user.email,
           name: user.name ?? null,
-          role: "client",
+          role: user.role,
         },
         expiresAt: Date.now() + 7 * 24 * 3600 * 1000,
       };

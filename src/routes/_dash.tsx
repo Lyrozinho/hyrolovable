@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { SidebarProvider, useSidebar } from "@/lib/sidebar";
 import { installSecurityGuard } from "@/lib/security-guard";
 import { supabase as ext } from "@/lib/supabase";
+import { getResellerBalance } from "@/lib/reseller-balance";
 
 export const Route = createFileRoute("/_dash")({
   ssr: false,
@@ -73,18 +74,25 @@ function DashInner() {
   const isReseller = session?.user.role === "client";
   const { data: resellerInfo } = useQuery({
     queryKey: ["reseller-balance", sessionKey],
-    enabled: !!session && isReseller,
+    enabled: authReady && !!session && isReseller,
     refetchInterval: 30_000,
     staleTime: 15_000,
     queryFn: async () => {
-      const uid = session!.user.id;
-      const [{ data: u }, { data: bal }] = await Promise.all([
-        ext.from("hyro_extension_users").select("role").eq("id", uid).maybeSingle(),
-        ext.from("hyro_reseller_balances").select("balance").eq("reseller_id", uid).maybeSingle(),
-      ]);
-      const role = (u as any)?.role;
-      if (role !== "reseller") return null;
-      return { balance: Number((bal as any)?.balance ?? 0) };
+      try {
+        const uid = session!.user.id;
+        const { data: u, error } = await ext
+          .from("hyro_extension_users")
+          .select("role")
+          .eq("id", uid)
+          .maybeSingle();
+        if (error) throw error;
+        const role = (u as any)?.role;
+        if (role !== "reseller") return null;
+        return { balance: await getResellerBalance(uid) };
+      } catch (error) {
+        console.error("Erro ao carregar saldo do revendedor", error);
+        return null;
+      }
     },
   });
 

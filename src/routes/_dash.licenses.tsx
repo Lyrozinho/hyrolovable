@@ -39,6 +39,7 @@ import { RedemptionLinkDialog } from "@/components/redemption-link-dialog";
 import { createLink as createRedemptionLink } from "@/lib/redemption";
 import { generateLicenseKey } from "@/lib/license-key";
 import { sha256Hex, useAuth } from "@/lib/auth";
+import { consumeResellerLicenseCredit, getResellerBalance } from "@/lib/reseller-balance";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
@@ -109,7 +110,7 @@ function LicensesPage() {
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [revealed, setRevealed] = useState<Record<string, boolean>>({});
   const [revealAll, setRevealAll] = useState(false);
-  const { session, sessionKey } = useAuth();
+  const { session, sessionKey, authReady } = useAuth();
   const isReseller = session?.user.role === "client";
   const [deleteTarget, setDeleteTarget] = useState<License | null>(null);
   const [deleting, setDeleting] = useState(false);
@@ -117,7 +118,7 @@ function LicensesPage() {
 
   const { data, isLoading, refetch, isFetching, error } = useQuery({
     queryKey: ["licenses", sessionKey, search, status, page],
-    enabled: !!session,
+    enabled: authReady && !!session,
     staleTime: 15_000,
     queryFn: async () => {
       const term = search.trim();
@@ -641,6 +642,15 @@ function CreateLicenseDialog({
     }
     setSubmitting(true);
     try {
+      if (session?.user.role === "client") {
+        const available = await getResellerBalance(session.user.id);
+        if (available <= 0) {
+          toast.error("Sem licenças disponíveis. Adicione créditos ao revendedor antes de criar.");
+          setSubmitting(false);
+          return;
+        }
+      }
+
       const expiresAt = lifetime
         ? new Date("2099-12-31T23:59:59Z")
         : new Date(Date.now() + parseInt(days || "30") * 24 * 3600 * 1000);
@@ -650,6 +660,7 @@ function CreateLicenseDialog({
         // Cria (ou reusa) um usuário placeholder com o e-mail alvo (sem senha).
         // O signup via /r/:slug preencherá a senha e ativará a conta.
         let placeholderUserId: string;
+        let createdPlaceholder = false;
         const { data: existingUser, error: euErr } = await supabase
           .from("hyro_extension_users")
           .select("id, password_hash")
@@ -673,6 +684,7 @@ function CreateLicenseDialog({
             .single();
           if (nuErr) throw nuErr;
           placeholderUserId = newUser.id;
+          createdPlaceholder = true;
         }
 
         const { error } = await supabase.from("hyro_extension_licenses").insert({
@@ -685,6 +697,18 @@ function CreateLicenseDialog({
         });
         if (error) throw error;
 
+        try {
+          if (session?.user.role === "client") {
+            await consumeResellerLicenseCredit(session.user.id);
+          }
+        } catch (creditError) {
+          await supabase.from("hyro_extension_licenses").delete().eq("id", key);
+          if (createdPlaceholder) {
+            await supabase.from("hyro_extension_users").delete().eq("id", placeholderUserId);
+          }
+          throw creditError;
+        }
+
         const link = await createRedemptionLink({
           license_id: key,
           target_email: emailNorm,
@@ -695,6 +719,7 @@ function CreateLicenseDialog({
         toast.success("Licença + link personalizado criados");
         qc.invalidateQueries({ queryKey: ["licenses"] });
         qc.invalidateQueries({ queryKey: ["dash-stats"] });
+        qc.invalidateQueries({ queryKey: ["reseller-balance"] });
         setCreated({
           key,
           email: emailNorm,
@@ -708,6 +733,7 @@ function CreateLicenseDialog({
 
         // 1) Buscar ou criar usuário em hyro_extension_users
         let userId: string | null = null;
+        let createdUserNow = false;
         const { data: existing, error: uerr } = await supabase
           .from("hyro_extension_users")
           .select("id, password_hash")
@@ -737,6 +763,7 @@ function CreateLicenseDialog({
             .single();
           if (cerr) throw cerr;
           userId = createdUser.id;
+          createdUserNow = true;
         }
 
         const { error } = await supabase.from("hyro_extension_licenses").insert({
@@ -748,9 +775,21 @@ function CreateLicenseDialog({
           reseller_id: session?.user.role === "client" ? session.user.id : null,
         });
         if (error) throw error;
+        try {
+          if (session?.user.role === "client") {
+            await consumeResellerLicenseCredit(session.user.id);
+          }
+        } catch (creditError) {
+          await supabase.from("hyro_extension_licenses").delete().eq("id", key);
+          if (createdUserNow && userId) {
+            await supabase.from("hyro_extension_users").delete().eq("id", userId);
+          }
+          throw creditError;
+        }
         toast.success("Licença criada", { description: key });
         qc.invalidateQueries({ queryKey: ["licenses"] });
         qc.invalidateQueries({ queryKey: ["dash-stats"] });
+        qc.invalidateQueries({ queryKey: ["reseller-balance"] });
         setCreated({
           key,
           email: emailNorm,
