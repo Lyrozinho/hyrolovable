@@ -60,14 +60,22 @@ export async function adjustResellerBalance(input: {
     throw new Error("Saldo insuficiente para debitar essa quantidade.");
   }
 
-  const { error } = await supabase.rpc("admin_adjust_reseller_balance", {
-    p_reseller_id: input.resellerId,
-    p_delta: delta,
-    p_note: input.note ?? null,
-  });
-  if (!error) return getResellerBalance(input.resellerId).catch(() => before + delta);
+  const target = before + delta;
 
-  return writeResellerBalance(input.resellerId, before + delta);
+  try {
+    return await writeResellerBalance(input.resellerId, target);
+  } catch (directError) {
+    const { error } = await supabase.rpc("admin_adjust_reseller_balance", {
+      p_reseller_id: input.resellerId,
+      p_delta: delta,
+      p_note: input.note ?? null,
+    });
+    if (error) throw directError;
+
+    const afterRpc = await getResellerBalance(input.resellerId).catch(() => before);
+    if (afterRpc !== target) throw directError;
+    return afterRpc;
+  }
 }
 
 export async function consumeResellerLicenseCredit(resellerId: string) {
