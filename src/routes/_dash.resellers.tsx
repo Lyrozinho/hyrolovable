@@ -148,12 +148,14 @@ function ResellersPage() {
       const licId = await fetchPrimaryLicenseForUser(session!.user.id);
       if (!licId) return { unlimited: false, total: 0, used: 0 };
       const perms = await fetchLicensePerms(licId);
-      const { count } = await supabase
-        .from("hyro_extension_users")
-        .select("id", { count: "exact", head: true })
-        .eq("role", "reseller")
-        .eq("created_by", session!.user.id);
-      return { unlimited: perms.unlimited, total: perms.package_slots || 0, used: count || 0 };
+      // Conta revendedores derivados das licenças criadas por este dono
+      const { data: mine } = await supabase
+        .from("hyro_extension_licenses")
+        .select("reseller_id")
+        .eq("created_by", session!.user.id)
+        .not("reseller_id", "is", null);
+      const uniq = new Set((mine ?? []).map((l: any) => l.reseller_id));
+      return { unlimited: perms.unlimited, total: perms.package_slots || 0, used: uniq.size };
     },
   });
 
@@ -162,23 +164,35 @@ function ResellersPage() {
     enabled: isCloudAdmin || !!session,
     refetchInterval: 30_000,
     queryFn: async () => {
-      let q = supabase
+      // hyro_extension_users NÃO possui coluna `created_by`. Escopo por criador
+      // é feito via hyro_extension_licenses.reseller_id/created_by mais abaixo.
+      const q = supabase
         .from("hyro_extension_users")
-        .select("id, email, name, role, active, created_at, created_by, hyro_reseller_balances(balance)")
+        .select("id, email, name, role, active, created_at, hyro_reseller_balances(balance)")
         .eq("role", "reseller")
         .order("created_at", { ascending: false });
-      if (!isOwner && session) q = q.eq("created_by", session.user.id);
       const { data, error } = await q;
       if (error) throw error;
 
-      const resellers = (data ?? []).map((r: any) => ({
+      let resellers = (data ?? []).map((r: any) => ({
         ...r,
         balance: r.hyro_reseller_balances?.[0]?.balance ?? 0,
       })) as Reseller[];
 
+      // Non-owner: mostra apenas revendedores cujas licenças foram criadas por mim.
+      if (!isOwner && session) {
+        const { data: mine } = await supabase
+          .from("hyro_extension_licenses")
+          .select("reseller_id")
+          .eq("created_by", session.user.id)
+          .not("reseller_id", "is", null);
+        const allowed = new Set((mine ?? []).map((l: any) => l.reseller_id));
+        resellers = resellers.filter((r) => allowed.has(r.id));
+      }
+
       // Contagem RÍGIDA de licenças criadas por cada revendedor
       const ids = resellers.map((r) => r.id);
-      let usedMap: Record<string, number> = {};
+      const usedMap: Record<string, number> = {};
       if (ids.length) {
         const { data: lic } = await supabase
           .from("hyro_extension_licenses")
@@ -609,13 +623,9 @@ function CreateResellerDialog({
       });
       if (error) throw error;
 
-      if (!isOwner && ownerUserId) {
-        await supabase
-          .from("hyro_extension_users")
-          .update({ created_by: ownerUserId })
-          .eq("email", emailNorm)
-          .is("created_by", null);
-      }
+      // hyro_extension_users não possui coluna created_by — a atribuição de
+      // "dono" do revendedor é derivada de hyro_extension_licenses.created_by
+      // (licenças criadas por este dono). Nenhum update adicional necessário.
 
       toast.success("Revendedor criado");
       qc.invalidateQueries({ queryKey: ["resellers"] });
