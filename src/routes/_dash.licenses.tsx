@@ -532,22 +532,26 @@ function StatusBadge({ status }: { status: string }) {
 }
 
 function IconAction({
-  children, onClick, label, danger,
+  children, onClick, label, danger, disabled,
 }: {
   children: React.ReactNode;
   onClick: () => void;
   label: string;
   danger?: boolean;
+  disabled?: boolean;
 }) {
   return (
     <button
-      onClick={onClick}
+      onClick={disabled ? undefined : onClick}
+      disabled={disabled}
       title={label}
       aria-label={label}
+      aria-disabled={disabled || undefined}
       className={[
         "h-8 w-8 rounded-md flex items-center justify-center transition-colors",
-        "text-muted-foreground hover:bg-muted",
-        danger ? "hover:text-destructive" : "hover:text-foreground",
+        disabled
+          ? "text-muted-foreground/40 cursor-not-allowed"
+          : ["text-muted-foreground hover:bg-muted", danger ? "hover:text-destructive" : "hover:text-foreground"].join(" "),
       ].join(" ")}
     >
       {children}
