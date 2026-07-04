@@ -104,25 +104,30 @@ function SignupPage() {
         .maybeSingle();
 
       let userId: string;
+      const isResellerInvite = (boundLink as any)?.kind === "reseller";
+
       if (existing) {
         if (existing.password_hash) {
           throw new Error("Este e-mail já possui cadastro. Faça login.");
         }
         const { error: upErr } = await ext
           .from("hyro_extension_users")
-          .update({ password_hash: passwordHash, name: fullName, active: true })
+          .update({
+            password_hash: passwordHash,
+            name: fullName,
+            active: true,
+            role: isResellerInvite ? "reseller" : "user",
+          })
           .eq("id", existing.id);
         if (upErr) throw upErr;
         userId = existing.id;
       } else {
-        const isResellerInvite = (boundLink as any)?.kind === "reseller";
         const { data: created, error: cErr } = await ext
           .from("hyro_extension_users")
           .insert({
             email: em, name: fullName,
             role: isResellerInvite ? "reseller" : "user",
             password_hash: passwordHash, active: true,
-            created_by: (boundLink as any)?.reseller_owner_id ?? null,
           })
           .select("id")
           .single();

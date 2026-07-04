@@ -44,6 +44,22 @@ type Reseller = {
   active: boolean;
   created_at: string;
   balance?: number;
+  pending?: boolean;
+  inviteSlug?: string;
+  inviteUrl?: string;
+  claimedAt?: string | null;
+};
+
+type ResellerInvite = {
+  slug: string;
+  target_email: string;
+  target_name: string | null;
+  created_by: string;
+  created_at: string;
+  reseller_slots: number | null;
+  reseller_owner_id: string | null;
+  claimed_user_id: string | null;
+  claimed_at: string | null;
 };
 
 type PartnerPlan = {
@@ -123,6 +139,24 @@ function fmtBRL(n: number) {
   return n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
+function normEmail(v?: string | null) {
+  return (v ?? "").trim().toLowerCase();
+}
+
+function inviteUrl(slug: string) {
+  const origin = typeof window !== "undefined" ? window.location.origin : "https://hyrolovable.lovable.app";
+  return `${origin}/r/${slug}`;
+}
+
+function inviteBelongsToSession(invite: ResellerInvite, userId?: string, email?: string | null) {
+  const ownerEmail = normEmail(email);
+  return (
+    invite.reseller_owner_id === userId ||
+    invite.created_by === userId ||
+    normEmail(invite.created_by) === ownerEmail
+  );
+}
+
 function buildPartnerWhatsapp(plan: PartnerPlan) {
   const msg =
     `Olá! Quero ativar o plano *${plan.name}* do Programa de Parceiros Hyro.\n` +
@@ -154,7 +188,16 @@ function ResellersPage() {
         .select("reseller_id")
         .eq("created_by", session!.user.id)
         .not("reseller_id", "is", null);
-      const uniq = new Set((mine ?? []).map((l: any) => l.reseller_id));
+      const uniq = new Set((mine ?? []).map((l: any) => `user:${l.reseller_id}`));
+
+      const { data: invites } = await (cloud as any)
+        .from("hyro_redemption_links")
+        .select("slug, created_by, reseller_owner_id, claimed_user_id")
+        .eq("kind", "reseller");
+      for (const invite of (invites ?? []) as Array<Partial<ResellerInvite>>) {
+        if (!inviteBelongsToSession(invite as ResellerInvite, session!.user.id, session!.user.email)) continue;
+        uniq.add(invite.claimed_user_id ? `user:${invite.claimed_user_id}` : `invite:${normEmail((invite as any).target_email) || invite.slug}`);
+      }
       return { unlimited: perms.unlimited, total: perms.package_slots || 0, used: uniq.size };
     },
   });
@@ -164,6 +207,16 @@ function ResellersPage() {
     enabled: isCloudAdmin || !!session,
     refetchInterval: 30_000,
     queryFn: async () => {
+      const { data: inviteRows, error: inviteError } = await (cloud as any)
+        .from("hyro_redemption_links")
+        .select("slug, target_email, target_name, created_by, created_at, reseller_slots, reseller_owner_id, claimed_user_id, claimed_at")
+        .eq("kind", "reseller")
+        .order("created_at", { ascending: false });
+      if (inviteError) console.error("Erro ao carregar convites de revenda", inviteError);
+      const scopedInvites = (((inviteRows ?? []) as ResellerInvite[]).filter((invite) =>
+        isOwner || inviteBelongsToSession(invite, session?.user.id, session?.user.email)
+      ));
+
       // hyro_extension_users NÃO possui coluna `created_by`. Escopo por criador
       // é feito via hyro_extension_licenses.reseller_id/created_by mais abaixo.
       const q = supabase
@@ -172,7 +225,7 @@ function ResellersPage() {
         .eq("role", "reseller")
         .order("created_at", { ascending: false });
       const { data, error } = await q;
-      if (error) throw error;
+      if (error) console.error("Erro ao carregar revendedores", error);
 
       let resellers = (data ?? []).map((r: any) => ({
         ...r,
@@ -187,7 +240,11 @@ function ResellersPage() {
           .eq("created_by", session.user.id)
           .not("reseller_id", "is", null);
         const allowed = new Set((mine ?? []).map((l: any) => l.reseller_id));
-        resellers = resellers.filter((r) => allowed.has(r.id));
+        const inviteIds = new Set(scopedInvites.map((invite) => invite.claimed_user_id).filter(Boolean));
+        const inviteEmails = new Set(scopedInvites.map((invite) => normEmail(invite.target_email)).filter(Boolean));
+        resellers = resellers.filter((r) =>
+          allowed.has(r.id) || inviteIds.has(r.id) || inviteEmails.has(normEmail(r.email))
+        );
       }
 
       // Contagem RÍGIDA de licenças criadas por cada revendedor
@@ -204,14 +261,60 @@ function ResellersPage() {
           usedMap[k] = (usedMap[k] ?? 0) + 1;
         }
       }
-      return resellers.map((r) => {
+      const enriched = resellers.map((r) => {
         const used = usedMap[r.id] ?? 0;
         const available = r.balance ?? 0;
         const allocated = used + available;
-        return { ...r, used, available, allocated } as Reseller & {
+        const invite = scopedInvites.find((row) =>
+          row.claimed_user_id === r.id || normEmail(row.target_email) === normEmail(r.email)
+        );
+        return {
+          ...r,
+          inviteSlug: invite?.slug,
+          inviteUrl: invite?.slug ? inviteUrl(invite.slug) : undefined,
+          claimedAt: invite?.claimed_at ?? null,
+          used,
+          available,
+          allocated,
+        } as Reseller & {
           used: number; available: number; allocated: number;
         };
       });
+
+      const knownIds = new Set(enriched.map((r) => r.id));
+      const knownEmails = new Set(enriched.map((r) => normEmail(r.email)));
+      const pendingSeen = new Set<string>();
+      const pending = scopedInvites
+        .filter((invite) => !knownIds.has(invite.claimed_user_id ?? "") && !knownEmails.has(normEmail(invite.target_email)))
+        .filter((invite) => {
+          const key = normEmail(invite.target_email) || invite.slug;
+          if (pendingSeen.has(key)) return false;
+          pendingSeen.add(key);
+          return true;
+        })
+        .map((invite) => {
+          const slots = Number(invite.reseller_slots ?? 0) || 0;
+          return {
+            id: `invite:${invite.slug}`,
+            email: invite.target_email,
+            name: invite.target_name,
+            role: "reseller",
+            active: !!invite.claimed_user_id,
+            pending: !invite.claimed_user_id,
+            created_at: invite.created_at,
+            balance: slots,
+            inviteSlug: invite.slug,
+            inviteUrl: inviteUrl(invite.slug),
+            claimedAt: invite.claimed_at,
+            used: 0,
+            available: slots,
+            allocated: slots,
+          } as Reseller & { used: number; available: number; allocated: number };
+        });
+
+      return [...enriched, ...pending].sort(
+        (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      );
     },
   });
 
@@ -384,7 +487,7 @@ function ResellersPage() {
                           }`}
                         >
                           <span className={`h-1.5 w-1.5 rounded-full ${r.active ? "bg-success" : "bg-muted-foreground"}`} />
-                          {r.active ? "Ativo" : "Inativo"}
+                          {r.pending ? "Pendente" : r.active ? "Ativo" : "Inativo"}
                         </Badge>
                       </TableCell>
                       <TableCell className="font-mono text-[13px] tabular-nums text-foreground">{allocated}</TableCell>
@@ -416,9 +519,23 @@ function ResellersPage() {
                         </div>
                       </TableCell>
                       <TableCell className="text-right">
-                        <Button size="sm" variant="ghost" className="h-8" onClick={() => setBalanceTarget(r)}>
-                          <Coins className="h-3.5 w-3.5 mr-1" /> Saldo
-                        </Button>
+                        {r.pending && r.inviteUrl ? (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-8"
+                            onClick={async () => {
+                              await navigator.clipboard.writeText(r.inviteUrl!);
+                              toast.success("Link copiado");
+                            }}
+                          >
+                            Copiar link
+                          </Button>
+                        ) : (
+                          <Button size="sm" variant="ghost" className="h-8" onClick={() => setBalanceTarget(r)}>
+                            <Coins className="h-3.5 w-3.5 mr-1" /> Saldo
+                          </Button>
+                        )}
                       </TableCell>
                     </TableRow>
                   );})
@@ -590,6 +707,25 @@ function CreateResellerDialog({
         // Link personalizado: cria hyro_redemption_links com kind='reseller'.
         // O signup pelo /r/:slug irá promover o usuário para role='reseller'
         // e aplicar o saldo inicial de licenças.
+        const { data: existingInvite } = await (cloud as any)
+          .from("hyro_redemption_links")
+          .select("slug, created_by, reseller_owner_id")
+          .eq("kind", "reseller")
+          .eq("target_email", emailNorm)
+          .is("claimed_user_id", null)
+          .order("created_at", { ascending: false })
+          .limit(5);
+        const reusable = ((existingInvite ?? []) as ResellerInvite[]).find((invite) =>
+          inviteBelongsToSession(invite, ownerUserId ?? session?.user.id, session?.user.email)
+        );
+        if (reusable?.slug) {
+          setCreatedUrl(inviteUrl(reusable.slug));
+          toast.success("Link personalizado de revenda já existente");
+          qc.invalidateQueries({ queryKey: ["resellers"] });
+          qc.invalidateQueries({ queryKey: ["my-slots"] });
+          return;
+        }
+
         const slug = (await import("@/lib/redemption")).generateSlug();
         const { data, error } = await (cloud as any)
           .from("hyro_redemption_links")
@@ -607,10 +743,11 @@ function CreateResellerDialog({
           .single();
         if (error) throw error;
 
-        const url = `https://hyrolovable.lovable.app/r/${(data as any).slug}`;
+        const url = inviteUrl((data as any).slug);
         setCreatedUrl(url);
         toast.success("Link personalizado de revenda criado");
         qc.invalidateQueries({ queryKey: ["resellers"] });
+        qc.invalidateQueries({ queryKey: ["my-slots"] });
         return;
       }
 
@@ -622,6 +759,29 @@ function CreateResellerDialog({
         p_initial_balance: parseInt(balance) || 0,
       });
       if (error) throw error;
+
+      const { data: createdUser } = await supabase
+        .from("hyro_extension_users")
+        .select("id")
+        .eq("email", emailNorm)
+        .maybeSingle();
+      try {
+        const slug = (await import("@/lib/redemption")).generateSlug();
+        await (cloud as any).from("hyro_redemption_links").insert({
+          slug,
+          kind: "reseller",
+          license_id: null,
+          target_email: emailNorm,
+          target_name: name.trim() || null,
+          created_by: session?.user.email ?? session?.user.id ?? "",
+          reseller_slots: Math.max(0, parseInt(balance) || 0),
+          reseller_owner_id: ownerUserId ?? session?.user.id ?? null,
+          claimed_user_id: (createdUser as any)?.id ?? null,
+          claimed_at: (createdUser as any)?.id ? new Date().toISOString() : null,
+        });
+      } catch (ledgerError) {
+        console.error("Revendedor criado, mas o vínculo da lista falhou", ledgerError);
+      }
 
       // hyro_extension_users não possui coluna created_by — a atribuição de
       // "dono" do revendedor é derivada de hyro_extension_licenses.created_by

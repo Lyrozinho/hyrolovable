@@ -82,12 +82,26 @@ export async function fetchPrimaryLicenseForUser(userId: string): Promise<string
 
 // Se o usuário é revendedor, retorna a licença do "dono" que o criou.
 export async function fetchParentLicenseForReseller(resellerId: string): Promise<string | null> {
-  const { data: u } = await ext
-    .from("hyro_extension_users")
-    .select("created_by")
-    .eq("id", resellerId)
+  const { data: link } = await (cloud as any)
+    .from("hyro_redemption_links")
+    .select("reseller_owner_id")
+    .eq("kind", "reseller")
+    .eq("claimed_user_id", resellerId)
+    .not("reseller_owner_id", "is", null)
+    .order("claimed_at", { ascending: false })
+    .limit(1)
     .maybeSingle();
-  const parentId = (u as any)?.created_by;
+  let parentId = (link as any)?.reseller_owner_id ?? null;
+
+  // Compatibilidade com contas antigas, sem depender desta coluna existir.
+  if (!parentId) {
+    const { data: u, error } = await ext
+      .from("hyro_extension_users")
+      .select("created_by")
+      .eq("id", resellerId)
+      .maybeSingle();
+    if (!error) parentId = (u as any)?.created_by ?? null;
+  }
   if (!parentId) return null;
   return fetchPrimaryLicenseForUser(parentId);
 }

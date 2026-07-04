@@ -2,7 +2,7 @@ import { supabase as cloud } from "@/integrations/supabase/client";
 
 export type RedemptionLink = {
   slug: string;
-  license_id: string;
+  license_id: string | null;
   target_email: string;
   target_name: string | null;
   locked_ip: string | null;
@@ -10,6 +10,9 @@ export type RedemptionLink = {
   claimed_at: string | null;
   created_by: string;
   created_at: string;
+  kind?: "license" | "reseller" | string;
+  reseller_slots?: number | null;
+  reseller_owner_id?: string | null;
 };
 
 const IP_CACHE_KEY = "hyro_client_ip";
