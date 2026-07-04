@@ -137,11 +137,13 @@ function SignupPage() {
         if (kind === "reseller") {
           const slots = (boundLink as any).reseller_slots ?? 0;
           if (slots > 0) {
-            await ext.rpc("admin_adjust_reseller_balance" as any, {
-              p_reseller_id: userId,
-              p_delta: slots,
-              p_note: `Pacote inicial via link ${boundLink.slug}`,
-            }).catch(() => {});
+            try {
+              await ext.rpc("admin_adjust_reseller_balance" as any, {
+                p_reseller_id: userId,
+                p_delta: slots,
+                p_note: `Pacote inicial via link ${boundLink.slug}`,
+              });
+            } catch { /* fail-open — o admin pode ajustar depois */ }
           }
         } else if (boundLink.license_id) {
           await ext
