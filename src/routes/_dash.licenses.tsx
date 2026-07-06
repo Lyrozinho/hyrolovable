@@ -111,9 +111,33 @@ function LicensesPage() {
   const [revealed, setRevealed] = useState<Record<string, boolean>>({});
   const [revealAll, setRevealAll] = useState(false);
   const { session, sessionKey, authReady } = useAuth();
-  const isReseller = session?.user.role === "client";
+  const isAdmin = session?.user.role === "admin";
+  const isReseller = session?.user.role === "client"; // "não-admin" (nome legado)
   const [deleteTarget, setDeleteTarget] = useState<License | null>(null);
   const [deleting, setDeleting] = useState(false);
+
+  // Papel real no banco: distingue "reseller" de cliente-comum dentro do grupo não-admin.
+  const { data: realRoleData } = useQuery({
+    queryKey: ["licenses-real-role", sessionKey],
+    enabled: authReady && !!session && !isAdmin,
+    staleTime: 30_000,
+    queryFn: async () => {
+      if (!session?.user.id) return { role: null as string | null };
+      const { data } = await supabase
+        .from("hyro_extension_users")
+        .select("role")
+        .eq("id", session.user.id)
+        .maybeSingle();
+      return { role: ((data as any)?.role ?? null) as string | null };
+    },
+  });
+  const isRealReseller = realRoleData?.role === "reseller";
+  // Gates de UI: só admin edita/exclui/altera perms/suspende/reativa.
+  // "Nova licença" e "Link personalizado" também para revendedor real.
+  const canCreate = isAdmin || isRealReseller;
+  const canLink = isAdmin || isRealReseller;
+  const canDelete = isAdmin;
+
 
 
   const { data, isLoading, refetch, isFetching, error } = useQuery({
