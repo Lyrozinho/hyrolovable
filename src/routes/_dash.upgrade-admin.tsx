@@ -42,7 +42,7 @@ function formatSize(bytes: number) {
 
 function UpgradeAdminPage() {
   const { session } = useAuth();
-  const isAdmin = session?.user.role !== "client";
+  const isAdmin = session?.user.role === "admin";
   const { meta, loading, error, setUpgrade, updateInfo, clearUpgrade } = useUpgrade();
 
   const [uploading, setUploading] = useState(false);

@@ -59,7 +59,7 @@ function StatCard({
 
 function DashboardPage() {
   const { session } = useAuth();
-  const isAdmin = !!session && session.user.role !== "client";
+  const isAdmin = !!session && session.user.role === "admin";
   const { data, isLoading } = useQuery({
     ...dashboardStatsQueryOptions(),
     initialData: () => (isAdmin ? readDashboardStatsSnapshot() : undefined),
