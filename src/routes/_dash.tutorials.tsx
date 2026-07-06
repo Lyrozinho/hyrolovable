@@ -65,6 +65,16 @@ function TutorialsPage() {
     return list.slice(start, start + PAGE_SIZE);
   }, [list, currentPage]);
 
+  // Prefetch signed URLs for visible tutorials so playback opens instantly.
+  useEffect(() => {
+    const paths: Array<string | undefined> = [];
+    for (const t of paged) {
+      paths.push(t.videoPath);
+      paths.push(t.thumbnailPath);
+    }
+    prefetchMediaUrls(paths);
+  }, [paged]);
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
