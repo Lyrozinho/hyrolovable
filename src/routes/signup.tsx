@@ -78,8 +78,8 @@ function SignupPage() {
     e.preventDefault();
     if (!firstName.trim()) return toast.error("Informe seu nome.");
     if (!lastName.trim()) return toast.error("Informe seu sobrenome.");
-    const em = (link?.target_email ?? email).trim().toLowerCase();
-    if (!em.includes("@")) return toast.error("E-mail inválido.");
+    const em = (link?.target_email ?? email ?? "").trim().toLowerCase();
+    if (!em || !em.includes("@") || em.length < 5) return toast.error("E-mail inválido.");
     if (password.length < 6) return toast.error("Senha deve ter no mínimo 6 caracteres.");
     if (password !== confirm) return toast.error("As senhas não coincidem.");
 
