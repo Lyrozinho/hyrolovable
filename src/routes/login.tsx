@@ -22,8 +22,8 @@ function LoginPage() {
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    if (!loading && session) navigate({ to: getSessionHome(session), replace: true });
-  }, [loading, session, navigate]);
+    if (!loading && session && !submitting) navigate({ to: getSessionHome(session), replace: true });
+  }, [loading, session, submitting, navigate]);
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
