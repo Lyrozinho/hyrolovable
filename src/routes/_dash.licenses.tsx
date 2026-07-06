@@ -409,9 +409,12 @@ function LicensesPage() {
                       <KeyRound className="h-4 w-4" />
                     </div>
                     <div className="text-sm">Nenhuma licença encontrada</div>
-                    <Button size="sm" variant="outline" onClick={() => setCreateOpen(true)}>
-                      <Plus className="h-3.5 w-3.5 mr-1.5" /> Criar primeira licença
-                    </Button>
+                    {canCreate && (
+                      <Button size="sm" variant="outline" onClick={() => setCreateOpen(true)}>
+                        <Plus className="h-3.5 w-3.5 mr-1.5" /> Criar primeira licença
+                      </Button>
+                    )}
+
                   </div>
                 </TableCell>
               </TableRow>
