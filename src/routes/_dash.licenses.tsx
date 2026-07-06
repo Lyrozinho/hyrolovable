@@ -241,6 +241,11 @@ function LicensesPage() {
 
   const confirmDelete = async () => {
     if (!deleteTarget) return;
+    if (!canDelete) {
+      toast.error("Somente administradores podem excluir licenças.");
+      setDeleteTarget(null);
+      return;
+    }
     setDeleting(true);
     try {
       const { error } = await supabase.from("hyro_extension_licenses").delete().eq("id", deleteTarget.id);
@@ -254,6 +259,7 @@ function LicensesPage() {
       setDeleting(false);
     }
   };
+
 
 
   const copyKey = async (key: string) => {
