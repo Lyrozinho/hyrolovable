@@ -27,7 +27,7 @@ import {
   DialogFooter,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { useTutorials, useSignedMediaUrl, uploadTutorialFile, removeTutorialFile, type Tutorial } from "@/lib/tutorials";
+import { useTutorials, useSignedMediaUrl, uploadTutorialFile, removeTutorialFile, prefetchMediaUrls, type Tutorial } from "@/lib/tutorials";
 import { VideoPlayer } from "@/components/video-player";
 import { useAuth } from "@/lib/auth";
 import { upsertUserFlags } from "@/lib/redemption";
