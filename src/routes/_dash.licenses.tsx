@@ -148,7 +148,16 @@ function LicensesPage() {
 
       if (isReseller) {
         if (!session?.user.id) return { rows: [], count: 0 };
-        query = query.or(`created_by.eq.${session.user.id},reseller_id.eq.${session.user.id}`);
+        const { data: currentUser, error: currentUserError } = await supabase
+          .from("hyro_extension_users")
+          .select("role")
+          .eq("id", session.user.id)
+          .maybeSingle();
+        if (currentUserError) throw currentUserError;
+        const realRole = (currentUser as any)?.role;
+        query = realRole === "reseller"
+          ? query.or(`created_by.eq.${session.user.id},reseller_id.eq.${session.user.id}`)
+          : query.eq("user_id", session.user.id);
       }
 
       if (status !== "all") query = query.eq("status", status);
