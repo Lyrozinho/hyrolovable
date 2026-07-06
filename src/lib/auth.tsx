@@ -27,6 +27,11 @@ function normalizeRole(value: unknown) {
   return typeof value === "string" && value ? value : "user";
 }
 
+function normalizeAppRole(value: unknown) {
+  const role = normalizeRole(value);
+  return role === "admin" ? "admin" : "client";
+}
+
 function persistClientSession(session: Session & { expiresAt: number }) {
   if (typeof window === "undefined") return;
   localStorage.setItem(CLIENT_KEY, JSON.stringify(session));
@@ -62,7 +67,7 @@ function normalizeClientSession(parsed: Partial<Session> & { expiresAt?: number 
       id: String(user.id),
       email: normalizeEmail(user.email),
       name: typeof user.name === "string" && user.name.trim() ? user.name : null,
-      role: normalizeRole(user.role),
+      role: normalizeAppRole(user.role),
     },
     expiresAt: parsed.expiresAt,
   };
@@ -104,7 +109,7 @@ async function repairClientSession(current: Session | null): Promise<Session | n
         id: (user as any).id,
         email: normalizeEmail((user as any).email),
         name: (user as any).name ?? current.user.name ?? null,
-        role: normalizeRole((user as any).role),
+        role: normalizeAppRole((user as any).role),
       },
       expiresAt: Date.now() + 7 * 24 * 3600 * 1000,
     };
@@ -205,7 +210,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           id: user.id,
           email: userEmail,
           name: user.name ?? null,
-          role: user.role,
+          role: "client",
         },
         expiresAt: Date.now() + 7 * 24 * 3600 * 1000,
       };
