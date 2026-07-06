@@ -1,5 +1,5 @@
 import { createFileRoute, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth";
 import { AppSidebar } from "@/components/app-sidebar";
@@ -10,7 +10,9 @@ import { Input } from "@/components/ui/input";
 import { SidebarProvider, useSidebar } from "@/lib/sidebar";
 import { installSecurityGuard } from "@/lib/security-guard";
 import { supabase as ext } from "@/lib/supabase";
+import { supabase as cloud } from "@/integrations/supabase/client";
 import { getResellerBalance } from "@/lib/reseller-balance";
+import { useRealtimeInvalidation } from "@/lib/realtime-invalidation";
 
 export const Route = createFileRoute("/_dash")({
   ssr: false,
@@ -41,6 +43,50 @@ function DashInner() {
   const { collapsed, toggleMobile } = useSidebar();
   const qc = useQueryClient();
   const lastSessionKeyRef = useRef<string | null>(null);
+
+  const extRealtimeBindings = useMemo(() => [
+    {
+      table: "hyro_extension_licenses",
+      queryKeys: [["dash-stats"], ["licenses"], ["subscription-license-stats"], ["resellers"], ["my-slots"], ["reseller-balance"]],
+    },
+    {
+      table: "hyro_extension_sessions",
+      queryKeys: [["dash-stats"]],
+    },
+    {
+      table: "hyro_extension_users",
+      queryKeys: [["dash-stats"], ["licenses"], ["resellers"], ["my-slots"], ["reseller-balance"], ["subscription-license-stats"]],
+    },
+    {
+      table: "hyro_reseller_balances",
+      queryKeys: [["reseller-balance"], ["resellers"], ["my-slots"]],
+    },
+  ], []);
+
+  const cloudRealtimeBindings = useMemo(() => [
+    {
+      table: "hyro_redemption_links",
+      queryKeys: [["resellers"], ["my-slots"]],
+    },
+    {
+      table: "hyro_user_flags",
+      queryKeys: [["user-flags"]],
+    },
+  ], []);
+
+  useRealtimeInvalidation({
+    client: ext as any,
+    enabled: authReady && !!session,
+    channelName: `hyro-ext-live-${sessionKey}`,
+    bindings: extRealtimeBindings,
+  });
+
+  useRealtimeInvalidation({
+    client: cloud as any,
+    enabled: authReady && !!session,
+    channelName: `hyro-cloud-live-${sessionKey}`,
+    bindings: cloudRealtimeBindings,
+  });
 
   useEffect(() => {
     installSecurityGuard();
@@ -75,8 +121,11 @@ function DashInner() {
   const { data: resellerInfo } = useQuery({
     queryKey: ["reseller-balance", sessionKey],
     enabled: authReady && !!session && isReseller,
-    refetchInterval: 30_000,
-    staleTime: 15_000,
+    refetchInterval: 10_000,
+    staleTime: 0,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
     queryFn: async () => {
       try {
         const uid = session!.user.id;

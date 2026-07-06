@@ -1,8 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/lib/supabase";
 import { KeyRound, ArrowUpRight } from "lucide-react";
 import { useAuth } from "@/lib/auth";
+import { fetchDashboardStats, readDashboardStatsSnapshot, type DashboardStats } from "@/lib/dashboard-stats";
 import {
   ResponsiveContainer,
   AreaChart,
@@ -16,55 +16,6 @@ import {
 export const Route = createFileRoute("/_dash/dashboard")({
   component: DashboardPage,
 });
-
-type Stats = {
-  activeLicenses: number;
-  onlineSessions: number;
-  activeResellers: number;
-  chart: { date: string; count: number }[];
-};
-
-async function fetchStats(): Promise<Stats> {
-  const nowIso = new Date().toISOString();
-
-  const [licRes, sessRes, resRes, licList] = await Promise.all([
-    supabase
-      .from("hyro_extension_licenses")
-      .select("id", { count: "exact", head: true })
-      .eq("status", "ativa")
-      .gt("expires_at", nowIso),
-    supabase
-      .from("hyro_extension_sessions")
-      .select("token", { count: "exact", head: true })
-      .gt("expires_at", nowIso),
-    supabase
-      .from("hyro_extension_users")
-      .select("id", { count: "exact", head: true })
-      .eq("role", "reseller")
-      .eq("active", true),
-    supabase
-      .from("hyro_extension_licenses")
-      .select("created_at")
-      .gte("created_at", new Date(Date.now() - 29 * 24 * 3600 * 1000).toISOString()),
-  ]);
-
-  const buckets: Record<string, number> = {};
-  for (let i = 29; i >= 0; i--) {
-    const d = new Date(Date.now() - i * 24 * 3600 * 1000).toISOString().slice(0, 10);
-    buckets[d] = 0;
-  }
-  (licList.data ?? []).forEach((r: { created_at: string }) => {
-    const d = r.created_at.slice(0, 10);
-    if (d in buckets) buckets[d]++;
-  });
-
-  return {
-    activeLicenses: licRes.count ?? 0,
-    onlineSessions: sessRes.count ?? 0,
-    activeResellers: resRes.count ?? 0,
-    chart: Object.entries(buckets).map(([date, count]) => ({ date, count })),
-  };
-}
 
 function StatCard({
   label,
@@ -106,16 +57,23 @@ function DashboardPage() {
   const isAdmin = !!session && session.user.role !== "client";
   const { data, isLoading } = useQuery({
     queryKey: ["dash-stats", sessionKey],
-    queryFn: fetchStats,
-    staleTime: 60_000,
+    queryFn: fetchDashboardStats,
+    initialData: () => (isAdmin ? readDashboardStatsSnapshot() : undefined),
+    initialDataUpdatedAt: 0,
+    staleTime: 0,
+    refetchInterval: 10_000,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
     enabled: isAdmin,
   });
 
   if (!isAdmin) return null;
 
-  const total30 = data?.chart.reduce((a, b) => a + b.count, 0) ?? 0;
-  const total15 = data?.chart.slice(-15).reduce((a, b) => a + b.count, 0) ?? 0;
-  const prev15 = data?.chart.slice(0, 15).reduce((a, b) => a + b.count, 0) ?? 0;
+  const stats = data as DashboardStats | undefined;
+  const total30 = stats?.chart.reduce((a, b) => a + b.count, 0) ?? 0;
+  const total15 = stats?.chart.slice(-15).reduce((a, b) => a + b.count, 0) ?? 0;
+  const prev15 = stats?.chart.slice(0, 15).reduce((a, b) => a + b.count, 0) ?? 0;
   const delta = prev15 === 0 ? (total15 > 0 ? 100 : 0) : ((total15 - prev15) / prev15) * 100;
 
   return (
@@ -140,19 +98,19 @@ function DashboardPage() {
       <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard
           label="Licenças ativas"
-          value={data?.activeLicenses ?? 0}
+          value={stats?.activeLicenses ?? 0}
           hint="período atual"
           loading={isLoading}
         />
         <StatCard
           label="Sessões online"
-          value={data?.onlineSessions ?? 0}
+          value={stats?.onlineSessions ?? 0}
           hint="agora"
           loading={isLoading}
         />
         <StatCard
           label="Revendedores"
-          value={data?.activeResellers ?? 0}
+          value={stats?.activeResellers ?? 0}
           hint="ativos"
           loading={isLoading}
         />
@@ -188,7 +146,7 @@ function DashboardPage() {
         </div>
         <div className="h-[240px] md:h-[320px] w-full px-3 pt-4 pb-2">
           <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={data?.chart ?? []} margin={{ left: 4, right: 12, top: 8, bottom: 4 }}>
+            <AreaChart data={stats?.chart ?? []} margin={{ left: 4, right: 12, top: 8, bottom: 4 }}>
               <defs>
                 <linearGradient id="cGrad" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="0%" stopColor="var(--color-foreground)" stopOpacity={0.14} />

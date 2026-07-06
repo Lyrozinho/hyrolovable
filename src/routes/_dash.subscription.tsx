@@ -115,12 +115,12 @@ function buildWhatsappLink(plan: Plan) {
 }
 
 function SubscriptionPage() {
-  const { session, sessionKey } = useAuth();
+  const { session, sessionKey, authReady } = useAuth();
   const isClient = session?.user.role === "client";
   const userId = session?.user.id ?? null;
   const { data: stats } = useQuery({
     queryKey: ["subscription-license-stats", sessionKey, isClient ? userId : "admin-all"],
-    enabled: !!session && (!isClient || !!userId),
+    enabled: authReady && !!session && (!isClient || !!userId),
     queryFn: async () => {
       let q = supabase.from("hyro_extension_licenses").select("id,status,expires_at,user_id,created_by,reseller_id");
       if (isClient && userId) {
@@ -154,7 +154,11 @@ function SubscriptionPage() {
       }
       return { total: data?.length ?? 0, active, expired, expiringSoon, lifetime, nearest };
     },
-    refetchInterval: 60_000,
+    staleTime: 0,
+    refetchInterval: 10_000,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
   });
 
   const nearestFmt = useMemo(() => {

@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { supabase as cloud } from "@/integrations/supabase/client";
 import { supabase as ext } from "@/lib/supabase";
+import { warmDashboardStatsSnapshot } from "@/lib/dashboard-stats";
 import type { AdminUser } from "./supabase";
 
 type Session = { token: string; user: AdminUser };
@@ -99,7 +100,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const emailNorm = email.trim().toLowerCase();
     // 1) Try admin (Lovable Auth) first
     const { error } = await cloud.auth.signInWithPassword({ email: emailNorm, password });
-    if (!error) return { redirectTo: "/dashboard" };
+    if (!error) {
+      await warmDashboardStatsSnapshot();
+      return { redirectTo: "/dashboard" };
+    }
 
     // 2) Fallback — client login via hyro_extension_users (license holders)
     try {
