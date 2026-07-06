@@ -106,11 +106,13 @@ function DashInner() {
     if (!loading && !session) navigate({ to: "/login", replace: true });
   }, [loading, session, navigate]);
 
-  // Role-based route gating — /dashboard e / são só de admin.
+  // Role-based route gating — /dashboard, /, /upgrade-admin são exclusivos de admin.
   useEffect(() => {
     if (!session) return;
-    if (session.user.role === "client") {
-      if (pathname === "/dashboard" || pathname === "/") {
+    const isAdmin = session.user.role === "admin";
+    if (!isAdmin) {
+      const adminOnly = ["/dashboard", "/", "/upgrade-admin"];
+      if (adminOnly.includes(pathname)) {
         navigate({ to: "/subscription", replace: true });
       }
     }
