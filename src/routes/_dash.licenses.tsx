@@ -477,9 +477,11 @@ function LicensesPage() {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="inline-flex items-center gap-0.5">
-                        <IconAction label="Link personalizado" onClick={() => setLinkFor(l)}>
-                          <Link2 className="h-3.5 w-3.5" />
-                        </IconAction>
+                        {canLink && (
+                          <IconAction label="Link personalizado" onClick={() => setLinkFor(l)}>
+                            <Link2 className="h-3.5 w-3.5" />
+                          </IconAction>
+                        )}
                         <IconAction
                           label={isReseller ? "Somente administradores podem alterar permissões" : "Permissões"}
                           onClick={() => setPermsFor(l)}
@@ -505,9 +507,12 @@ function LicensesPage() {
                             <CheckCircle2 className="h-3.5 w-3.5" />
                           )}
                         </IconAction>
-                        <IconAction label="Excluir" onClick={() => setDeleteTarget(l)} danger>
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </IconAction>
+                        {canDelete && (
+                          <IconAction label="Excluir" onClick={() => setDeleteTarget(l)} danger>
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </IconAction>
+                        )}
+
                       </div>
                     </TableCell>
                   </TableRow>
