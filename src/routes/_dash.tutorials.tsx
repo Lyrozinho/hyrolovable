@@ -44,7 +44,7 @@ const MAX_THUMB_MB = 3;
 function TutorialsPage() {
   const { list, add, update, remove } = useTutorials();
   const { session } = useAuth();
-  const isAdmin = session?.user.role !== "client";
+  const isAdmin = session?.user.role === "admin";
 
   useEffect(() => {
     if (session?.user.email) {
