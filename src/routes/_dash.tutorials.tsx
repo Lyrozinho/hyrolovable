@@ -27,7 +27,7 @@ import {
   DialogFooter,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { useTutorials, useSignedMediaUrl, uploadTutorialFile, removeTutorialFile, type Tutorial } from "@/lib/tutorials";
+import { useTutorials, useSignedMediaUrl, uploadTutorialFile, removeTutorialFile, prefetchMediaUrls, type Tutorial } from "@/lib/tutorials";
 import { VideoPlayer } from "@/components/video-player";
 import { useAuth } from "@/lib/auth";
 import { upsertUserFlags } from "@/lib/redemption";
@@ -64,6 +64,16 @@ function TutorialsPage() {
     const start = (currentPage - 1) * PAGE_SIZE;
     return list.slice(start, start + PAGE_SIZE);
   }, [list, currentPage]);
+
+  // Prefetch signed URLs for visible tutorials so playback opens instantly.
+  useEffect(() => {
+    const paths: Array<string | undefined> = [];
+    for (const t of paged) {
+      paths.push(t.videoPath);
+      paths.push(t.thumbnailPath);
+    }
+    prefetchMediaUrls(paths);
+  }, [paged]);
 
   return (
     <div className="space-y-6">

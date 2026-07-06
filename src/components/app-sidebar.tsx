@@ -195,7 +195,7 @@ export function AppSidebar() {
                   ].join(" ")}
                 >
                   <item.icon className="h-[18px] w-[18px] shrink-0" strokeWidth={2} />
-                  {!isCollapsed && <span>{item.title}</span>}
+                  {!isCollapsed && <span>{role === "client" && item.url === "/licenses" ? "Minhas licenças" : item.title}</span>}
                 </Link>
               </li>
             );

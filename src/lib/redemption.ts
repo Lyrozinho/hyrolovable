@@ -118,7 +118,7 @@ export async function bindOrCheckIP(slug: string, ip: string): Promise<Redemptio
     return fresh;
   }
   if (link.locked_ip !== ip) {
-    throw new Error("Este link já está vinculado a outro acesso.");
+    throw new Error("Este link já foi acessado por outro dispositivo/IP e não pode ser usado novamente.");
   }
   return link;
 }

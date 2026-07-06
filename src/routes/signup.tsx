@@ -78,8 +78,8 @@ function SignupPage() {
     e.preventDefault();
     if (!firstName.trim()) return toast.error("Informe seu nome.");
     if (!lastName.trim()) return toast.error("Informe seu sobrenome.");
-    const em = (link?.target_email ?? email).trim().toLowerCase();
-    if (!em.includes("@")) return toast.error("E-mail inválido.");
+    const em = (link?.target_email ?? email ?? "").trim().toLowerCase();
+    if (!em || !em.includes("@") || em.length < 5) return toast.error("E-mail inválido.");
     if (password.length < 6) return toast.error("Senha deve ter no mínimo 6 caracteres.");
     if (password !== confirm) return toast.error("As senhas não coincidem.");
 
@@ -113,6 +113,7 @@ function SignupPage() {
         const { error: upErr } = await ext
           .from("hyro_extension_users")
           .update({
+            email: em,
             password_hash: passwordHash,
             name: fullName,
             active: true,
@@ -122,16 +123,24 @@ function SignupPage() {
         if (upErr) throw upErr;
         userId = existing.id;
       } else {
+        if (!em) throw new Error("E-mail obrigatório para criar conta.");
         const { data: created, error: cErr } = await ext
           .from("hyro_extension_users")
           .insert({
-            email: em, name: fullName,
+            email: em,
+            name: fullName,
             role: isResellerInvite ? "reseller" : "user",
-            password_hash: passwordHash, active: true,
+            password_hash: passwordHash,
+            active: true,
           })
-          .select("id")
+          .select("id, email")
           .single();
         if (cErr) throw cErr;
+        if (!created?.email) {
+          // rollback defensivo caso o backend tenha rejeitado o email silenciosamente
+          await ext.from("hyro_extension_users").delete().eq("id", created.id);
+          throw new Error("Falha ao registrar e-mail. Tente novamente.");
+        }
         userId = created.id;
       }
 
