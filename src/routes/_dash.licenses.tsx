@@ -111,9 +111,33 @@ function LicensesPage() {
   const [revealed, setRevealed] = useState<Record<string, boolean>>({});
   const [revealAll, setRevealAll] = useState(false);
   const { session, sessionKey, authReady } = useAuth();
-  const isReseller = session?.user.role === "client";
+  const isAdmin = session?.user.role === "admin";
+  const isReseller = session?.user.role === "client"; // "não-admin" (nome legado)
   const [deleteTarget, setDeleteTarget] = useState<License | null>(null);
   const [deleting, setDeleting] = useState(false);
+
+  // Papel real no banco: distingue "reseller" de cliente-comum dentro do grupo não-admin.
+  const { data: realRoleData } = useQuery({
+    queryKey: ["licenses-real-role", sessionKey],
+    enabled: authReady && !!session && !isAdmin,
+    staleTime: 30_000,
+    queryFn: async () => {
+      if (!session?.user.id) return { role: null as string | null };
+      const { data } = await supabase
+        .from("hyro_extension_users")
+        .select("role")
+        .eq("id", session.user.id)
+        .maybeSingle();
+      return { role: ((data as any)?.role ?? null) as string | null };
+    },
+  });
+  const isRealReseller = realRoleData?.role === "reseller";
+  // Gates de UI: só admin edita/exclui/altera perms/suspende/reativa.
+  // "Nova licença" e "Link personalizado" também para revendedor real.
+  const canCreate = isAdmin || isRealReseller;
+  const canLink = isAdmin || isRealReseller;
+  const canDelete = isAdmin;
+
 
 
   const { data, isLoading, refetch, isFetching, error } = useQuery({
@@ -217,6 +241,11 @@ function LicensesPage() {
 
   const confirmDelete = async () => {
     if (!deleteTarget) return;
+    if (!canDelete) {
+      toast.error("Somente administradores podem excluir licenças.");
+      setDeleteTarget(null);
+      return;
+    }
     setDeleting(true);
     try {
       const { error } = await supabase.from("hyro_extension_licenses").delete().eq("id", deleteTarget.id);
@@ -230,6 +259,7 @@ function LicensesPage() {
       setDeleting(false);
     }
   };
+
 
 
   const copyKey = async (key: string) => {
@@ -300,9 +330,12 @@ function LicensesPage() {
             <FlaskConical className="h-3.5 w-3.5 md:mr-1.5" />
             <span className="hidden md:inline">Gerar teste</span>
           </Button>
-          <Button size="sm" className="h-9" onClick={() => setCreateOpen(true)}>
-            <Plus className="h-3.5 w-3.5 mr-1.5" /> Nova licença
-          </Button>
+          {canCreate && (
+            <Button size="sm" className="h-9" onClick={() => setCreateOpen(true)}>
+              <Plus className="h-3.5 w-3.5 mr-1.5" /> Nova licença
+            </Button>
+          )}
+
         </div>
       </div>
 
@@ -376,9 +409,12 @@ function LicensesPage() {
                       <KeyRound className="h-4 w-4" />
                     </div>
                     <div className="text-sm">Nenhuma licença encontrada</div>
-                    <Button size="sm" variant="outline" onClick={() => setCreateOpen(true)}>
-                      <Plus className="h-3.5 w-3.5 mr-1.5" /> Criar primeira licença
-                    </Button>
+                    {canCreate && (
+                      <Button size="sm" variant="outline" onClick={() => setCreateOpen(true)}>
+                        <Plus className="h-3.5 w-3.5 mr-1.5" /> Criar primeira licença
+                      </Button>
+                    )}
+
                   </div>
                 </TableCell>
               </TableRow>
@@ -441,9 +477,11 @@ function LicensesPage() {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="inline-flex items-center gap-0.5">
-                        <IconAction label="Link personalizado" onClick={() => setLinkFor(l)}>
-                          <Link2 className="h-3.5 w-3.5" />
-                        </IconAction>
+                        {canLink && (
+                          <IconAction label="Link personalizado" onClick={() => setLinkFor(l)}>
+                            <Link2 className="h-3.5 w-3.5" />
+                          </IconAction>
+                        )}
                         <IconAction
                           label={isReseller ? "Somente administradores podem alterar permissões" : "Permissões"}
                           onClick={() => setPermsFor(l)}
@@ -469,9 +507,12 @@ function LicensesPage() {
                             <CheckCircle2 className="h-3.5 w-3.5" />
                           )}
                         </IconAction>
-                        <IconAction label="Excluir" onClick={() => setDeleteTarget(l)} danger>
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </IconAction>
+                        {canDelete && (
+                          <IconAction label="Excluir" onClick={() => setDeleteTarget(l)} danger>
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </IconAction>
+                        )}
+
                       </div>
                     </TableCell>
                   </TableRow>
