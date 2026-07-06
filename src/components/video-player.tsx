@@ -148,7 +148,7 @@ function NativePlayer({
         onError={() =>
           setError("Não foi possível reproduzir este vídeo. Formato pode não ser suportado.")
         }
-        preload="metadata"
+        preload="auto"
         playsInline
         controlsList="nodownload"
       >
