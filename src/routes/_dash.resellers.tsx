@@ -169,7 +169,7 @@ function buildPartnerWhatsapp(plan: PartnerPlan) {
 
 function ResellersPage() {
   const { session, sessionKey, authReady } = useAuth();
-  const isCloudAdmin = session?.user.role !== "client";
+  const isCloudAdmin = session?.user.role === "admin";
   const isOwner = isCloudAdmin && session?.user.email?.toLowerCase() === OWNER_EMAIL;
   const [createOpen, setCreateOpen] = useState(false);
   const [balanceTarget, setBalanceTarget] = useState<Reseller | null>(null);
