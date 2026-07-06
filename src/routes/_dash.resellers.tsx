@@ -179,6 +179,11 @@ function ResellersPage() {
   const { data: mySlots } = useQuery({
     queryKey: ["my-slots", sessionKey],
     enabled: authReady && !!session && !isCloudAdmin,
+    staleTime: 0,
+    refetchInterval: 5_000,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
     queryFn: async () => {
       try {
         const licId = await fetchPrimaryLicenseForUser(session!.user.id);
@@ -213,7 +218,11 @@ function ResellersPage() {
   const { data, isLoading } = useQuery({
     queryKey: ["resellers", sessionKey, isOwner ? "all" : "scoped"],
     enabled: authReady && !!session,
-    refetchInterval: 30_000,
+    staleTime: 0,
+    refetchInterval: 5_000,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
     queryFn: async () => {
       try {
       const { data: inviteRows, error: inviteError } = await (cloud as any)

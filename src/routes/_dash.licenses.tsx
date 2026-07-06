@@ -119,7 +119,11 @@ function LicensesPage() {
   const { data, isLoading, refetch, isFetching, error } = useQuery({
     queryKey: ["licenses", sessionKey, search, status, page],
     enabled: authReady && !!session,
-    staleTime: 15_000,
+    staleTime: 0,
+    refetchInterval: 5_000,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
     queryFn: async () => {
       const term = search.trim();
       let matchedUserIds: string[] | null = null;
