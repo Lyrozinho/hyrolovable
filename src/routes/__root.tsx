@@ -49,9 +49,10 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   useEffect(() => {
     if (errorPathRef.current !== pathname) {
       errorPathRef.current = pathname;
+      router.invalidate();
       reset();
     }
-  }, [pathname, reset]);
+  }, [pathname, reset, router]);
 
   useEffect(() => {
     reportLovableError(error, { boundary: "tanstack_root_error_component" });

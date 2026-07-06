@@ -1,8 +1,22 @@
 import { QueryClient } from "@tanstack/react-query";
-import { createRouter } from "@tanstack/react-router";
+import { createRouter, useRouter, useRouterState } from "@tanstack/react-router";
+import { useEffect, useRef } from "react";
 import { routeTree } from "./routeTree.gen";
 
-function DefaultRouterError() {
+function DefaultRouterError({ error, reset }: { error: Error; reset: () => void }) {
+  console.error(error);
+  const router = useRouter();
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
+  const errorPathRef = useRef(pathname);
+
+  useEffect(() => {
+    if (errorPathRef.current !== pathname) {
+      errorPathRef.current = pathname;
+      router.invalidate();
+      reset();
+    }
+  }, [pathname, reset, router]);
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
@@ -15,7 +29,10 @@ function DefaultRouterError() {
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           <button
             type="button"
-            onClick={() => window.location.reload()}
+            onClick={() => {
+              router.invalidate();
+              reset();
+            }}
             className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
           >
             Tentar novamente
