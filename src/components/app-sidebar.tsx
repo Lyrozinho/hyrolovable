@@ -46,7 +46,9 @@ export function AppSidebar() {
     await signOut();
   };
 
-  const role = (session?.user.role === "client" ? "client" : "admin") as "admin" | "client";
+  // ADMIN estrito: apenas sessão com role "admin" (login via Lovable Cloud) é admin.
+  // Qualquer outra coisa (client, reseller, user, ausente) NÃO tem privilégios de admin.
+  const role = (session?.user.role === "admin" ? "admin" : "client") as "admin" | "client";
   const isOwnerAdmin = role === "admin" && session?.user.email?.toLowerCase() === OWNER_EMAIL;
 
   // Carrega perms quando é cliente
