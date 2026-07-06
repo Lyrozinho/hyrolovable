@@ -139,17 +139,25 @@ export type UserFlags = {
 };
 
 export async function fetchUserFlags(email: string): Promise<UserFlags | null> {
-  const { data } = await (cloud as any)
+  const { data, error } = await (cloud as any)
     .from("hyro_user_flags")
     .select("*")
     .eq("user_email", email.toLowerCase())
     .maybeSingle();
+  if (error) throw error;
   return (data as UserFlags | null) ?? null;
 }
 
 export async function upsertUserFlags(email: string, patch: Partial<UserFlags>) {
   const emailNorm = email.toLowerCase();
-  await (cloud as any)
+  const current = await fetchUserFlags(emailNorm).catch(() => null);
+  const { error } = await (cloud as any)
     .from("hyro_user_flags")
-    .upsert({ user_email: emailNorm, ...patch }, { onConflict: "user_email" });
+    .upsert({
+      user_email: emailNorm,
+      welcome_seen: patch.welcome_seen ?? current?.welcome_seen ?? false,
+      tutorial_seen: patch.tutorial_seen ?? current?.tutorial_seen ?? false,
+      first_ip: patch.first_ip ?? current?.first_ip ?? null,
+    }, { onConflict: "user_email" });
+  if (error) throw error;
 }
