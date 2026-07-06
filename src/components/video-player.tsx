@@ -52,7 +52,7 @@ function NativePlayer({
   const [volume, setVolume] = useState(1);
   const [current, setCurrent] = useState(0);
   const [duration, setDuration] = useState(0);
-  const [buffering, setBuffering] = useState(true);
+  const [buffering, setBuffering] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showUI, setShowUI] = useState(true);
   const hideTimer = useRef<number | null>(null);
