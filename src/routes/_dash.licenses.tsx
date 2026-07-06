@@ -330,9 +330,12 @@ function LicensesPage() {
             <FlaskConical className="h-3.5 w-3.5 md:mr-1.5" />
             <span className="hidden md:inline">Gerar teste</span>
           </Button>
-          <Button size="sm" className="h-9" onClick={() => setCreateOpen(true)}>
-            <Plus className="h-3.5 w-3.5 mr-1.5" /> Nova licença
-          </Button>
+          {canCreate && (
+            <Button size="sm" className="h-9" onClick={() => setCreateOpen(true)}>
+              <Plus className="h-3.5 w-3.5 mr-1.5" /> Nova licença
+            </Button>
+          )}
+
         </div>
       </div>
 
