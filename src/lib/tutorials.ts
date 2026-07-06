@@ -160,7 +160,7 @@ export async function removeTutorialFile(path?: string) {
 
 const urlCache = new Map<string, { url: string; exp: number }>();
 
-async function signUrl(path: string): Promise<string | null> {
+export async function signUrl(path: string): Promise<string | null> {
   const now = Date.now();
   const cached = urlCache.get(path);
   if (cached && cached.exp > now + 60_000) return cached.url;
@@ -171,6 +171,12 @@ async function signUrl(path: string): Promise<string | null> {
   }
   urlCache.set(path, { url: data.signedUrl, exp: now + SIGN_TTL * 1000 });
   return data.signedUrl;
+}
+
+export function prefetchMediaUrls(paths: Array<string | undefined | null>) {
+  for (const p of paths) {
+    if (p) signUrl(p).catch(() => {});
+  }
 }
 
 export function useSignedMediaUrl(path?: string) {
