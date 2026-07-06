@@ -1,4 +1,5 @@
 import { supabase } from "@/lib/supabase";
+import { queryOptions } from "@tanstack/react-query";
 
 export type DashboardStats = {
   activeLicenses: number;
@@ -76,6 +77,15 @@ export async function fetchDashboardStats(): Promise<DashboardStats> {
   };
   writeDashboardStatsSnapshot(stats);
   return stats;
+}
+
+export function dashboardStatsQueryOptions() {
+  return queryOptions({
+    queryKey: ["dash-stats"],
+    queryFn: fetchDashboardStats,
+    staleTime: 0,
+    gcTime: 5 * 60_000,
+  });
 }
 
 export async function warmDashboardStatsSnapshot() {

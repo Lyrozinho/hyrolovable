@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { KeyRound, ArrowUpRight } from "lucide-react";
 import { useAuth } from "@/lib/auth";
-import { fetchDashboardStats, readDashboardStatsSnapshot, type DashboardStats } from "@/lib/dashboard-stats";
+import { dashboardStatsQueryOptions, readDashboardStatsSnapshot, type DashboardStats } from "@/lib/dashboard-stats";
 import {
   ResponsiveContainer,
   AreaChart,
@@ -14,6 +14,9 @@ import {
 } from "recharts";
 
 export const Route = createFileRoute("/_dash/dashboard")({
+  loader: ({ context }) => context.queryClient.ensureQueryData(dashboardStatsQueryOptions()).catch(() => undefined),
+  pendingMs: 0,
+  pendingComponent: () => <div className="min-h-[360px]" />,
   component: DashboardPage,
 });
 
@@ -53,14 +56,12 @@ function StatCard({
 }
 
 function DashboardPage() {
-  const { session, sessionKey } = useAuth();
+  const { session } = useAuth();
   const isAdmin = !!session && session.user.role !== "client";
   const { data, isLoading } = useQuery({
-    queryKey: ["dash-stats", sessionKey],
-    queryFn: fetchDashboardStats,
+    ...dashboardStatsQueryOptions(),
     initialData: () => (isAdmin ? readDashboardStatsSnapshot() : undefined),
     initialDataUpdatedAt: 0,
-    staleTime: 0,
     refetchInterval: 10_000,
     refetchOnMount: "always",
     refetchOnWindowFocus: true,
