@@ -155,7 +155,7 @@ function SubscriptionPage() {
       return { total: data?.length ?? 0, active, expired, expiringSoon, lifetime, nearest };
     },
     staleTime: 0,
-    refetchInterval: 10_000,
+    refetchInterval: 5_000,
     refetchOnMount: "always",
     refetchOnWindowFocus: true,
     refetchOnReconnect: true,

@@ -17,6 +17,8 @@ export const Route = createFileRoute("/_dash/dashboard")({
   loader: ({ context }) => context.queryClient.ensureQueryData(dashboardStatsQueryOptions()).catch(() => undefined),
   pendingMs: 0,
   pendingComponent: () => <div className="min-h-[360px]" />,
+  errorComponent: () => <div className="min-h-[360px]" />,
+  notFoundComponent: () => <div className="min-h-[360px]" />,
   component: DashboardPage,
 });
 
@@ -62,7 +64,7 @@ function DashboardPage() {
     ...dashboardStatsQueryOptions(),
     initialData: () => (isAdmin ? readDashboardStatsSnapshot() : undefined),
     initialDataUpdatedAt: 0,
-    refetchInterval: 10_000,
+    refetchInterval: 5_000,
     refetchOnMount: "always",
     refetchOnWindowFocus: true,
     refetchOnReconnect: true,

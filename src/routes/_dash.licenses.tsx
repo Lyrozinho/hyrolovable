@@ -120,7 +120,7 @@ function LicensesPage() {
     queryKey: ["licenses", sessionKey, search, status, page],
     enabled: authReady && !!session,
     staleTime: 0,
-    refetchInterval: 10_000,
+    refetchInterval: 5_000,
     refetchOnMount: "always",
     refetchOnWindowFocus: true,
     refetchOnReconnect: true,
