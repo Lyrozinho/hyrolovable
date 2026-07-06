@@ -19,6 +19,19 @@ const Ctx = createContext<AuthCtx | null>(null);
 
 const CLIENT_KEY = "hyro_client_session";
 
+function normalizeEmail(value: unknown) {
+  return typeof value === "string" ? value.trim().toLowerCase() : "";
+}
+
+function normalizeRole(value: unknown) {
+  return typeof value === "string" && value ? value : "user";
+}
+
+function persistClientSession(session: Session & { expiresAt: number }) {
+  if (typeof window === "undefined") return;
+  localStorage.setItem(CLIENT_KEY, JSON.stringify(session));
+}
+
 export async function sha256Hex(input: string): Promise<string> {
   const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(input));
   return Array.from(new Uint8Array(buf))
@@ -33,10 +46,25 @@ function toAdminSession(s: { access_token: string; user: { id: string; email?: s
     token: s.access_token,
     user: {
       id: s.user.id,
-      email: s.user.email ?? "",
+      email: normalizeEmail(s.user.email),
       name: (meta.name as string) ?? (meta.full_name as string) ?? null,
-      role: (meta.role as string) ?? "admin",
+      role: normalizeRole(meta.role) === "user" ? "admin" : normalizeRole(meta.role),
     },
+  };
+}
+
+function normalizeClientSession(parsed: Partial<Session> & { expiresAt?: number }): (Session & { expiresAt?: number }) | null {
+  const user = parsed.user as Partial<AdminUser> | undefined;
+  if (!parsed.token || !user?.id) return null;
+  return {
+    token: String(parsed.token),
+    user: {
+      id: String(user.id),
+      email: normalizeEmail(user.email),
+      name: typeof user.name === "string" && user.name.trim() ? user.name : null,
+      role: normalizeRole(user.role),
+    },
+    expiresAt: parsed.expiresAt,
   };
 }
 
@@ -45,14 +73,45 @@ function readClientSession(): Session | null {
   try {
     const raw = localStorage.getItem(CLIENT_KEY);
     if (!raw) return null;
-    const parsed = JSON.parse(raw) as Session & { expiresAt?: number };
+    const parsed = normalizeClientSession(JSON.parse(raw) as Partial<Session> & { expiresAt?: number });
+    if (!parsed) {
+      localStorage.removeItem(CLIENT_KEY);
+      return null;
+    }
     if (parsed.expiresAt && parsed.expiresAt < Date.now()) {
       localStorage.removeItem(CLIENT_KEY);
       return null;
     }
     return { token: parsed.token, user: parsed.user };
   } catch {
+    localStorage.removeItem(CLIENT_KEY);
     return null;
+  }
+}
+
+async function repairClientSession(current: Session | null): Promise<Session | null> {
+  if (!current || current.user.role === "admin" || normalizeEmail(current.user.email)) return current;
+  try {
+    const { data: user, error } = await ext
+      .from("hyro_extension_users")
+      .select("id,email,name,role,active")
+      .eq("id", current.user.id)
+      .maybeSingle();
+    if (error || !user || !(user as any).active) return current;
+    const fixed: Session & { expiresAt: number } = {
+      token: current.token,
+      user: {
+        id: (user as any).id,
+        email: normalizeEmail((user as any).email),
+        name: (user as any).name ?? current.user.name ?? null,
+        role: normalizeRole((user as any).role),
+      },
+      expiresAt: Date.now() + 7 * 24 * 3600 * 1000,
+    };
+    persistClientSession(fixed);
+    return { token: fixed.token, user: fixed.user };
+  } catch {
+    return current;
   }
 }
 
@@ -66,7 +125,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [authReady, setAuthReady] = useState(false);
   const sessionKey = useMemo(() => {
     if (!session?.user.id) return "anon";
-    return `${session.user.role}:${session.user.id}:${session.user.email.trim().toLowerCase()}`;
+    return `${session.user.role}:${session.user.id}:${normalizeEmail(session.user.email) || "no-email"}`;
   }, [session?.user.email, session?.user.id, session?.user.role]);
 
   useEffect(() => {
@@ -77,7 +136,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           localStorage.removeItem(CLIENT_KEY);
           setSession(admin);
         } else {
-          setSession(readClientSession());
+          const client = readClientSession();
+          setSession(client);
+          repairClientSession(client).then((fixed) => setSession((cur) => (cur?.token === fixed?.token ? fixed : cur)));
         }
         setAuthReady(true);
         setLoading(false);
@@ -85,11 +146,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
     cloud.auth.getSession().then(({ data }) => {
       const admin = toAdminSession(data.session as any);
-      setSession(admin ?? readClientSession());
+      const client = admin ? null : readClientSession();
+      setSession(admin ?? client);
+      if (!admin) repairClientSession(client).then((fixed) => setSession((cur) => (cur?.token === fixed?.token ? fixed : cur)));
       setAuthReady(true);
       setLoading(false);
     }).catch(() => {
-      setSession(readClientSession());
+      const client = readClientSession();
+      setSession(client);
+      repairClientSession(client).then((fixed) => setSession((cur) => (cur?.token === fixed?.token ? fixed : cur)));
       setAuthReady(true);
       setLoading(false);
     });
@@ -115,6 +180,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .maybeSingle();
       if (uerr) throw uerr;
       if (!user || !user.active) return { error: "Credenciais inválidas" };
+      const userEmail = normalizeEmail((user as any).email);
+      if (!userEmail || !userEmail.includes("@")) return { error: "Cadastro sem e-mail válido. Solicite a correção do cadastro." };
       if (!user.password_hash || user.password_hash !== hash) {
         return { error: "Credenciais inválidas" };
       }
@@ -136,13 +203,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         token: `client_${user.id}_${Date.now()}`,
         user: {
           id: user.id,
-          email: user.email,
+          email: userEmail,
           name: user.name ?? null,
           role: user.role,
         },
         expiresAt: Date.now() + 7 * 24 * 3600 * 1000,
       };
-      localStorage.setItem(CLIENT_KEY, JSON.stringify(clientSess));
+      persistClientSession(clientSess);
       setSession({ token: clientSess.token, user: clientSess.user });
       return { redirectTo: "/subscription" };
     } catch (e: any) {
