@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/table";
 import {
   Loader2, Coins, MessageCircle, Rocket, Crown, Building2,
-  Check, ArrowRight, Users, ShieldCheck, TrendingUp, Handshake,
+  Check, ArrowRight, Users, ShieldCheck, TrendingUp, Handshake, Settings,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { supabase as cloud } from "@/integrations/supabase/client";
@@ -136,6 +136,14 @@ const PARTNER_PLANS: PartnerPlan[] = [
   },
 ];
 
+type PlanOverride = {
+  setup?: number | null;
+  monthly?: number | null;
+  licensesMonth?: number | "ilimitado" | null;
+  commission?: number | null;
+};
+type PlansConfig = Record<string, PlanOverride>;
+
 function fmtBRL(n: number) {
   return n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
@@ -158,11 +166,24 @@ function inviteBelongsToSession(invite: ResellerInvite, userId?: string, email?:
   );
 }
 
-function buildPartnerWhatsapp(plan: PartnerPlan) {
+function mergePlan(plan: PartnerPlan, cfg?: PlanOverride | null): PartnerPlan {
+  if (!cfg) return plan;
+  return {
+    ...plan,
+    setup: cfg.setup ?? plan.setup,
+    monthly: cfg.monthly ?? plan.monthly,
+    licensesMonth: (cfg.licensesMonth ?? plan.licensesMonth) as PartnerPlan["licensesMonth"],
+    commission: cfg.commission ?? plan.commission,
+  };
+}
+
+function buildPartnerWhatsapp(plan: PartnerPlan, hasValues: boolean) {
+  const pricing = hasValues
+    ? `Setup: ${fmtBRL(plan.setup)} · Mensalidade: ${fmtBRL(plan.monthly)}\nLicenças/mês: ${plan.licensesMonth === "ilimitado" ? "Ilimitadas" : plan.licensesMonth} · Comissão: ${plan.commission}%\n\n`
+    : "";
   const msg =
     `Olá! Quero ativar o plano *${plan.name}* do Programa de Parceiros Hyro.\n` +
-    `Setup: ${fmtBRL(plan.setup)} · Mensalidade: ${fmtBRL(plan.monthly)}\n` +
-    `Licenças/mês: ${plan.licensesMonth === "ilimitado" ? "Ilimitadas" : plan.licensesMonth} · Comissão: ${plan.commission}%\n\n` +
+    pricing +
     `Aguardo os próximos passos para começar a revender.`;
   return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`;
 }
@@ -174,6 +195,22 @@ function ResellersPage() {
   const [createOpen, setCreateOpen] = useState(false);
   const [balanceTarget, setBalanceTarget] = useState<Reseller | null>(null);
   const [tab, setTab] = useState<"plans" | "list">("plans");
+  const [configOpen, setConfigOpen] = useState(false);
+
+  const { data: plansConfig } = useQuery({
+    queryKey: ["partner-plans-config"],
+    staleTime: 30_000,
+    queryFn: async () => {
+      const { data } = await (cloud as any)
+        .from("hyro_partner_plans_config")
+        .select("plans")
+        .eq("id", 1)
+        .maybeSingle();
+      return ((data as any)?.plans ?? {}) as PlansConfig;
+    },
+  });
+
+
 
   // Slots contratados/dispon\u00edveis do dono da licen\u00e7a (apenas para clientes)
   const { data: mySlots } = useQuery({
@@ -375,16 +412,30 @@ function ResellersPage() {
               Ativação exclusiva mediante contato com o time comercial.
             </p>
           </div>
-          <a
-            href={`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent("Olá! Quero saber mais sobre o Programa de Parceiros Hyro.")}`}
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex items-center gap-2 text-[12.5px] font-medium px-4 py-2 rounded-lg border border-border bg-background hover:bg-accent transition-colors shadow-xs"
-          >
-            <MessageCircle className="h-3.5 w-3.5" /> Falar com comercial
-          </a>
+          <div className="flex items-center gap-2">
+            {isOwner && (
+              <button
+                type="button"
+                onClick={() => setConfigOpen(true)}
+                title="Configurar valores dos planos"
+                aria-label="Configurar valores dos planos"
+                className="inline-flex items-center justify-center h-9 w-9 rounded-lg border border-border bg-background hover:bg-accent transition-colors shadow-xs"
+              >
+                <Settings className="h-4 w-4" />
+              </button>
+            )}
+            <a
+              href={`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent("Olá! Quero saber mais sobre o Programa de Parceiros Hyro.")}`}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-2 text-[12.5px] font-medium px-4 py-2 rounded-lg border border-border bg-background hover:bg-accent transition-colors shadow-xs"
+            >
+              <MessageCircle className="h-3.5 w-3.5" /> Falar com comercial
+            </a>
+          </div>
         </div>
       </div>
+
 
       {/* Tabs */}
       <div className="flex items-center justify-between flex-wrap gap-3 border-b border-border">
@@ -452,11 +503,12 @@ function ResellersPage() {
         <section>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             {PARTNER_PLANS.map((p) => (
-              <PartnerCard key={p.id} plan={p} />
+              <PartnerCard key={p.id} plan={p} override={plansConfig?.[p.id] ?? null} />
             ))}
           </div>
         </section>
       )}
+
 
       {/* Existing resellers */}
       {tab === "list" && (
@@ -580,13 +632,26 @@ function ResellersPage() {
 
       <CreateResellerDialog open={createOpen} onOpenChange={setCreateOpen} ownerUserId={session?.user.id ?? null} isOwner={isOwner} />
       <AdjustBalanceDialog reseller={balanceTarget} onClose={() => setBalanceTarget(null)} />
+      {isOwner && (
+        <PartnerPlansConfigDialog
+          open={configOpen}
+          onOpenChange={setConfigOpen}
+          current={plansConfig ?? {}}
+        />
+      )}
     </div>
   );
 }
 
-function PartnerCard({ plan }: { plan: PartnerPlan }) {
+function PartnerCard({ plan: base, override }: { plan: PartnerPlan; override?: PlanOverride | null }) {
+  const plan = mergePlan(base, override);
   const Icon = plan.icon;
   const featured = plan.featured;
+  const hasMonthly = override?.monthly != null;
+  const hasSetup = override?.setup != null;
+  const hasLicenses = override?.licensesMonth != null;
+  const hasCommission = override?.commission != null;
+  const hasAny = hasMonthly || hasSetup || hasLicenses || hasCommission;
   return (
     <div
       className={[
@@ -623,7 +688,7 @@ function PartnerCard({ plan }: { plan: PartnerPlan }) {
         <div className="flex-1 min-w-0">
           <div className="text-[15px] font-semibold tracking-tight leading-none">{plan.name}</div>
           <div className={["text-[10.5px] font-mono uppercase tracking-wider mt-1.5", featured ? "text-background/60" : "text-muted-foreground"].join(" ")}>
-            {plan.commission}% de comissão
+            {hasCommission ? `${plan.commission}% de comissão` : "Comissão sob consulta"}
           </div>
         </div>
       </div>
@@ -634,15 +699,21 @@ function PartnerCard({ plan }: { plan: PartnerPlan }) {
 
       {/* Pricing */}
       <div className="mb-5">
-        <div className="flex items-baseline gap-1.5">
-          <span className={["text-[13px] font-medium", featured ? "text-background/80" : "text-muted-foreground"].join(" ")}>R$</span>
-          <span className="text-[40px] leading-none font-semibold tracking-tight font-mono tabular-nums">
-            {plan.monthly.toLocaleString("pt-BR")}
-          </span>
-          <span className={["text-[12.5px] ml-1", featured ? "text-background/60" : "text-muted-foreground"].join(" ")}>/mês</span>
-        </div>
+        {hasMonthly ? (
+          <div className="flex items-baseline gap-1.5">
+            <span className={["text-[13px] font-medium", featured ? "text-background/80" : "text-muted-foreground"].join(" ")}>R$</span>
+            <span className="text-[40px] leading-none font-semibold tracking-tight font-mono tabular-nums">
+              {plan.monthly.toLocaleString("pt-BR")}
+            </span>
+            <span className={["text-[12.5px] ml-1", featured ? "text-background/60" : "text-muted-foreground"].join(" ")}>/mês</span>
+          </div>
+        ) : (
+          <div className="flex items-baseline gap-1.5">
+            <span className="text-[28px] leading-none font-semibold tracking-tight">Sob consulta</span>
+          </div>
+        )}
         <div className={["text-[11.5px] mt-1.5", featured ? "text-background/60" : "text-muted-foreground"].join(" ")}>
-          + Setup único de <span className="font-medium">{fmtBRL(plan.setup)}</span>
+          {hasSetup ? <>+ Setup único de <span className="font-medium">{fmtBRL(plan.setup)}</span></> : "Setup sob consulta"}
         </div>
       </div>
 
@@ -651,12 +722,12 @@ function PartnerCard({ plan }: { plan: PartnerPlan }) {
         <div>
           <div className={["text-[10px] uppercase tracking-wider font-semibold", featured ? "text-background/60" : "text-muted-foreground"].join(" ")}>Licenças/mês</div>
           <div className="text-[15px] font-semibold font-mono mt-0.5">
-            {plan.licensesMonth === "ilimitado" ? "∞" : plan.licensesMonth}
+            {hasLicenses ? (plan.licensesMonth === "ilimitado" ? "∞" : plan.licensesMonth) : "—"}
           </div>
         </div>
         <div>
           <div className={["text-[10px] uppercase tracking-wider font-semibold", featured ? "text-background/60" : "text-muted-foreground"].join(" ")}>Comissão</div>
-          <div className="text-[15px] font-semibold font-mono mt-0.5">{plan.commission}%</div>
+          <div className="text-[15px] font-semibold font-mono mt-0.5">{hasCommission ? `${plan.commission}%` : "—"}</div>
         </div>
       </div>
 
@@ -687,7 +758,7 @@ function PartnerCard({ plan }: { plan: PartnerPlan }) {
             : "bg-foreground text-background hover:bg-foreground/90",
         ].join(" ")}
       >
-        <a href={buildPartnerWhatsapp(plan)} target="_blank" rel="noreferrer">
+        <a href={buildPartnerWhatsapp(plan, hasAny)} target="_blank" rel="noreferrer">
           <MessageCircle className="h-3.5 w-3.5" />
           Ativar via WhatsApp
           <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover/btn:translate-x-0.5" />
@@ -697,6 +768,7 @@ function PartnerCard({ plan }: { plan: PartnerPlan }) {
       <p className={["text-[10.5px] mt-3 text-center", featured ? "text-background/50" : "text-muted-foreground"].join(" ")}>
         Ativação sujeita a análise comercial
       </p>
+
     </div>
   );
 }
@@ -1060,3 +1132,148 @@ function AdjustBalanceDialog({
     </Dialog>
   );
 }
+
+function PartnerPlansConfigDialog({
+  open,
+  onOpenChange,
+  current,
+}: {
+  open: boolean;
+  onOpenChange: (b: boolean) => void;
+  current: PlansConfig;
+}) {
+  const qc = useQueryClient();
+  const [draft, setDraft] = useState<PlansConfig>(current);
+  const [saving, setSaving] = useState(false);
+
+
+  const setField = (planId: string, key: keyof PlanOverride, value: any) => {
+    setDraft((d) => ({
+      ...d,
+      [planId]: { ...(d?.[planId] ?? {}), [key]: value },
+    }));
+  };
+
+  const parseNum = (v: string): number | null => {
+    const t = v.trim();
+    if (t === "") return null;
+    const n = Number(t.replace(",", "."));
+    return Number.isFinite(n) ? n : null;
+  };
+
+  const save = async () => {
+    setSaving(true);
+    try {
+      const { error } = await (cloud as any)
+        .from("hyro_partner_plans_config")
+        .upsert({ id: 1, plans: draft, updated_at: new Date().toISOString() }, { onConflict: "id" });
+      if (error) throw error;
+      toast.success("Valores dos planos atualizados");
+      qc.invalidateQueries({ queryKey: ["partner-plans-config"] });
+      onOpenChange(false);
+    } catch (e: any) {
+      toast.error(e?.message ?? "Erro ao salvar");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(v) => {
+        if (v) setDraft(current);
+        onOpenChange(v);
+      }}
+    >
+      <DialogContent className="sm:max-w-[640px] p-0 overflow-hidden">
+        <DialogHeader className="px-6 pt-6 pb-4 border-b border-border/60">
+          <div className="flex items-start gap-3">
+            <div className="h-9 w-9 rounded-md bg-foreground text-background flex items-center justify-center shrink-0">
+              <Settings className="h-4 w-4" />
+            </div>
+            <div className="min-w-0">
+              <DialogTitle className="text-[15px] font-semibold tracking-tight">Configurar planos de parceria</DialogTitle>
+              <p className="text-[12.5px] text-muted-foreground mt-0.5">
+                Defina os valores exibidos para os revendedores. Deixe em branco para ocultar o campo (aparece “Sob consulta”).
+              </p>
+            </div>
+          </div>
+        </DialogHeader>
+
+        <div className="px-6 py-5 space-y-5 max-h-[70vh] overflow-y-auto">
+          {PARTNER_PLANS.map((p) => {
+            const cur = draft?.[p.id] ?? {};
+            return (
+              <section key={p.id} className="rounded-lg border border-border p-4 space-y-3">
+                <div className="flex items-center gap-2">
+                  <p.icon className="h-4 w-4 text-muted-foreground" />
+                  <div className="text-[13px] font-semibold">{p.name}</div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label className="text-[11.5px]">Setup (R$)</Label>
+                    <Input
+                      type="number" min={0} step="1" inputMode="decimal"
+                      value={cur.setup ?? ""}
+                      placeholder="ex: 497"
+                      onChange={(e) => setField(p.id, "setup", parseNum(e.target.value))}
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-[11.5px]">Mensalidade (R$)</Label>
+                    <Input
+                      type="number" min={0} step="1" inputMode="decimal"
+                      value={cur.monthly ?? ""}
+                      placeholder="ex: 149"
+                      onChange={(e) => setField(p.id, "monthly", parseNum(e.target.value))}
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-[11.5px]">Licenças/mês</Label>
+                    <Input
+                      type="text"
+                      value={
+                        cur.licensesMonth === "ilimitado"
+                          ? "ilimitado"
+                          : cur.licensesMonth == null
+                            ? ""
+                            : String(cur.licensesMonth)
+                      }
+                      placeholder='ex: 15 ou "ilimitado"'
+                      onChange={(e) => {
+                        const v = e.target.value.trim().toLowerCase();
+                        if (v === "") return setField(p.id, "licensesMonth", null);
+                        if (v.startsWith("il") || v === "∞") return setField(p.id, "licensesMonth", "ilimitado");
+                        const n = parseInt(v, 10);
+                        setField(p.id, "licensesMonth", Number.isFinite(n) ? n : null);
+                      }}
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-[11.5px]">Comissão (%)</Label>
+                    <Input
+                      type="number" min={0} max={100} step="1" inputMode="decimal"
+                      value={cur.commission ?? ""}
+                      placeholder="ex: 25"
+                      onChange={(e) => setField(p.id, "commission", parseNum(e.target.value))}
+                    />
+                  </div>
+                </div>
+              </section>
+            );
+          })}
+        </div>
+
+        <DialogFooter className="px-6 py-4 border-t border-border/60 bg-muted/30 gap-2">
+          <Button variant="ghost" size="sm" onClick={() => onOpenChange(false)}>Cancelar</Button>
+          <Button size="sm" onClick={save} disabled={saving}>
+            {saving && <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />}
+            Salvar valores
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+

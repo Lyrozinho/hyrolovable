@@ -35,6 +35,24 @@ export type Database = {
         }
         Relationships: []
       }
+      hyro_partner_plans_config: {
+        Row: {
+          id: number
+          plans: Json
+          updated_at: string
+        }
+        Insert: {
+          id?: number
+          plans?: Json
+          updated_at?: string
+        }
+        Update: {
+          id?: number
+          plans?: Json
+          updated_at?: string
+        }
+        Relationships: []
+      }
       hyro_redemption_links: {
         Row: {
           claimed_at: string | null

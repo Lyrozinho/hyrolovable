@@ -1105,8 +1105,6 @@ function LicenseCreatedSuccess({
         "",
         ...warning,
         "",
-        "💬 Dúvidas? WhatsApp: (27) 98135-9051",
-        "",
         "_Obrigado por escolher a Hyro Lovable! 🚀_",
       ].join("\n")
     : [
@@ -1140,8 +1138,6 @@ function LicenseCreatedSuccess({
         "4️⃣ Ative com sua chave de licença",
         "",
         ...warning,
-        "",
-        "💬 Dúvidas? Fale conosco no WhatsApp: (27) 98135-9051",
         "",
         "_Obrigado por escolher a Hyro Lovable! 🚀_",
       ].join("\n");

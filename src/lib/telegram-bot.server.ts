@@ -16,7 +16,6 @@ function ext() {
 
 const PANEL_URL = "https://hyrolovable.lovable.app";
 const EXTENSION_URL = PANEL_URL + "/upgrade";
-const SUPPORT_WHATSAPP = "(27) 98135-9051";
 
 // ---------- Telegram API ----------
 
@@ -199,8 +198,6 @@ function buildLicenseMessage(input: {
       "",
       ...warning,
       "",
-      `💬 Dúvidas? WhatsApp: ${SUPPORT_WHATSAPP}`,
-      "",
       "_Obrigado por escolher a Hyro Lovable! 🚀_",
     ].join("\n");
   }
@@ -235,8 +232,6 @@ function buildLicenseMessage(input: {
     "4️⃣ Ative com sua chave de licença",
     "",
     ...warning,
-    "",
-    `💬 Dúvidas? WhatsApp: ${SUPPORT_WHATSAPP}`,
     "",
     "_Obrigado por escolher a Hyro Lovable! 🚀_",
   ].join("\n");
@@ -453,8 +448,6 @@ export async function createReseller(input: {
     "⚠️ *Aviso importante*",
     "É *proibido revender, ceder ou compartilhar* fora dos termos combinados.",
     "Casos identificados resultam em *suspensão imediata sem reembolso*.",
-    "",
-    `💬 Dúvidas? WhatsApp: ${SUPPORT_WHATSAPP}`,
   ].join("\n");
 
   return { email, balance, message };
