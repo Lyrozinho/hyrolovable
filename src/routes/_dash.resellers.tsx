@@ -195,6 +195,22 @@ function ResellersPage() {
   const [createOpen, setCreateOpen] = useState(false);
   const [balanceTarget, setBalanceTarget] = useState<Reseller | null>(null);
   const [tab, setTab] = useState<"plans" | "list">("plans");
+  const [configOpen, setConfigOpen] = useState(false);
+
+  const { data: plansConfig } = useQuery({
+    queryKey: ["partner-plans-config"],
+    staleTime: 30_000,
+    queryFn: async () => {
+      const { data } = await (cloud as any)
+        .from("hyro_partner_plans_config")
+        .select("plans")
+        .eq("id", 1)
+        .maybeSingle();
+      return ((data as any)?.plans ?? {}) as PlansConfig;
+    },
+  });
+
+
 
   // Slots contratados/dispon\u00edveis do dono da licen\u00e7a (apenas para clientes)
   const { data: mySlots } = useQuery({
@@ -473,11 +489,12 @@ function ResellersPage() {
         <section>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             {PARTNER_PLANS.map((p) => (
-              <PartnerCard key={p.id} plan={p} />
+              <PartnerCard key={p.id} plan={p} override={plansConfig?.[p.id] ?? null} />
             ))}
           </div>
         </section>
       )}
+
 
       {/* Existing resellers */}
       {tab === "list" && (
