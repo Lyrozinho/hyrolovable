@@ -649,11 +649,11 @@ function PartnerCard({ plan: base, override }: { plan: PartnerPlan; override?: P
   const plan = mergePlan(base, override);
   const Icon = plan.icon;
   const featured = plan.featured;
-  const hasMonthly = override?.monthly != null;
-  const hasSetup = override?.setup != null;
-  const hasLicenses = override?.licensesMonth != null;
-  const hasCommission = override?.commission != null;
-  const hasAny = hasMonthly || hasSetup || hasLicenses || hasCommission;
+  const hasMonthly = override?.monthly != null || base.monthly > 0;
+  const hasLicenses = override?.licensesMonth != null || (typeof base.licensesMonth === "number" && base.licensesMonth > 0) || base.licensesMonth === "ilimitado";
+  const hasAny = hasMonthly || hasLicenses;
+  const per = perLicensePrice(plan);
+  const licensesLabel = plan.licensesMonth === "ilimitado" ? "Ilimitadas" : `${plan.licensesMonth} chaves`;
   return (
     <div
       className={[
@@ -679,18 +679,21 @@ function PartnerCard({ plan: base, override }: { plan: PartnerPlan; override?: P
       <div className="flex items-center gap-2.5 mb-3">
         <div
           className={[
-            "h-9 w-9 rounded-lg flex items-center justify-center border",
+            "h-10 w-10 rounded-xl flex items-center justify-center border shadow-inner",
             featured
               ? "bg-background/10 border-background/20"
-              : "bg-secondary border-border",
+              : "bg-gradient-to-br from-amber-100 to-amber-300/60 border-amber-300/60 dark:from-amber-500/20 dark:to-amber-700/10 dark:border-amber-400/30",
           ].join(" ")}
         >
-          <Icon className="h-4 w-4" />
+          <Icon
+            className={featured ? "h-5 w-5" : "h-5 w-5 text-amber-700 dark:text-amber-300 -rotate-45"}
+            strokeWidth={2.2}
+          />
         </div>
         <div className="flex-1 min-w-0">
           <div className="text-[15px] font-semibold tracking-tight leading-none">{plan.name}</div>
           <div className={["text-[10.5px] font-mono uppercase tracking-wider mt-1.5", featured ? "text-background/60" : "text-muted-foreground"].join(" ")}>
-            {hasCommission ? `${plan.commission}% de comissão` : "Comissão sob consulta"}
+            {hasLicenses ? licensesLabel : "Volume sob consulta"}
           </div>
         </div>
       </div>
@@ -705,7 +708,7 @@ function PartnerCard({ plan: base, override }: { plan: PartnerPlan; override?: P
           <div className="flex items-baseline gap-1.5">
             <span className={["text-[13px] font-medium", featured ? "text-background/80" : "text-muted-foreground"].join(" ")}>R$</span>
             <span className="text-[40px] leading-none font-semibold tracking-tight font-mono tabular-nums">
-              {plan.monthly.toLocaleString("pt-BR")}
+              {plan.monthly.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </span>
             <span className={["text-[12.5px] ml-1", featured ? "text-background/60" : "text-muted-foreground"].join(" ")}>/mês</span>
           </div>
@@ -715,23 +718,31 @@ function PartnerCard({ plan: base, override }: { plan: PartnerPlan; override?: P
           </div>
         )}
         <div className={["text-[11.5px] mt-1.5", featured ? "text-background/60" : "text-muted-foreground"].join(" ")}>
-          {hasSetup ? <>+ Setup único de <span className="font-medium">{fmtBRL(plan.setup)}</span></> : "Setup sob consulta"}
+          {per
+            ? <>
+                <span className="font-medium">{fmtBRL(per)}</span> por chave/mês
+              </>
+            : plan.licensesMonth === "ilimitado"
+              ? "Chaves ilimitadas por mês"
+              : "Valor por chave sob consulta"}
         </div>
       </div>
 
       {/* Quick stats */}
       <div className={["grid grid-cols-2 gap-2 p-2.5 rounded-lg mb-5", featured ? "bg-background/10" : "bg-muted/40 border border-border"].join(" ")}>
         <div>
-          <div className={["text-[10px] uppercase tracking-wider font-semibold", featured ? "text-background/60" : "text-muted-foreground"].join(" ")}>Licenças/mês</div>
+          <div className={["text-[10px] uppercase tracking-wider font-semibold", featured ? "text-background/60" : "text-muted-foreground"].join(" ")}>Chaves/mês</div>
           <div className="text-[15px] font-semibold font-mono mt-0.5">
             {hasLicenses ? (plan.licensesMonth === "ilimitado" ? "∞" : plan.licensesMonth) : "—"}
           </div>
         </div>
         <div>
-          <div className={["text-[10px] uppercase tracking-wider font-semibold", featured ? "text-background/60" : "text-muted-foreground"].join(" ")}>Comissão</div>
-          <div className="text-[15px] font-semibold font-mono mt-0.5">{hasCommission ? `${plan.commission}%` : "—"}</div>
+          <div className={["text-[10px] uppercase tracking-wider font-semibold", featured ? "text-background/60" : "text-muted-foreground"].join(" ")}>Por chave</div>
+          <div className="text-[15px] font-semibold font-mono mt-0.5">{per ? fmtBRL(per) : "—"}</div>
         </div>
       </div>
+
+
 
       <div className={["h-px w-full mb-4", featured ? "bg-background/15" : "bg-border"].join(" ")} />
 
