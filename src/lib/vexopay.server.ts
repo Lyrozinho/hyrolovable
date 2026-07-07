@@ -1,7 +1,10 @@
 // Server-only helpers for VexoPay integration.
 // Do NOT import this from client bundles — it reads process.env at call time.
 
-const BASE_URL = process.env.VEXOPAY_BASE_URL || "https://api.vexopay.com";
+// VexoPay's production gateway is served from the main site.
+// The API's `api.vexopay.com` host in the public docs currently returns a
+// TLS SNI error at Cloudflare (surfaces in the browser as HTTP 525).
+const BASE_URL = process.env.VEXOPAY_BASE_URL || "https://www.vexopay.com.br";
 
 export type PixCreateInput = {
   amountCents: number;
