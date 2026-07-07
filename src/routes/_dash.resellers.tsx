@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/table";
 import {
   Loader2, Coins, MessageCircle, Rocket, Crown, Building2,
-  Check, ArrowRight, Users, ShieldCheck, TrendingUp, Handshake, Settings,
+  Check, ArrowRight, Users, ShieldCheck, TrendingUp, Handshake, Settings, KeyRound,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { supabase as cloud } from "@/integrations/supabase/client";
@@ -80,58 +80,53 @@ type PartnerPlan = {
 const PARTNER_PLANS: PartnerPlan[] = [
   {
     id: "starter",
-    name: "Starter",
-    tagline: "Comece a revender com previsibilidade e margem sólida.",
-    icon: Rocket,
-    setup: 497,
+    name: "Pacote Essencial",
+    tagline: "Comece a revender com um pacote enxuto de chaves mensais.",
+    icon: KeyRound,
+    setup: 0,
     monthly: 149,
-    licensesMonth: 15,
-    commission: 25,
+    licensesMonth: 5,
+    commission: 0,
     perks: [
-      "15 licenças mensais para revender",
-      "25% de comissão sobre renovações",
+      "Chaves entregues instantaneamente",
       "Painel próprio de gestão",
-      "Material de venda pronto",
-      "Suporte via WhatsApp em horário comercial",
+      "Renovação mensal simplificada",
+      "Suporte via WhatsApp",
     ],
   },
   {
     id: "growth",
-    name: "Growth",
-    tagline: "O plano dos revendedores que faturam de verdade.",
-    icon: TrendingUp,
-    setup: 997,
+    name: "Pacote Pro",
+    tagline: "Mais chaves por mês com melhor custo por chave.",
+    icon: KeyRound,
+    setup: 0,
     monthly: 349,
-    licensesMonth: 50,
-    commission: 35,
+    licensesMonth: 15,
+    commission: 0,
     featured: true,
     badge: "Mais escolhido",
     perks: [
-      "50 licenças mensais + créditos acumuláveis",
-      "35% de comissão + bônus por meta",
-      "White-label parcial (sua marca no painel)",
-      "Prioridade em ativações e suporte",
-      "Treinamento de vendas ao vivo",
-      "Relatórios avançados de conversão",
+      "Volume maior de chaves mensais",
+      "Melhor custo por chave",
+      "Prioridade em ativações",
+      "Suporte prioritário",
     ],
   },
   {
     id: "elite",
-    name: "Elite Partner",
-    tagline: "Operação escalável com margem premium e exclusividade.",
-    icon: Crown,
-    setup: 2497,
+    name: "Pacote Elite",
+    tagline: "Alto volume de chaves com o melhor valor unitário.",
+    icon: KeyRound,
+    setup: 0,
     monthly: 897,
-    licensesMonth: "ilimitado",
-    commission: 50,
-    badge: "Máxima margem",
+    licensesMonth: 50,
+    commission: 0,
+    badge: "Melhor valor por chave",
     perks: [
-      "Licenças ilimitadas para revenda",
-      "50% de comissão vitalícia",
-      "White-label completo com domínio próprio",
-      "Gerente de conta dedicado",
-      "Acesso à API + integrações personalizadas",
-      "Exclusividade regional negociável",
+      "Grande volume de chaves mensais",
+      "Menor custo por chave",
+      "Atendimento dedicado",
+      "Fluxo de revenda otimizado",
     ],
   },
 ];
@@ -177,12 +172,19 @@ function mergePlan(plan: PartnerPlan, cfg?: PlanOverride | null): PartnerPlan {
   };
 }
 
+function perLicensePrice(plan: PartnerPlan): number | null {
+  if (typeof plan.licensesMonth !== "number" || plan.licensesMonth <= 0) return null;
+  if (!Number.isFinite(plan.monthly) || plan.monthly <= 0) return null;
+  return plan.monthly / plan.licensesMonth;
+}
+
 function buildPartnerWhatsapp(plan: PartnerPlan, hasValues: boolean) {
+  const per = perLicensePrice(plan);
   const pricing = hasValues
-    ? `Setup: ${fmtBRL(plan.setup)} · Mensalidade: ${fmtBRL(plan.monthly)}\nLicenças/mês: ${plan.licensesMonth === "ilimitado" ? "Ilimitadas" : plan.licensesMonth} · Comissão: ${plan.commission}%\n\n`
+    ? `Valor: ${fmtBRL(plan.monthly)} / mês\nChaves: ${plan.licensesMonth === "ilimitado" ? "Ilimitadas" : plan.licensesMonth}${per ? ` · ${fmtBRL(per)} por chave/mês` : ""}\n\n`
     : "";
   const msg =
-    `Olá! Quero ativar o plano *${plan.name}* do Programa de Parceiros Hyro.\n` +
+    `Olá! Quero ativar o *${plan.name}* do Programa de Parceiros Hyro.\n` +
     pricing +
     `Aguardo os próximos passos para começar a revender.`;
   return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`;
@@ -647,11 +649,11 @@ function PartnerCard({ plan: base, override }: { plan: PartnerPlan; override?: P
   const plan = mergePlan(base, override);
   const Icon = plan.icon;
   const featured = plan.featured;
-  const hasMonthly = override?.monthly != null;
-  const hasSetup = override?.setup != null;
-  const hasLicenses = override?.licensesMonth != null;
-  const hasCommission = override?.commission != null;
-  const hasAny = hasMonthly || hasSetup || hasLicenses || hasCommission;
+  const hasMonthly = override?.monthly != null || base.monthly > 0;
+  const hasLicenses = override?.licensesMonth != null || (typeof base.licensesMonth === "number" && base.licensesMonth > 0) || base.licensesMonth === "ilimitado";
+  const hasAny = hasMonthly || hasLicenses;
+  const per = perLicensePrice(plan);
+  const licensesLabel = plan.licensesMonth === "ilimitado" ? "Ilimitadas" : `${plan.licensesMonth} chaves`;
   return (
     <div
       className={[
@@ -677,18 +679,21 @@ function PartnerCard({ plan: base, override }: { plan: PartnerPlan; override?: P
       <div className="flex items-center gap-2.5 mb-3">
         <div
           className={[
-            "h-9 w-9 rounded-lg flex items-center justify-center border",
+            "h-10 w-10 rounded-xl flex items-center justify-center border shadow-inner",
             featured
               ? "bg-background/10 border-background/20"
-              : "bg-secondary border-border",
+              : "bg-gradient-to-br from-amber-100 to-amber-300/60 border-amber-300/60 dark:from-amber-500/20 dark:to-amber-700/10 dark:border-amber-400/30",
           ].join(" ")}
         >
-          <Icon className="h-4 w-4" />
+          <Icon
+            className={featured ? "h-5 w-5" : "h-5 w-5 text-amber-700 dark:text-amber-300 -rotate-45"}
+            strokeWidth={2.2}
+          />
         </div>
         <div className="flex-1 min-w-0">
           <div className="text-[15px] font-semibold tracking-tight leading-none">{plan.name}</div>
           <div className={["text-[10.5px] font-mono uppercase tracking-wider mt-1.5", featured ? "text-background/60" : "text-muted-foreground"].join(" ")}>
-            {hasCommission ? `${plan.commission}% de comissão` : "Comissão sob consulta"}
+            {hasLicenses ? licensesLabel : "Volume sob consulta"}
           </div>
         </div>
       </div>
@@ -703,7 +708,7 @@ function PartnerCard({ plan: base, override }: { plan: PartnerPlan; override?: P
           <div className="flex items-baseline gap-1.5">
             <span className={["text-[13px] font-medium", featured ? "text-background/80" : "text-muted-foreground"].join(" ")}>R$</span>
             <span className="text-[40px] leading-none font-semibold tracking-tight font-mono tabular-nums">
-              {plan.monthly.toLocaleString("pt-BR")}
+              {plan.monthly.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </span>
             <span className={["text-[12.5px] ml-1", featured ? "text-background/60" : "text-muted-foreground"].join(" ")}>/mês</span>
           </div>
@@ -713,23 +718,31 @@ function PartnerCard({ plan: base, override }: { plan: PartnerPlan; override?: P
           </div>
         )}
         <div className={["text-[11.5px] mt-1.5", featured ? "text-background/60" : "text-muted-foreground"].join(" ")}>
-          {hasSetup ? <>+ Setup único de <span className="font-medium">{fmtBRL(plan.setup)}</span></> : "Setup sob consulta"}
+          {per
+            ? <>
+                <span className="font-medium">{fmtBRL(per)}</span> por chave/mês
+              </>
+            : plan.licensesMonth === "ilimitado"
+              ? "Chaves ilimitadas por mês"
+              : "Valor por chave sob consulta"}
         </div>
       </div>
 
       {/* Quick stats */}
       <div className={["grid grid-cols-2 gap-2 p-2.5 rounded-lg mb-5", featured ? "bg-background/10" : "bg-muted/40 border border-border"].join(" ")}>
         <div>
-          <div className={["text-[10px] uppercase tracking-wider font-semibold", featured ? "text-background/60" : "text-muted-foreground"].join(" ")}>Licenças/mês</div>
+          <div className={["text-[10px] uppercase tracking-wider font-semibold", featured ? "text-background/60" : "text-muted-foreground"].join(" ")}>Chaves/mês</div>
           <div className="text-[15px] font-semibold font-mono mt-0.5">
             {hasLicenses ? (plan.licensesMonth === "ilimitado" ? "∞" : plan.licensesMonth) : "—"}
           </div>
         </div>
         <div>
-          <div className={["text-[10px] uppercase tracking-wider font-semibold", featured ? "text-background/60" : "text-muted-foreground"].join(" ")}>Comissão</div>
-          <div className="text-[15px] font-semibold font-mono mt-0.5">{hasCommission ? `${plan.commission}%` : "—"}</div>
+          <div className={["text-[10px] uppercase tracking-wider font-semibold", featured ? "text-background/60" : "text-muted-foreground"].join(" ")}>Por chave</div>
+          <div className="text-[15px] font-semibold font-mono mt-0.5">{per ? fmtBRL(per) : "—"}</div>
         </div>
       </div>
+
+
 
       <div className={["h-px w-full mb-4", featured ? "bg-background/15" : "bg-border"].join(" ")} />
 
@@ -1204,33 +1217,41 @@ function PartnerPlansConfigDialog({
         <div className="px-6 py-5 space-y-5 max-h-[70vh] overflow-y-auto">
           {PARTNER_PLANS.map((p) => {
             const cur = draft?.[p.id] ?? {};
+            const monthlyVal =
+              cur.monthly != null ? Number(cur.monthly) : p.monthly;
+            const licVal =
+              cur.licensesMonth === "ilimitado"
+                ? "ilimitado"
+                : cur.licensesMonth != null
+                  ? Number(cur.licensesMonth)
+                  : p.licensesMonth;
+            const perPreview =
+              typeof licVal === "number" && licVal > 0 && Number.isFinite(monthlyVal) && monthlyVal > 0
+                ? monthlyVal / licVal
+                : null;
             return (
               <section key={p.id} className="rounded-lg border border-border p-4 space-y-3">
-                <div className="flex items-center gap-2">
-                  <p.icon className="h-4 w-4 text-muted-foreground" />
-                  <div className="text-[13px] font-semibold">{p.name}</div>
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <KeyRound className="h-4 w-4 text-amber-500 -rotate-45" />
+                    <div className="text-[13px] font-semibold">{p.name}</div>
+                  </div>
+                  <div className="text-[11px] text-muted-foreground font-mono">
+                    {perPreview ? `${fmtBRL(perPreview)} / chave` : licVal === "ilimitado" ? "∞ chaves" : "—"}
+                  </div>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5">
-                    <Label className="text-[11.5px]">Setup (R$)</Label>
+                    <Label className="text-[11.5px]">Valor mensal (R$)</Label>
                     <Input
-                      type="number" min={0} step="1" inputMode="decimal"
-                      value={cur.setup ?? ""}
-                      placeholder="ex: 497"
-                      onChange={(e) => setField(p.id, "setup", parseNum(e.target.value))}
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-[11.5px]">Mensalidade (R$)</Label>
-                    <Input
-                      type="number" min={0} step="1" inputMode="decimal"
+                      type="number" min={0} step="0.01" inputMode="decimal"
                       value={cur.monthly ?? ""}
-                      placeholder="ex: 149"
+                      placeholder="ex: 149.50"
                       onChange={(e) => setField(p.id, "monthly", parseNum(e.target.value))}
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <Label className="text-[11.5px]">Licenças/mês</Label>
+                    <Label className="text-[11.5px]">Quantidade de chaves</Label>
                     <Input
                       type="text"
                       value={
@@ -1240,7 +1261,7 @@ function PartnerPlansConfigDialog({
                             ? ""
                             : String(cur.licensesMonth)
                       }
-                      placeholder='ex: 15 ou "ilimitado"'
+                      placeholder='ex: 5 ou "ilimitado"'
                       onChange={(e) => {
                         const v = e.target.value.trim().toLowerCase();
                         if (v === "") return setField(p.id, "licensesMonth", null);
@@ -1250,20 +1271,15 @@ function PartnerPlansConfigDialog({
                       }}
                     />
                   </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-[11.5px]">Comissão (%)</Label>
-                    <Input
-                      type="number" min={0} max={100} step="1" inputMode="decimal"
-                      value={cur.commission ?? ""}
-                      placeholder="ex: 25"
-                      onChange={(e) => setField(p.id, "commission", parseNum(e.target.value))}
-                    />
-                  </div>
                 </div>
+                <p className="text-[11px] text-muted-foreground">
+                  O valor por chave/mês é calculado automaticamente com base nos dois campos acima.
+                </p>
               </section>
             );
           })}
         </div>
+
 
         <DialogFooter className="px-6 py-4 border-t border-border/60 bg-muted/30 gap-2">
           <Button variant="ghost" size="sm" onClick={() => onOpenChange(false)}>Cancelar</Button>
