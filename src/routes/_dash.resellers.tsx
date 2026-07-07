@@ -412,16 +412,30 @@ function ResellersPage() {
               Ativação exclusiva mediante contato com o time comercial.
             </p>
           </div>
-          <a
-            href={`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent("Olá! Quero saber mais sobre o Programa de Parceiros Hyro.")}`}
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex items-center gap-2 text-[12.5px] font-medium px-4 py-2 rounded-lg border border-border bg-background hover:bg-accent transition-colors shadow-xs"
-          >
-            <MessageCircle className="h-3.5 w-3.5" /> Falar com comercial
-          </a>
+          <div className="flex items-center gap-2">
+            {isOwner && (
+              <button
+                type="button"
+                onClick={() => setConfigOpen(true)}
+                title="Configurar valores dos planos"
+                aria-label="Configurar valores dos planos"
+                className="inline-flex items-center justify-center h-9 w-9 rounded-lg border border-border bg-background hover:bg-accent transition-colors shadow-xs"
+              >
+                <Settings className="h-4 w-4" />
+              </button>
+            )}
+            <a
+              href={`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent("Olá! Quero saber mais sobre o Programa de Parceiros Hyro.")}`}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-2 text-[12.5px] font-medium px-4 py-2 rounded-lg border border-border bg-background hover:bg-accent transition-colors shadow-xs"
+            >
+              <MessageCircle className="h-3.5 w-3.5" /> Falar com comercial
+            </a>
+          </div>
         </div>
       </div>
+
 
       {/* Tabs */}
       <div className="flex items-center justify-between flex-wrap gap-3 border-b border-border">
