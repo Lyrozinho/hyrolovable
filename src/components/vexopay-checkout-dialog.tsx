@@ -206,9 +206,11 @@ export function VexoPayCheckoutDialog({ open, onOpenChange, planId, planName, am
       const s = (r?.status || "").toLowerCase();
       if (["paid", "approved", "completed", "success", "confirmed"].includes(s)) {
         setStep("paid");
+        void creditOnPaid();
       } else {
         toast.info("Pagamento ainda não identificado. Aguarde a confirmação.");
       }
+
     } catch (e: any) {
       toast.error(e?.message || "Falha ao consultar status.");
     } finally {
