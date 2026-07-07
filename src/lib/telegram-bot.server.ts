@@ -138,13 +138,11 @@ async function clearState(chatId: string) {
 // ---------- Helpers ----------
 
 async function sha256Hex(input: string): Promise<string> {
-  const { createHash } = await import("crypto");
   return createHash("sha256").update(input).digest("hex");
 }
 
 const ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 function generateLicenseKey(): string {
-  const { randomBytes } = require("crypto") as typeof import("crypto");
   const rand = (n: number) => {
     const b = randomBytes(n);
     let s = "";
@@ -155,7 +153,6 @@ function generateLicenseKey(): string {
 }
 function generateSlug(): string {
   const alpha = "abcdefghjkmnpqrstuvwxyz23456789";
-  const { randomBytes } = require("crypto") as typeof import("crypto");
   const b = randomBytes(10);
   let s = "";
   for (let i = 0; i < 10; i++) s += alpha[b[i] % alpha.length];
