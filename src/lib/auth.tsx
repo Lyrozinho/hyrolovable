@@ -11,7 +11,7 @@ type AuthCtx = {
   loading: boolean;
   sessionKey: string;
   authReady: boolean;
-  signIn: (email: string, password: string) => Promise<{ error?: string; redirectTo?: "/dashboard" | "/subscription" }>;
+  signIn: (email: string, password: string) => Promise<{ error?: string; redirectTo?: "/dashboard" | "/my-license" }>;
   signOut: () => Promise<void>;
 };
 
@@ -120,8 +120,8 @@ async function repairClientSession(current: Session | null): Promise<Session | n
   }
 }
 
-export function getSessionHome(session: Session | null): "/dashboard" | "/subscription" {
-  return session?.user.role === "client" ? "/subscription" : "/dashboard";
+export function getSessionHome(session: Session | null): "/dashboard" | "/my-license" {
+  return session?.user.role === "client" ? "/my-license" : "/dashboard";
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -216,7 +216,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       };
       persistClientSession(clientSess);
       setSession({ token: clientSess.token, user: clientSess.user });
-      return { redirectTo: "/subscription" };
+      return { redirectTo: "/my-license" };
     } catch (e: any) {
       return { error: error.message === "Invalid login credentials" ? "Credenciais inválidas" : (e?.message ?? error.message) };
     }
