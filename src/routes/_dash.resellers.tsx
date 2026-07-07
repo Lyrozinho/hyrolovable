@@ -172,12 +172,19 @@ function mergePlan(plan: PartnerPlan, cfg?: PlanOverride | null): PartnerPlan {
   };
 }
 
+function perLicensePrice(plan: PartnerPlan): number | null {
+  if (typeof plan.licensesMonth !== "number" || plan.licensesMonth <= 0) return null;
+  if (!Number.isFinite(plan.monthly) || plan.monthly <= 0) return null;
+  return plan.monthly / plan.licensesMonth;
+}
+
 function buildPartnerWhatsapp(plan: PartnerPlan, hasValues: boolean) {
+  const per = perLicensePrice(plan);
   const pricing = hasValues
-    ? `Setup: ${fmtBRL(plan.setup)} · Mensalidade: ${fmtBRL(plan.monthly)}\nLicenças/mês: ${plan.licensesMonth === "ilimitado" ? "Ilimitadas" : plan.licensesMonth} · Comissão: ${plan.commission}%\n\n`
+    ? `Valor: ${fmtBRL(plan.monthly)} / mês\nChaves: ${plan.licensesMonth === "ilimitado" ? "Ilimitadas" : plan.licensesMonth}${per ? ` · ${fmtBRL(per)} por chave/mês` : ""}\n\n`
     : "";
   const msg =
-    `Olá! Quero ativar o plano *${plan.name}* do Programa de Parceiros Hyro.\n` +
+    `Olá! Quero ativar o *${plan.name}* do Programa de Parceiros Hyro.\n` +
     pricing +
     `Aguardo os próximos passos para começar a revender.`;
   return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`;
