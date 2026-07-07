@@ -137,7 +137,9 @@ export function VexoPayCheckoutDialog({ open, onOpenChange, planId, planName, am
           if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; }
           if (tickRef.current) { clearInterval(tickRef.current); tickRef.current = null; }
           setStep("paid");
+          void creditOnPaid();
         }
+
       } catch { /* silent */ }
     }, 4000);
     return () => {
