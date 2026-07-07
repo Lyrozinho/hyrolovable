@@ -356,17 +356,44 @@ export function VexoPayCheckoutDialog({ open, onOpenChange, planId, planName, am
           )}
 
           {step === "paid" && (
-            <div className="flex flex-col items-center text-center py-4 gap-3">
+            <div className="flex flex-col items-center text-center py-4 gap-3 animate-in fade-in-0 zoom-in-95 duration-500">
               <div className="h-14 w-14 rounded-full bg-success/15 border border-success/30 flex items-center justify-center">
                 <CheckCircle2 className="h-7 w-7 text-success" />
               </div>
-              <div className="text-[14px] font-medium">Pagamento aprovado</div>
-              <p className="text-[12.5px] text-muted-foreground max-w-[320px]">
-                Seu pacote <span className="font-semibold text-foreground">{planName}</span> será liberado no painel em instantes.
-              </p>
+              <div className="text-[15px] font-semibold tracking-tight">Recebemos seu pagamento</div>
+              {(() => {
+                const qty = creditResult?.credited ?? (licensesCount || 0);
+                if (qty === 1) {
+                  return (
+                    <p className="text-[12.5px] text-muted-foreground max-w-[340px]">
+                      Sua <span className="font-semibold text-foreground">chave</span> já está disponível no seu saldo, pronta para uso.
+                    </p>
+                  );
+                }
+                if (qty > 1) {
+                  return (
+                    <p className="text-[12.5px] text-muted-foreground max-w-[340px]">
+                      Suas <span className="font-semibold text-foreground">{qty} chaves</span> do pacote{" "}
+                      <span className="font-semibold text-foreground">{planName}</span> já estão disponíveis no seu saldo.
+                    </p>
+                  );
+                }
+                return (
+                  <p className="text-[12.5px] text-muted-foreground max-w-[340px]">
+                    Seu pacote <span className="font-semibold text-foreground">{planName}</span> foi liberado.
+                  </p>
+                );
+              })()}
+              {creditResult?.balance != null && (
+                <div className="mt-1 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-border bg-muted/50 text-[11.5px]">
+                  <span className="text-muted-foreground">Saldo atual</span>
+                  <span className="font-semibold font-mono tabular-nums">{creditResult.balance}</span>
+                </div>
+              )}
               <Button className="mt-2" onClick={() => onOpenChange(false)}>Concluir</Button>
             </div>
           )}
+
         </div>
       </DialogContent>
     </Dialog>
