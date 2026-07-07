@@ -106,9 +106,12 @@ export function VexoPayCheckoutDialog({ open, onOpenChange, planId, planName, am
     setStep("form");
     setFirstName(""); setLastName(""); setCpf("");
     setPix(null); setCopied(false); setSecondsLeft(300); setExpired(false); setChecking(false);
+    setCreditResult(null);
+    creditedRef.current = false;
     if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; }
     if (tickRef.current) { clearInterval(tickRef.current); tickRef.current = null; }
   };
+
 
   useEffect(() => { if (!open) reset(); }, [open]);
 
