@@ -1,6 +1,7 @@
 // Server-only Telegram bot helper.
 // Handles updates, authorization, conversation state and license/reseller creation.
 import { createClient } from "@supabase/supabase-js";
+import { createHash, randomBytes } from "node:crypto";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 const EXT_URL = "https://zoxdnsjhdpdhwyxbluax.supabase.co";
