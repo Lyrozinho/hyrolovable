@@ -14,14 +14,19 @@ import { toast } from "sonner";
 import { Loader2, Copy, Check, QrCode, Clock, ShieldCheck, KeyRound, CheckCircle2, AlertTriangle } from "lucide-react";
 import { createVexoPayPixCharge, checkVexoPayPixStatus } from "@/lib/vexopay.functions";
 
+import { adjustResellerBalance } from "@/lib/reseller-balance";
+
 type Props = {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   planId: string;
   planName: string;
   amountCents: number;
+  licensesCount?: number;
+  resellerUserId?: string | null;
   defaultEmail?: string | null;
 };
+
 
 function fmtBRL(cents: number) {
   return (cents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -50,7 +55,7 @@ function isValidCPF(v: string) {
   return d2 === parseInt(cpf[10], 10);
 }
 
-export function VexoPayCheckoutDialog({ open, onOpenChange, planId, planName, amountCents, defaultEmail }: Props) {
+export function VexoPayCheckoutDialog({ open, onOpenChange, planId, planName, amountCents, licensesCount = 0, resellerUserId, defaultEmail }: Props) {
   const [step, setStep] = useState<"form" | "pix" | "paid">("form");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -66,8 +71,33 @@ export function VexoPayCheckoutDialog({ open, onOpenChange, planId, planName, am
   const [secondsLeft, setSecondsLeft] = useState(300);
   const [expired, setExpired] = useState(false);
   const [checking, setChecking] = useState(false);
+  const [creditResult, setCreditResult] = useState<{ credited: number; balance: number | null } | null>(null);
+  const creditedRef = useRef(false);
   const pollRef = useRef<number | null>(null);
   const tickRef = useRef<number | null>(null);
+
+  const creditOnPaid = async () => {
+    if (creditedRef.current) return;
+    creditedRef.current = true;
+    const qty = Math.max(0, Math.trunc(licensesCount || 0));
+    if (!resellerUserId || qty <= 0) {
+      setCreditResult({ credited: 0, balance: null });
+      return;
+    }
+    try {
+      const newBal = await adjustResellerBalance({
+        resellerId: resellerUserId,
+        delta: qty,
+        note: `Compra PIX — ${planName}`,
+      });
+      setCreditResult({ credited: qty, balance: newBal });
+      toast.success(`${qty} ${qty === 1 ? "chave adicionada" : "chaves adicionadas"} ao seu saldo.`);
+    } catch (e: any) {
+      setCreditResult({ credited: 0, balance: null });
+      toast.error(e?.message || "Falha ao creditar saldo automaticamente. Contate o suporte.");
+    }
+  };
+
 
   const createFn = useServerFn(createVexoPayPixCharge);
   const statusFn = useServerFn(checkVexoPayPixStatus);
@@ -76,9 +106,12 @@ export function VexoPayCheckoutDialog({ open, onOpenChange, planId, planName, am
     setStep("form");
     setFirstName(""); setLastName(""); setCpf("");
     setPix(null); setCopied(false); setSecondsLeft(300); setExpired(false); setChecking(false);
+    setCreditResult(null);
+    creditedRef.current = false;
     if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; }
     if (tickRef.current) { clearInterval(tickRef.current); tickRef.current = null; }
   };
+
 
   useEffect(() => { if (!open) reset(); }, [open]);
 
@@ -104,7 +137,9 @@ export function VexoPayCheckoutDialog({ open, onOpenChange, planId, planName, am
           if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; }
           if (tickRef.current) { clearInterval(tickRef.current); tickRef.current = null; }
           setStep("paid");
+          void creditOnPaid();
         }
+
       } catch { /* silent */ }
     }, 4000);
     return () => {
@@ -171,9 +206,11 @@ export function VexoPayCheckoutDialog({ open, onOpenChange, planId, planName, am
       const s = (r?.status || "").toLowerCase();
       if (["paid", "approved", "completed", "success", "confirmed"].includes(s)) {
         setStep("paid");
+        void creditOnPaid();
       } else {
         toast.info("Pagamento ainda não identificado. Aguarde a confirmação.");
       }
+
     } catch (e: any) {
       toast.error(e?.message || "Falha ao consultar status.");
     } finally {
@@ -238,7 +275,7 @@ export function VexoPayCheckoutDialog({ open, onOpenChange, planId, planName, am
 
               <div className="flex items-start gap-2 text-[11.5px] text-muted-foreground rounded-md border border-border bg-muted/30 p-2.5">
                 <ShieldCheck className="h-3.5 w-3.5 mt-0.5 shrink-0" />
-                <span>Seus dados são usados apenas para processar o pagamento via PIX (VexoPay). Nada é compartilhado.</span>
+                <span>Seus dados são usados apenas para processar o pagamento via PIX. Nada é compartilhado.</span>
               </div>
 
               <div className="flex items-center justify-between gap-2 pt-1">
@@ -284,16 +321,17 @@ export function VexoPayCheckoutDialog({ open, onOpenChange, planId, planName, am
                 </div>
 
                 <div className="w-full space-y-1.5">
-                  <Label className="text-[11.5px]">PIX copia e cola</Label>
-                  <div className="flex items-stretch gap-2">
+                  <Label className={`text-[11.5px] ${expired ? "text-muted-foreground/60" : ""}`}>PIX copia e cola</Label>
+                  <div className={`flex items-stretch gap-2 transition-opacity ${expired ? "opacity-40 pointer-events-none select-none" : ""}`}>
                     <div className="flex-1 rounded-md border border-border bg-muted/40 px-2.5 py-2 font-mono text-[11px] break-all max-h-[72px] overflow-auto">
-                      {pix.qrCodeText || "—"}
+                      {expired ? "—" : (pix.qrCodeText || "—")}
                     </div>
-                    <Button variant="outline" onClick={copyCode} disabled={!pix.qrCodeText || expired} className="shrink-0">
+                    <Button variant="outline" onClick={copyCode} disabled={!pix.qrCodeText || expired} className="shrink-0" aria-disabled={expired}>
                       {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
                     </Button>
                   </div>
                 </div>
+
 
                 <div className="w-full flex items-center justify-between text-[12px] text-muted-foreground border-t border-border pt-3">
                   <span>Valor</span>
@@ -318,17 +356,44 @@ export function VexoPayCheckoutDialog({ open, onOpenChange, planId, planName, am
           )}
 
           {step === "paid" && (
-            <div className="flex flex-col items-center text-center py-4 gap-3">
+            <div className="flex flex-col items-center text-center py-4 gap-3 animate-in fade-in-0 zoom-in-95 duration-500">
               <div className="h-14 w-14 rounded-full bg-success/15 border border-success/30 flex items-center justify-center">
                 <CheckCircle2 className="h-7 w-7 text-success" />
               </div>
-              <div className="text-[14px] font-medium">Pagamento aprovado</div>
-              <p className="text-[12.5px] text-muted-foreground max-w-[320px]">
-                Seu pacote <span className="font-semibold text-foreground">{planName}</span> será liberado no painel em instantes.
-              </p>
+              <div className="text-[15px] font-semibold tracking-tight">Recebemos seu pagamento</div>
+              {(() => {
+                const qty = creditResult?.credited ?? (licensesCount || 0);
+                if (qty === 1) {
+                  return (
+                    <p className="text-[12.5px] text-muted-foreground max-w-[340px]">
+                      Sua <span className="font-semibold text-foreground">chave</span> já está disponível no seu saldo, pronta para uso.
+                    </p>
+                  );
+                }
+                if (qty > 1) {
+                  return (
+                    <p className="text-[12.5px] text-muted-foreground max-w-[340px]">
+                      Suas <span className="font-semibold text-foreground">{qty} chaves</span> do pacote{" "}
+                      <span className="font-semibold text-foreground">{planName}</span> já estão disponíveis no seu saldo.
+                    </p>
+                  );
+                }
+                return (
+                  <p className="text-[12.5px] text-muted-foreground max-w-[340px]">
+                    Seu pacote <span className="font-semibold text-foreground">{planName}</span> foi liberado.
+                  </p>
+                );
+              })()}
+              {creditResult?.balance != null && (
+                <div className="mt-1 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-border bg-muted/50 text-[11.5px]">
+                  <span className="text-muted-foreground">Saldo atual</span>
+                  <span className="font-semibold font-mono tabular-nums">{creditResult.balance}</span>
+                </div>
+              )}
               <Button className="mt-2" onClick={() => onOpenChange(false)}>Concluir</Button>
             </div>
           )}
+
         </div>
       </DialogContent>
     </Dialog>

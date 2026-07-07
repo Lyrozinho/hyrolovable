@@ -806,7 +806,7 @@ function PartnerCard({ plan: base, override }: { plan: PartnerPlan; override?: P
       )}
 
       <p className={["text-[10.5px] mt-3 text-center", featured ? "text-background/50" : "text-muted-foreground"].join(" ")}>
-        {hasMonthly ? "Pagamento via PIX processado por VexoPay" : "Ativação sujeita a análise comercial"}
+        {hasMonthly ? "Pagamento seguro via PIX" : "Ativação sujeita a análise comercial"}
       </p>
 
       {hasMonthly && (
@@ -816,9 +816,12 @@ function PartnerCard({ plan: base, override }: { plan: PartnerPlan; override?: P
           planId={plan.id}
           planName={plan.name}
           amountCents={Math.round(plan.monthly * 100)}
+          licensesCount={typeof plan.licensesMonth === "number" ? plan.licensesMonth : 0}
+          resellerUserId={session?.user.id ?? null}
           defaultEmail={session?.user.email ?? null}
         />
       )}
+
 
     </div>
   );
