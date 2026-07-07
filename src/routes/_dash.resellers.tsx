@@ -1132,3 +1132,154 @@ function AdjustBalanceDialog({
     </Dialog>
   );
 }
+
+function PartnerPlansConfigDialog({
+  open,
+  onOpenChange,
+  current,
+}: {
+  open: boolean;
+  onOpenChange: (b: boolean) => void;
+  current: PlansConfig;
+}) {
+  const qc = useQueryClient();
+  const [draft, setDraft] = useState<PlansConfig>(current);
+  const [saving, setSaving] = useState(false);
+
+  // Ressincroniza quando o modal reabre com dados novos.
+  useState(() => draft);
+  const openKey = open ? "open" : "closed";
+  // Reset when opened
+  if (open && draft === (undefined as any)) setDraft(current);
+
+  const setField = (planId: string, key: keyof PlanOverride, value: any) => {
+    setDraft((d) => ({
+      ...d,
+      [planId]: { ...(d?.[planId] ?? {}), [key]: value },
+    }));
+  };
+
+  const parseNum = (v: string): number | null => {
+    const t = v.trim();
+    if (t === "") return null;
+    const n = Number(t.replace(",", "."));
+    return Number.isFinite(n) ? n : null;
+  };
+
+  const save = async () => {
+    setSaving(true);
+    try {
+      const { error } = await (cloud as any)
+        .from("hyro_partner_plans_config")
+        .upsert({ id: 1, plans: draft, updated_at: new Date().toISOString() }, { onConflict: "id" });
+      if (error) throw error;
+      toast.success("Valores dos planos atualizados");
+      qc.invalidateQueries({ queryKey: ["partner-plans-config"] });
+      onOpenChange(false);
+    } catch (e: any) {
+      toast.error(e?.message ?? "Erro ao salvar");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(v) => {
+        if (v) setDraft(current);
+        onOpenChange(v);
+      }}
+      key={openKey}
+    >
+      <DialogContent className="sm:max-w-[640px] p-0 overflow-hidden">
+        <DialogHeader className="px-6 pt-6 pb-4 border-b border-border/60">
+          <div className="flex items-start gap-3">
+            <div className="h-9 w-9 rounded-md bg-foreground text-background flex items-center justify-center shrink-0">
+              <Settings className="h-4 w-4" />
+            </div>
+            <div className="min-w-0">
+              <DialogTitle className="text-[15px] font-semibold tracking-tight">Configurar planos de parceria</DialogTitle>
+              <p className="text-[12.5px] text-muted-foreground mt-0.5">
+                Defina os valores exibidos para os revendedores. Deixe em branco para ocultar o campo (aparece “Sob consulta”).
+              </p>
+            </div>
+          </div>
+        </DialogHeader>
+
+        <div className="px-6 py-5 space-y-5 max-h-[70vh] overflow-y-auto">
+          {PARTNER_PLANS.map((p) => {
+            const cur = draft?.[p.id] ?? {};
+            return (
+              <section key={p.id} className="rounded-lg border border-border p-4 space-y-3">
+                <div className="flex items-center gap-2">
+                  <p.icon className="h-4 w-4 text-muted-foreground" />
+                  <div className="text-[13px] font-semibold">{p.name}</div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label className="text-[11.5px]">Setup (R$)</Label>
+                    <Input
+                      type="number" min={0} step="1" inputMode="decimal"
+                      value={cur.setup ?? ""}
+                      placeholder="ex: 497"
+                      onChange={(e) => setField(p.id, "setup", parseNum(e.target.value))}
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-[11.5px]">Mensalidade (R$)</Label>
+                    <Input
+                      type="number" min={0} step="1" inputMode="decimal"
+                      value={cur.monthly ?? ""}
+                      placeholder="ex: 149"
+                      onChange={(e) => setField(p.id, "monthly", parseNum(e.target.value))}
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-[11.5px]">Licenças/mês</Label>
+                    <Input
+                      type="text"
+                      value={
+                        cur.licensesMonth === "ilimitado"
+                          ? "ilimitado"
+                          : cur.licensesMonth == null
+                            ? ""
+                            : String(cur.licensesMonth)
+                      }
+                      placeholder='ex: 15 ou "ilimitado"'
+                      onChange={(e) => {
+                        const v = e.target.value.trim().toLowerCase();
+                        if (v === "") return setField(p.id, "licensesMonth", null);
+                        if (v.startsWith("il") || v === "∞") return setField(p.id, "licensesMonth", "ilimitado");
+                        const n = parseInt(v, 10);
+                        setField(p.id, "licensesMonth", Number.isFinite(n) ? n : null);
+                      }}
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-[11.5px]">Comissão (%)</Label>
+                    <Input
+                      type="number" min={0} max={100} step="1" inputMode="decimal"
+                      value={cur.commission ?? ""}
+                      placeholder="ex: 25"
+                      onChange={(e) => setField(p.id, "commission", parseNum(e.target.value))}
+                    />
+                  </div>
+                </div>
+              </section>
+            );
+          })}
+        </div>
+
+        <DialogFooter className="px-6 py-4 border-t border-border/60 bg-muted/30 gap-2">
+          <Button variant="ghost" size="sm" onClick={() => onOpenChange(false)}>Cancelar</Button>
+          <Button size="sm" onClick={save} disabled={saving}>
+            {saving && <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />}
+            Salvar valores
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
