@@ -55,7 +55,7 @@ function isValidCPF(v: string) {
   return d2 === parseInt(cpf[10], 10);
 }
 
-export function VexoPayCheckoutDialog({ open, onOpenChange, planId, planName, amountCents, defaultEmail }: Props) {
+export function VexoPayCheckoutDialog({ open, onOpenChange, planId, planName, amountCents, licensesCount = 0, resellerUserId, defaultEmail }: Props) {
   const [step, setStep] = useState<"form" | "pix" | "paid">("form");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
