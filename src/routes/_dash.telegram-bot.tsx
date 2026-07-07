@@ -63,15 +63,20 @@ function TelegramBotPage() {
   const [newId, setNewId] = useState("");
   const [newNote, setNewNote] = useState("");
 
+  // O webhook precisa apontar para o domínio publicado (Telegram exige HTTPS público
+  // sem redirecionamento). O domínio de preview (`lovableproject.com`) redireciona
+  // para o auth-bridge (302) e o Telegram rejeita com "Wrong response from webhook: 302 Found".
+  const PUBLISHED_HOST = "hyrolovable.lovable.app";
   const suggestedUrl = useMemo(() => {
-    if (typeof window === "undefined") return "";
-    return `${window.location.origin}/api/public/telegram/webhook`;
+    return `https://${PUBLISHED_HOST}/api/public/telegram/webhook`;
   }, []);
   const [webhookUrl, setWebhookUrl] = useState<string>("");
   useEffect(() => {
     const current = (info.data?.config as any)?.webhook_url as string | undefined;
-    if (current) setWebhookUrl(current);
-    else if (suggestedUrl) setWebhookUrl(suggestedUrl);
+    // Se o webhook atual estiver no domínio de preview, força a URL sugerida (publicada).
+    const isPreviewDomain = current && !current.includes(PUBLISHED_HOST);
+    if (current && !isPreviewDomain) setWebhookUrl(current);
+    else setWebhookUrl(suggestedUrl);
   }, [info.data, suggestedUrl]);
 
   const addUser = useMutation({
