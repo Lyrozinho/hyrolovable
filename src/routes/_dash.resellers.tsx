@@ -30,6 +30,7 @@ import { toast } from "sonner";
 import { sha256Hex, useAuth } from "@/lib/auth";
 import { OWNER_EMAIL, fetchPrimaryLicenseForUser, fetchLicensePerms } from "@/lib/permissions";
 import { adjustResellerBalance, getResellerBalance, setResellerBalance } from "@/lib/reseller-balance";
+import { VexoPayCheckoutDialog } from "@/components/vexopay-checkout-dialog";
 
 export const Route = createFileRoute("/_dash/resellers")({
   component: ResellersPage,
@@ -646,6 +647,8 @@ function ResellersPage() {
 }
 
 function PartnerCard({ plan: base, override }: { plan: PartnerPlan; override?: PlanOverride | null }) {
+  const [checkoutOpen, setCheckoutOpen] = useState(false);
+  const { session } = useAuth();
   const plan = mergePlan(base, override);
   const Icon = plan.icon;
   const featured = plan.featured;
@@ -762,25 +765,52 @@ function PartnerCard({ plan: base, override }: { plan: PartnerPlan; override?: P
         ))}
       </ul>
 
-      <Button
-        asChild
-        className={[
-          "w-full h-11 text-[13px] font-semibold group/btn",
-          featured
-            ? "bg-background text-foreground hover:bg-background/90"
-            : "bg-foreground text-background hover:bg-foreground/90",
-        ].join(" ")}
-      >
-        <a href={buildPartnerWhatsapp(plan, hasAny)} target="_blank" rel="noreferrer">
-          <MessageCircle className="h-3.5 w-3.5" />
-          Ativar via WhatsApp
+      {hasMonthly ? (
+        <Button
+          onClick={() => setCheckoutOpen(true)}
+          className={[
+            "w-full h-11 text-[13px] font-semibold group/btn",
+            featured
+              ? "bg-background text-foreground hover:bg-background/90"
+              : "bg-foreground text-background hover:bg-foreground/90",
+          ].join(" ")}
+        >
+          <KeyRound className="h-3.5 w-3.5" />
+          Comprar
           <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover/btn:translate-x-0.5" />
-        </a>
-      </Button>
+        </Button>
+      ) : (
+        <Button
+          asChild
+          className={[
+            "w-full h-11 text-[13px] font-semibold group/btn",
+            featured
+              ? "bg-background text-foreground hover:bg-background/90"
+              : "bg-foreground text-background hover:bg-foreground/90",
+          ].join(" ")}
+        >
+          <a href={buildPartnerWhatsapp(plan, hasAny)} target="_blank" rel="noreferrer">
+            <MessageCircle className="h-3.5 w-3.5" />
+            Falar com comercial
+            <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover/btn:translate-x-0.5" />
+          </a>
+        </Button>
+      )}
 
       <p className={["text-[10.5px] mt-3 text-center", featured ? "text-background/50" : "text-muted-foreground"].join(" ")}>
-        Ativação sujeita a análise comercial
+        {hasMonthly ? "Pagamento via PIX processado por VexoPay" : "Ativação sujeita a análise comercial"}
       </p>
+
+      {hasMonthly && (
+        <VexoPayCheckoutDialog
+          open={checkoutOpen}
+          onOpenChange={setCheckoutOpen}
+          planId={plan.id}
+          planName={plan.name}
+          amountCents={Math.round(plan.monthly * 100)}
+          defaultEmail={session?.user.email ?? null}
+        />
+      )}
 
     </div>
   );
