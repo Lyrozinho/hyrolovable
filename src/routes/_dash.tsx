@@ -26,6 +26,7 @@ const titles: Record<string, string> = {
   "/subscription": "Assinatura",
   "/tutorials": "Tutoriais",
   "/upgrade-admin": "Atualização",
+  "/telegram-bot": "Bot Telegram",
 };
 
 function DashLayout() {
