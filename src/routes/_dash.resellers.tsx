@@ -1146,11 +1146,6 @@ function PartnerPlansConfigDialog({
   const [draft, setDraft] = useState<PlansConfig>(current);
   const [saving, setSaving] = useState(false);
 
-  // Ressincroniza quando o modal reabre com dados novos.
-  useState(() => draft);
-  const openKey = open ? "open" : "closed";
-  // Reset when opened
-  if (open && draft === (undefined as any)) setDraft(current);
 
   const setField = (planId: string, key: keyof PlanOverride, value: any) => {
     setDraft((d) => ({
