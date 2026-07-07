@@ -18,7 +18,6 @@ import { Route as RSlugRouteImport } from './routes/r.$slug'
 import { Route as DashUpgradeAdminRouteImport } from './routes/_dash.upgrade-admin'
 import { Route as DashTutorialsRouteImport } from './routes/_dash.tutorials'
 import { Route as DashTelegramBotRouteImport } from './routes/_dash.telegram-bot'
-import { Route as DashSubscriptionRouteImport } from './routes/_dash.subscription'
 import { Route as DashResellersRouteImport } from './routes/_dash.resellers'
 import { Route as DashLicensesRouteImport } from './routes/_dash.licenses'
 import { Route as DashDashboardRouteImport } from './routes/_dash.dashboard'
@@ -70,11 +69,6 @@ const DashTelegramBotRoute = DashTelegramBotRouteImport.update({
   path: '/telegram-bot',
   getParentRoute: () => DashRoute,
 } as any)
-const DashSubscriptionRoute = DashSubscriptionRouteImport.update({
-  id: '/subscription',
-  path: '/subscription',
-  getParentRoute: () => DashRoute,
-} as any)
 const DashResellersRoute = DashResellersRouteImport.update({
   id: '/resellers',
   path: '/resellers',
@@ -115,7 +109,6 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof DashDashboardRoute
   '/licenses': typeof DashLicensesRoute
   '/resellers': typeof DashResellersRoute
-  '/subscription': typeof DashSubscriptionRoute
   '/telegram-bot': typeof DashTelegramBotRoute
   '/tutorials': typeof DashTutorialsRoute
   '/upgrade-admin': typeof DashUpgradeAdminRoute
@@ -132,7 +125,6 @@ export interface FileRoutesByTo {
   '/dashboard': typeof DashDashboardRoute
   '/licenses': typeof DashLicensesRoute
   '/resellers': typeof DashResellersRoute
-  '/subscription': typeof DashSubscriptionRoute
   '/telegram-bot': typeof DashTelegramBotRoute
   '/tutorials': typeof DashTutorialsRoute
   '/upgrade-admin': typeof DashUpgradeAdminRoute
@@ -151,7 +143,6 @@ export interface FileRoutesById {
   '/_dash/dashboard': typeof DashDashboardRoute
   '/_dash/licenses': typeof DashLicensesRoute
   '/_dash/resellers': typeof DashResellersRoute
-  '/_dash/subscription': typeof DashSubscriptionRoute
   '/_dash/telegram-bot': typeof DashTelegramBotRoute
   '/_dash/tutorials': typeof DashTutorialsRoute
   '/_dash/upgrade-admin': typeof DashUpgradeAdminRoute
@@ -170,7 +161,6 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/licenses'
     | '/resellers'
-    | '/subscription'
     | '/telegram-bot'
     | '/tutorials'
     | '/upgrade-admin'
@@ -187,7 +177,6 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/licenses'
     | '/resellers'
-    | '/subscription'
     | '/telegram-bot'
     | '/tutorials'
     | '/upgrade-admin'
@@ -205,7 +194,6 @@ export interface FileRouteTypes {
     | '/_dash/dashboard'
     | '/_dash/licenses'
     | '/_dash/resellers'
-    | '/_dash/subscription'
     | '/_dash/telegram-bot'
     | '/_dash/tutorials'
     | '/_dash/upgrade-admin'
@@ -292,13 +280,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashTelegramBotRouteImport
       parentRoute: typeof DashRoute
     }
-    '/_dash/subscription': {
-      id: '/_dash/subscription'
-      path: '/subscription'
-      fullPath: '/subscription'
-      preLoaderRoute: typeof DashSubscriptionRouteImport
-      parentRoute: typeof DashRoute
-    }
     '/_dash/resellers': {
       id: '/_dash/resellers'
       path: '/resellers'
@@ -348,7 +329,6 @@ interface DashRouteChildren {
   DashDashboardRoute: typeof DashDashboardRoute
   DashLicensesRoute: typeof DashLicensesRoute
   DashResellersRoute: typeof DashResellersRoute
-  DashSubscriptionRoute: typeof DashSubscriptionRoute
   DashTelegramBotRoute: typeof DashTelegramBotRoute
   DashTutorialsRoute: typeof DashTutorialsRoute
   DashUpgradeAdminRoute: typeof DashUpgradeAdminRoute
@@ -358,7 +338,6 @@ const DashRouteChildren: DashRouteChildren = {
   DashDashboardRoute: DashDashboardRoute,
   DashLicensesRoute: DashLicensesRoute,
   DashResellersRoute: DashResellersRoute,
-  DashSubscriptionRoute: DashSubscriptionRoute,
   DashTelegramBotRoute: DashTelegramBotRoute,
   DashTutorialsRoute: DashTutorialsRoute,
   DashUpgradeAdminRoute: DashUpgradeAdminRoute,
