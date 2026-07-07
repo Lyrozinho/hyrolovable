@@ -321,16 +321,17 @@ export function VexoPayCheckoutDialog({ open, onOpenChange, planId, planName, am
                 </div>
 
                 <div className="w-full space-y-1.5">
-                  <Label className="text-[11.5px]">PIX copia e cola</Label>
-                  <div className="flex items-stretch gap-2">
+                  <Label className={`text-[11.5px] ${expired ? "text-muted-foreground/60" : ""}`}>PIX copia e cola</Label>
+                  <div className={`flex items-stretch gap-2 transition-opacity ${expired ? "opacity-40 pointer-events-none select-none" : ""}`}>
                     <div className="flex-1 rounded-md border border-border bg-muted/40 px-2.5 py-2 font-mono text-[11px] break-all max-h-[72px] overflow-auto">
-                      {pix.qrCodeText || "—"}
+                      {expired ? "—" : (pix.qrCodeText || "—")}
                     </div>
-                    <Button variant="outline" onClick={copyCode} disabled={!pix.qrCodeText || expired} className="shrink-0">
+                    <Button variant="outline" onClick={copyCode} disabled={!pix.qrCodeText || expired} className="shrink-0" aria-disabled={expired}>
                       {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
                     </Button>
                   </div>
                 </div>
+
 
                 <div className="w-full flex items-center justify-between text-[12px] text-muted-foreground border-t border-border pt-3">
                   <span>Valor</span>
