@@ -71,8 +71,33 @@ export function VexoPayCheckoutDialog({ open, onOpenChange, planId, planName, am
   const [secondsLeft, setSecondsLeft] = useState(300);
   const [expired, setExpired] = useState(false);
   const [checking, setChecking] = useState(false);
+  const [creditResult, setCreditResult] = useState<{ credited: number; balance: number | null } | null>(null);
+  const creditedRef = useRef(false);
   const pollRef = useRef<number | null>(null);
   const tickRef = useRef<number | null>(null);
+
+  const creditOnPaid = async () => {
+    if (creditedRef.current) return;
+    creditedRef.current = true;
+    const qty = Math.max(0, Math.trunc(licensesCount || 0));
+    if (!resellerUserId || qty <= 0) {
+      setCreditResult({ credited: 0, balance: null });
+      return;
+    }
+    try {
+      const newBal = await adjustResellerBalance({
+        resellerId: resellerUserId,
+        delta: qty,
+        note: `Compra PIX — ${planName}`,
+      });
+      setCreditResult({ credited: qty, balance: newBal });
+      toast.success(`${qty} ${qty === 1 ? "chave adicionada" : "chaves adicionadas"} ao seu saldo.`);
+    } catch (e: any) {
+      setCreditResult({ credited: 0, balance: null });
+      toast.error(e?.message || "Falha ao creditar saldo automaticamente. Contate o suporte.");
+    }
+  };
+
 
   const createFn = useServerFn(createVexoPayPixCharge);
   const statusFn = useServerFn(checkVexoPayPixStatus);
