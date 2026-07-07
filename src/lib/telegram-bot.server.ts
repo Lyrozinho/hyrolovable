@@ -66,9 +66,6 @@ export function deriveWebhookSecret(): string {
   // Derive a stable secret from the bot token itself.
   // Uses SHA-256 hex (only [a-f0-9], matches Telegram's allowed charset A-Za-z0-9_-).
   const token = botToken();
-  // Node crypto is available on the worker runtime with nodejs_compat.
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const { createHash } = require("crypto") as typeof import("crypto");
   return createHash("sha256").update(`telegram-webhook:${token}`).digest("hex");
 }
 
