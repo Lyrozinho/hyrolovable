@@ -83,6 +83,69 @@ export type Database = {
         }
         Relationships: []
       }
+      hyro_telegram_allowed_users: {
+        Row: {
+          created_at: string
+          is_super: boolean
+          note: string | null
+          telegram_id: string
+        }
+        Insert: {
+          created_at?: string
+          is_super?: boolean
+          note?: string | null
+          telegram_id: string
+        }
+        Update: {
+          created_at?: string
+          is_super?: boolean
+          note?: string | null
+          telegram_id?: string
+        }
+        Relationships: []
+      }
+      hyro_telegram_bot_state: {
+        Row: {
+          state: Json
+          telegram_id: string
+          updated_at: string
+        }
+        Insert: {
+          state?: Json
+          telegram_id: string
+          updated_at?: string
+        }
+        Update: {
+          state?: Json
+          telegram_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      hyro_telegram_config: {
+        Row: {
+          id: number
+          last_error: string | null
+          updated_at: string
+          webhook_set_at: string | null
+          webhook_url: string | null
+        }
+        Insert: {
+          id?: number
+          last_error?: string | null
+          updated_at?: string
+          webhook_set_at?: string | null
+          webhook_url?: string | null
+        }
+        Update: {
+          id?: number
+          last_error?: string | null
+          updated_at?: string
+          webhook_set_at?: string | null
+          webhook_url?: string | null
+        }
+        Relationships: []
+      }
       hyro_tutorials: {
         Row: {
           created_at: string
