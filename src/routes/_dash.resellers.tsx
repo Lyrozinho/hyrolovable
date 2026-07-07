@@ -504,11 +504,19 @@ function ResellersPage() {
       {/* Partner plans */}
       {tab === "plans" && (
         <section>
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-            {PARTNER_PLANS.map((p) => (
-              <PartnerCard key={p.id} plan={p} override={plansConfig?.[p.id] ?? null} />
-            ))}
-          </div>
+          {plansConfig === undefined ? (
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+              {[0, 1, 2].map((i) => (
+                <div key={i} className="rounded-lg border border-border bg-card/60 h-[360px] animate-pulse" />
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+              {PARTNER_PLANS.map((p) => (
+                <PartnerCard key={p.id} plan={p} override={plansConfig?.[p.id] ?? null} />
+              ))}
+            </div>
+          )}
         </section>
       )}
 
