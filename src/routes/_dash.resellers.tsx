@@ -1185,7 +1185,7 @@ function PartnerPlansConfigDialog({
         if (v) setDraft(current);
         onOpenChange(v);
       }}
-      key={openKey}
+      >
     >
       <DialogContent className="sm:max-w-[640px] p-0 overflow-hidden">
         <DialogHeader className="px-6 pt-6 pb-4 border-b border-border/60">
