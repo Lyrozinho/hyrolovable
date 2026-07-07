@@ -136,6 +136,14 @@ const PARTNER_PLANS: PartnerPlan[] = [
   },
 ];
 
+type PlanOverride = {
+  setup?: number | null;
+  monthly?: number | null;
+  licensesMonth?: number | "ilimitado" | null;
+  commission?: number | null;
+};
+type PlansConfig = Record<string, PlanOverride>;
+
 function fmtBRL(n: number) {
   return n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
@@ -158,11 +166,24 @@ function inviteBelongsToSession(invite: ResellerInvite, userId?: string, email?:
   );
 }
 
-function buildPartnerWhatsapp(plan: PartnerPlan) {
+function mergePlan(plan: PartnerPlan, cfg?: PlanOverride | null): PartnerPlan {
+  if (!cfg) return plan;
+  return {
+    ...plan,
+    setup: cfg.setup ?? plan.setup,
+    monthly: cfg.monthly ?? plan.monthly,
+    licensesMonth: (cfg.licensesMonth ?? plan.licensesMonth) as PartnerPlan["licensesMonth"],
+    commission: cfg.commission ?? plan.commission,
+  };
+}
+
+function buildPartnerWhatsapp(plan: PartnerPlan, hasValues: boolean) {
+  const pricing = hasValues
+    ? `Setup: ${fmtBRL(plan.setup)} · Mensalidade: ${fmtBRL(plan.monthly)}\nLicenças/mês: ${plan.licensesMonth === "ilimitado" ? "Ilimitadas" : plan.licensesMonth} · Comissão: ${plan.commission}%\n\n`
+    : "";
   const msg =
     `Olá! Quero ativar o plano *${plan.name}* do Programa de Parceiros Hyro.\n` +
-    `Setup: ${fmtBRL(plan.setup)} · Mensalidade: ${fmtBRL(plan.monthly)}\n` +
-    `Licenças/mês: ${plan.licensesMonth === "ilimitado" ? "Ilimitadas" : plan.licensesMonth} · Comissão: ${plan.commission}%\n\n` +
+    pricing +
     `Aguardo os próximos passos para começar a revender.`;
   return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`;
 }
