@@ -75,68 +75,42 @@ async function callJson(path: string, init: RequestInit): Promise<{ status: numb
 
 export async function createPixCharge(input: PixCreateInput): Promise<PixCreateResult | PixErrorResult> {
   const c = input.customer ?? {};
-  // Send both flat and nested customer shapes — VexoPay's docs are terse and different
-  // deployments accept different keys; sending both is harmless.
+  const documentDigits = (c.document || "").replace(/\D/g, "");
+  const amountReais = Math.round(input.amountCents) / 100;
+
+  // Payload shape per VexoPay docs: amount in BRL (number), payerName, payerDocument (digits).
   const body: Record<string, unknown> = {
-    amount: input.amountCents,
+    amount: Number(amountReais.toFixed(2)),
+    payerName: (c.name || "Cliente").toString().slice(0, 120),
+    payerDocument: documentDigits,
     description: input.description,
-    external_id: input.externalId,
-    externalId: input.externalId,
-    expiration: 300,
-    customer_name: c.name || undefined,
-    customer_document: c.document || undefined,
-    customer_email: c.email || undefined,
-    customer: {
-      name: c.name || undefined,
-      document: c.document || undefined,
-      email: c.email || undefined,
-    },
-    payer: {
-      name: c.name || undefined,
-      document: c.document || undefined,
-      email: c.email || undefined,
-    },
   };
 
-  // Canonical VexoPay gateway path, with fallbacks for possible variants.
-  const paths = ["/api/gateway/pix-create", "/v1/pix/create", "/gateway/pix-create"];
-  let last: { status: number; json: any; text: string } | null = null;
-  for (const p of paths) {
-    try {
-      const r = await callJson(p, { method: "POST", body: JSON.stringify(body) });
-      last = r;
-      if (r.status >= 200 && r.status < 300) {
-        const data = r.json ?? {};
-        const inner = data.data ?? data.result ?? data;
-        const id =
-          pick<string>(inner, ["id", "transaction_id", "transactionId", "external_id", "externalId"]) ??
-          input.externalId;
-        const qrB64 = pick<string>(inner, [
-          "qrCodeBase64","qr_code_base64","qrcodeBase64","qrcode_base64",
-          "pix.qrCodeBase64","pix.qr_code_base64","qr.image","qrImage","qrcode.image","qr_code_image",
-        ]);
-        const qrText = pick<string>(inner, [
-          "qrCode","qr_code","copyPaste","copy_paste","emv","brcode","brCode",
-          "pix.qrCode","pix.copyPaste","pix.brcode","qr.text","payload","pixCopyPaste","pix_copy_paste",
-        ]);
-        const expiresAt = pick<string>(inner, ["expires_at","expiresAt","expiration","expiration_date"]);
-        const status = pick<string>(inner, ["status","state"]);
-        return { ok: true, id: String(id), qrCodeBase64: qrB64, qrCodeText: qrText, expiresAt, status, raw: data };
-      }
-      // Only keep trying on 404 (path miss). Any other status is a real API response.
-      if (r.status !== 404) break;
-    } catch (err) {
-      console.error("[vexopay] request error", p, err);
-    }
+  const r = await callJson("/api/gateway/pix-create", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+
+  if (r.status >= 200 && r.status < 300 && r.json?.success !== false) {
+    const data = r.json ?? {};
+    const inner = data.data ?? data.result ?? data;
+    const id =
+      pick<string>(inner, ["transactionId", "transaction_id", "id", "externalId"]) ??
+      input.externalId;
+    const qrB64 = pick<string>(inner, ["qrCodeBase64", "qr_code_base64", "qrCodeUrl"]);
+    const qrText = pick<string>(inner, ["copyPaste", "copy_paste", "qrCode", "qr_code", "brcode", "emv"]);
+    const expiresAt = pick<string>(inner, ["expiresAt", "expires_at", "expiration"]);
+    const status = pick<string>(inner, ["status", "state"]);
+    return { ok: true, id: String(id), qrCodeBase64: qrB64, qrCodeText: qrText, expiresAt, status, raw: data };
   }
-  const s = last?.status ?? 500;
+
   const providerMsg =
-    pick<string>(last?.json, ["message", "error", "detail", "errors.0.message"]) ||
-    (last?.text ? last.text.slice(0, 200) : "") ||
+    pick<string>(r.json, ["error", "message", "detail", "errors.0.message"]) ||
+    (r.text ? r.text.slice(0, 200) : "") ||
     "Falha ao criar PIX";
-  const providerCode = pick<string>(last?.json, ["errorCode", "code"]);
+  const providerCode = pick<string>(r.json, ["errorCode", "code"]);
   const msg = providerCode ? `${providerMsg} [${providerCode}]` : providerMsg;
-  return { ok: false, status: s, message: String(msg).slice(0, 400), raw: last?.json ?? last?.text ?? null };
+  return { ok: false, status: r.status || 500, message: String(msg).slice(0, 400), raw: r.json ?? r.text ?? null };
 }
 
 export async function checkPixStatus(id: string): Promise<{ ok: true; status: string; raw: any } | PixErrorResult> {
