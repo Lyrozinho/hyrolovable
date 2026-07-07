@@ -112,7 +112,7 @@ function DashInner() {
     if (!session) return;
     const isAdmin = session.user.role === "admin";
     if (!isAdmin) {
-      const adminOnly = ["/dashboard", "/", "/upgrade-admin"];
+      const adminOnly = ["/dashboard", "/", "/upgrade-admin", "/telegram-bot"];
       if (adminOnly.includes(pathname)) {
         navigate({ to: "/subscription", replace: true });
       }
