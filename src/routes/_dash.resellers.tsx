@@ -605,9 +605,15 @@ function ResellersPage() {
   );
 }
 
-function PartnerCard({ plan }: { plan: PartnerPlan }) {
+function PartnerCard({ plan: base, override }: { plan: PartnerPlan; override?: PlanOverride | null }) {
+  const plan = mergePlan(base, override);
   const Icon = plan.icon;
   const featured = plan.featured;
+  const hasMonthly = override?.monthly != null;
+  const hasSetup = override?.setup != null;
+  const hasLicenses = override?.licensesMonth != null;
+  const hasCommission = override?.commission != null;
+  const hasAny = hasMonthly || hasSetup || hasLicenses || hasCommission;
   return (
     <div
       className={[
@@ -644,7 +650,7 @@ function PartnerCard({ plan }: { plan: PartnerPlan }) {
         <div className="flex-1 min-w-0">
           <div className="text-[15px] font-semibold tracking-tight leading-none">{plan.name}</div>
           <div className={["text-[10.5px] font-mono uppercase tracking-wider mt-1.5", featured ? "text-background/60" : "text-muted-foreground"].join(" ")}>
-            {plan.commission}% de comissão
+            {hasCommission ? `${plan.commission}% de comissão` : "Comissão sob consulta"}
           </div>
         </div>
       </div>
@@ -655,15 +661,21 @@ function PartnerCard({ plan }: { plan: PartnerPlan }) {
 
       {/* Pricing */}
       <div className="mb-5">
-        <div className="flex items-baseline gap-1.5">
-          <span className={["text-[13px] font-medium", featured ? "text-background/80" : "text-muted-foreground"].join(" ")}>R$</span>
-          <span className="text-[40px] leading-none font-semibold tracking-tight font-mono tabular-nums">
-            {plan.monthly.toLocaleString("pt-BR")}
-          </span>
-          <span className={["text-[12.5px] ml-1", featured ? "text-background/60" : "text-muted-foreground"].join(" ")}>/mês</span>
-        </div>
+        {hasMonthly ? (
+          <div className="flex items-baseline gap-1.5">
+            <span className={["text-[13px] font-medium", featured ? "text-background/80" : "text-muted-foreground"].join(" ")}>R$</span>
+            <span className="text-[40px] leading-none font-semibold tracking-tight font-mono tabular-nums">
+              {plan.monthly.toLocaleString("pt-BR")}
+            </span>
+            <span className={["text-[12.5px] ml-1", featured ? "text-background/60" : "text-muted-foreground"].join(" ")}>/mês</span>
+          </div>
+        ) : (
+          <div className="flex items-baseline gap-1.5">
+            <span className="text-[28px] leading-none font-semibold tracking-tight">Sob consulta</span>
+          </div>
+        )}
         <div className={["text-[11.5px] mt-1.5", featured ? "text-background/60" : "text-muted-foreground"].join(" ")}>
-          + Setup único de <span className="font-medium">{fmtBRL(plan.setup)}</span>
+          {hasSetup ? <>+ Setup único de <span className="font-medium">{fmtBRL(plan.setup)}</span></> : "Setup sob consulta"}
         </div>
       </div>
 
@@ -672,12 +684,12 @@ function PartnerCard({ plan }: { plan: PartnerPlan }) {
         <div>
           <div className={["text-[10px] uppercase tracking-wider font-semibold", featured ? "text-background/60" : "text-muted-foreground"].join(" ")}>Licenças/mês</div>
           <div className="text-[15px] font-semibold font-mono mt-0.5">
-            {plan.licensesMonth === "ilimitado" ? "∞" : plan.licensesMonth}
+            {hasLicenses ? (plan.licensesMonth === "ilimitado" ? "∞" : plan.licensesMonth) : "—"}
           </div>
         </div>
         <div>
           <div className={["text-[10px] uppercase tracking-wider font-semibold", featured ? "text-background/60" : "text-muted-foreground"].join(" ")}>Comissão</div>
-          <div className="text-[15px] font-semibold font-mono mt-0.5">{plan.commission}%</div>
+          <div className="text-[15px] font-semibold font-mono mt-0.5">{hasCommission ? `${plan.commission}%` : "—"}</div>
         </div>
       </div>
 
@@ -708,7 +720,7 @@ function PartnerCard({ plan }: { plan: PartnerPlan }) {
             : "bg-foreground text-background hover:bg-foreground/90",
         ].join(" ")}
       >
-        <a href={buildPartnerWhatsapp(plan)} target="_blank" rel="noreferrer">
+        <a href={buildPartnerWhatsapp(plan, hasAny)} target="_blank" rel="noreferrer">
           <MessageCircle className="h-3.5 w-3.5" />
           Ativar via WhatsApp
           <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover/btn:translate-x-0.5" />
@@ -718,6 +730,7 @@ function PartnerCard({ plan }: { plan: PartnerPlan }) {
       <p className={["text-[10.5px] mt-3 text-center", featured ? "text-background/50" : "text-muted-foreground"].join(" ")}>
         Ativação sujeita a análise comercial
       </p>
+
     </div>
   );
 }
