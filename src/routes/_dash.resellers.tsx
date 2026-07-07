@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/table";
 import {
   Loader2, Coins, MessageCircle, Rocket, Crown, Building2,
-  Check, ArrowRight, Users, ShieldCheck, TrendingUp, Handshake, Settings,
+  Check, ArrowRight, Users, ShieldCheck, TrendingUp, Handshake, Settings, KeyRound,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { supabase as cloud } from "@/integrations/supabase/client";
