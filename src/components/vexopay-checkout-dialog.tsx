@@ -243,7 +243,7 @@ export function VexoPayCheckoutDialog({ open, onOpenChange, planId, planName, am
 
               <div className="flex items-start gap-2 text-[11.5px] text-muted-foreground rounded-md border border-border bg-muted/30 p-2.5">
                 <ShieldCheck className="h-3.5 w-3.5 mt-0.5 shrink-0" />
-                <span>Seus dados são usados apenas para processar o pagamento via PIX (VexoPay). Nada é compartilhado.</span>
+                <span>Seus dados são usados apenas para processar o pagamento via PIX. Nada é compartilhado.</span>
               </div>
 
               <div className="flex items-center justify-between gap-2 pt-1">
