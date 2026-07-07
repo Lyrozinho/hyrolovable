@@ -2,7 +2,6 @@ import { createFileRoute } from "@tanstack/react-router";
 
 const BUCKET = "upgrade-files";
 const META_PATH = "upgrade/latest.json";
-const FALLBACK_FILE_NAME = "HERO-Lovable-v5.8-FINAL.zip";
 
 type StoredMeta = {
   fileName?: string;
@@ -12,26 +11,6 @@ type StoredMeta = {
   notes?: string;
   updatedAt?: number;
 };
-
-async function fallbackMeta() {
-  let size = 0;
-  try {
-    const fs = await import("node:fs/promises");
-    const stat = await fs.stat("public/hyro-lovable.zip");
-    size = stat.size;
-  } catch {
-    size = 6759582;
-  }
-
-  return {
-    fileName: FALLBACK_FILE_NAME,
-    size,
-    mime: "application/zip",
-    version: "5.8",
-    updatedAt: 1751558340000,
-    source: "bundled" as const,
-  };
-}
 
 export const Route = createFileRoute("/api/public/upgrade-meta")({
   server: {
@@ -44,7 +23,7 @@ export const Route = createFileRoute("/api/public/upgrade-meta")({
           if (!error && data) {
             const meta = JSON.parse(await data.text()) as StoredMeta;
             return Response.json({
-              fileName: meta.fileName || FALLBACK_FILE_NAME,
+              fileName: meta.fileName || "atualizacao.zip",
               size: meta.size || 0,
               mime: meta.mime || "application/zip",
               version: meta.version,
@@ -54,10 +33,13 @@ export const Route = createFileRoute("/api/public/upgrade-meta")({
             });
           }
         } catch {
-          // Keep the public page downloadable even if cloud metadata is unavailable.
+          // fall through to 404
         }
 
-        return Response.json(await fallbackMeta());
+        return Response.json(
+          { error: "Nenhuma atualização disponível." },
+          { status: 404 },
+        );
       },
     },
   },
