@@ -1070,6 +1070,14 @@ function LicenseCreatedSuccess({
         day: "2-digit", month: "long", year: "numeric",
       });
 
+  const extensionUrl = panelUrl + "/upgrade";
+  const warning = [
+    "━━━━━━━━━━━━━━━━━━",
+    "⚠️ *Aviso importante*",
+    "Esta licença é *pessoal e intransferível*. É *proibido revender, ceder ou compartilhar*.",
+    "Casos identificados de revenda resultam em *suspensão imediata sem reembolso*.",
+  ];
+
   const message = isPerso
     ? [
         "🎉 *Sua licença Hyro Lovable está pronta!*",
@@ -1085,11 +1093,17 @@ function LicenseCreatedSuccess({
         "📅 *Validade*",
         validity,
         "",
+        "📥 *Baixar a extensão*",
+        extensionUrl,
+        "",
         "━━━━━━━━━━━━━━━━━━",
         "*Como resgatar:*",
-        "1️⃣ Abra o link acima no seu navegador",
+        "1️⃣ Abra o link de resgate no seu navegador",
         "2️⃣ Preencha nome, sobrenome e senha (o e-mail já vem preenchido)",
-        "3️⃣ Sua licença será liberada automaticamente",
+        "3️⃣ Baixe e instale a extensão pelo link acima",
+        "4️⃣ Sua licença será liberada automaticamente",
+        "",
+        ...warning,
         "",
         "💬 Dúvidas? WhatsApp: (27) 98135-9051",
         "",
@@ -1113,19 +1127,25 @@ function LicenseCreatedSuccess({
         "🌐 *Acesse o painel*",
         panelUrl,
         "",
+        "📥 *Baixar a extensão*",
+        extensionUrl,
+        "",
         "━━━━━━━━━━━━━━━━━━",
         "*Como começar:*",
         "1️⃣ Acesse o painel pelo link acima",
         ...(data.password
           ? ["2️⃣ Faça login com o e-mail e senha enviados"]
           : ["2️⃣ Solicite sua senha de acesso pelo suporte"]),
-        "3️⃣ Baixe e instale a extensão em: " + panelUrl + "/upgrade",
+        "3️⃣ Baixe e instale a extensão pelo link de download",
         "4️⃣ Ative com sua chave de licença",
+        "",
+        ...warning,
         "",
         "💬 Dúvidas? Fale conosco no WhatsApp: (27) 98135-9051",
         "",
         "_Obrigado por escolher a Hyro Lovable! 🚀_",
       ].join("\n");
+
 
   const copy = async () => {
     await navigator.clipboard.writeText(message);
