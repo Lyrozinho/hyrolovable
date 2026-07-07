@@ -23,7 +23,7 @@ const titles: Record<string, string> = {
   "/dashboard": "Visão geral",
   "/licenses": "Licenças",
   "/resellers": "Revendedores",
-  "/subscription": "Assinatura",
+  "/my-license": "Minhas licenças",
   "/tutorials": "Tutoriais",
   "/upgrade-admin": "Atualização",
   "/telegram-bot": "Bot Telegram",
