@@ -14,14 +14,19 @@ import { toast } from "sonner";
 import { Loader2, Copy, Check, QrCode, Clock, ShieldCheck, KeyRound, CheckCircle2, AlertTriangle } from "lucide-react";
 import { createVexoPayPixCharge, checkVexoPayPixStatus } from "@/lib/vexopay.functions";
 
+import { adjustResellerBalance } from "@/lib/reseller-balance";
+
 type Props = {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   planId: string;
   planName: string;
   amountCents: number;
+  licensesCount?: number;
+  resellerUserId?: string | null;
   defaultEmail?: string | null;
 };
+
 
 function fmtBRL(cents: number) {
   return (cents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
