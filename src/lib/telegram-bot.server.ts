@@ -1,6 +1,7 @@
 // Server-only Telegram bot helper.
 // Handles updates, authorization, conversation state and license/reseller creation.
 import { createClient } from "@supabase/supabase-js";
+import { createHash, randomBytes } from "node:crypto";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 const EXT_URL = "https://zoxdnsjhdpdhwyxbluax.supabase.co";
@@ -65,9 +66,6 @@ export function deriveWebhookSecret(): string {
   // Derive a stable secret from the bot token itself.
   // Uses SHA-256 hex (only [a-f0-9], matches Telegram's allowed charset A-Za-z0-9_-).
   const token = botToken();
-  // Node crypto is available on the worker runtime with nodejs_compat.
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const { createHash } = require("crypto") as typeof import("crypto");
   return createHash("sha256").update(`telegram-webhook:${token}`).digest("hex");
 }
 
@@ -140,13 +138,11 @@ async function clearState(chatId: string) {
 // ---------- Helpers ----------
 
 async function sha256Hex(input: string): Promise<string> {
-  const { createHash } = await import("crypto");
   return createHash("sha256").update(input).digest("hex");
 }
 
 const ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 function generateLicenseKey(): string {
-  const { randomBytes } = require("crypto") as typeof import("crypto");
   const rand = (n: number) => {
     const b = randomBytes(n);
     let s = "";
@@ -157,7 +153,6 @@ function generateLicenseKey(): string {
 }
 function generateSlug(): string {
   const alpha = "abcdefghjkmnpqrstuvwxyz23456789";
-  const { randomBytes } = require("crypto") as typeof import("crypto");
   const b = randomBytes(10);
   let s = "";
   for (let i = 0; i < 10; i++) s += alpha[b[i] % alpha.length];
