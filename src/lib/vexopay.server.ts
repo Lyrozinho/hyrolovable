@@ -140,7 +140,12 @@ export async function createPixCharge(input: PixCreateInput): Promise<PixCreateR
 }
 
 export async function checkPixStatus(id: string): Promise<{ ok: true; status: string; raw: any } | PixErrorResult> {
-  const paths = [`/v1/pix/status/${encodeURIComponent(id)}`, `/v1/pix/${encodeURIComponent(id)}`, `/gateway/pix-status/${encodeURIComponent(id)}`, `/v1/pix/status?id=${encodeURIComponent(id)}`];
+  const paths = [
+    `/api/gateway/pix-status?transactionId=${encodeURIComponent(id)}`,
+    `/api/gateway/pix-status?id=${encodeURIComponent(id)}`,
+    `/v1/pix/status/${encodeURIComponent(id)}`,
+    `/gateway/pix-status/${encodeURIComponent(id)}`,
+  ];
   let last: { status: number; json: any; text: string } | null = null;
   for (const p of paths) {
     try {
