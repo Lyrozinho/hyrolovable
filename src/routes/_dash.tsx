@@ -23,7 +23,7 @@ const titles: Record<string, string> = {
   "/dashboard": "Visão geral",
   "/licenses": "Licenças",
   "/resellers": "Revendedores",
-  "/subscription": "Assinatura",
+  "/my-license": "Minhas licenças",
   "/tutorials": "Tutoriais",
   "/upgrade-admin": "Atualização",
   "/telegram-bot": "Bot Telegram",
@@ -114,7 +114,7 @@ function DashInner() {
     if (!isAdmin) {
       const adminOnly = ["/dashboard", "/", "/upgrade-admin", "/telegram-bot"];
       if (adminOnly.includes(pathname)) {
-        navigate({ to: "/subscription", replace: true });
+        navigate({ to: "/my-license", replace: true });
       }
     }
   }, [session, pathname, navigate]);

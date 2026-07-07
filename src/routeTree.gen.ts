@@ -18,8 +18,8 @@ import { Route as RSlugRouteImport } from './routes/r.$slug'
 import { Route as DashUpgradeAdminRouteImport } from './routes/_dash.upgrade-admin'
 import { Route as DashTutorialsRouteImport } from './routes/_dash.tutorials'
 import { Route as DashTelegramBotRouteImport } from './routes/_dash.telegram-bot'
-import { Route as DashSubscriptionRouteImport } from './routes/_dash.subscription'
 import { Route as DashResellersRouteImport } from './routes/_dash.resellers'
+import { Route as DashMyLicenseRouteImport } from './routes/_dash.my-license'
 import { Route as DashLicensesRouteImport } from './routes/_dash.licenses'
 import { Route as DashDashboardRouteImport } from './routes/_dash.dashboard'
 import { Route as ApiPublicUpgradeZipRouteImport } from './routes/api/public/upgrade-zip'
@@ -70,14 +70,14 @@ const DashTelegramBotRoute = DashTelegramBotRouteImport.update({
   path: '/telegram-bot',
   getParentRoute: () => DashRoute,
 } as any)
-const DashSubscriptionRoute = DashSubscriptionRouteImport.update({
-  id: '/subscription',
-  path: '/subscription',
-  getParentRoute: () => DashRoute,
-} as any)
 const DashResellersRoute = DashResellersRouteImport.update({
   id: '/resellers',
   path: '/resellers',
+  getParentRoute: () => DashRoute,
+} as any)
+const DashMyLicenseRoute = DashMyLicenseRouteImport.update({
+  id: '/my-license',
+  path: '/my-license',
   getParentRoute: () => DashRoute,
 } as any)
 const DashLicensesRoute = DashLicensesRouteImport.update({
@@ -114,8 +114,8 @@ export interface FileRoutesByFullPath {
   '/upgrade': typeof UpgradeRoute
   '/dashboard': typeof DashDashboardRoute
   '/licenses': typeof DashLicensesRoute
+  '/my-license': typeof DashMyLicenseRoute
   '/resellers': typeof DashResellersRoute
-  '/subscription': typeof DashSubscriptionRoute
   '/telegram-bot': typeof DashTelegramBotRoute
   '/tutorials': typeof DashTutorialsRoute
   '/upgrade-admin': typeof DashUpgradeAdminRoute
@@ -131,8 +131,8 @@ export interface FileRoutesByTo {
   '/upgrade': typeof UpgradeRoute
   '/dashboard': typeof DashDashboardRoute
   '/licenses': typeof DashLicensesRoute
+  '/my-license': typeof DashMyLicenseRoute
   '/resellers': typeof DashResellersRoute
-  '/subscription': typeof DashSubscriptionRoute
   '/telegram-bot': typeof DashTelegramBotRoute
   '/tutorials': typeof DashTutorialsRoute
   '/upgrade-admin': typeof DashUpgradeAdminRoute
@@ -150,8 +150,8 @@ export interface FileRoutesById {
   '/upgrade': typeof UpgradeRoute
   '/_dash/dashboard': typeof DashDashboardRoute
   '/_dash/licenses': typeof DashLicensesRoute
+  '/_dash/my-license': typeof DashMyLicenseRoute
   '/_dash/resellers': typeof DashResellersRoute
-  '/_dash/subscription': typeof DashSubscriptionRoute
   '/_dash/telegram-bot': typeof DashTelegramBotRoute
   '/_dash/tutorials': typeof DashTutorialsRoute
   '/_dash/upgrade-admin': typeof DashUpgradeAdminRoute
@@ -169,8 +169,8 @@ export interface FileRouteTypes {
     | '/upgrade'
     | '/dashboard'
     | '/licenses'
+    | '/my-license'
     | '/resellers'
-    | '/subscription'
     | '/telegram-bot'
     | '/tutorials'
     | '/upgrade-admin'
@@ -186,8 +186,8 @@ export interface FileRouteTypes {
     | '/upgrade'
     | '/dashboard'
     | '/licenses'
+    | '/my-license'
     | '/resellers'
-    | '/subscription'
     | '/telegram-bot'
     | '/tutorials'
     | '/upgrade-admin'
@@ -204,8 +204,8 @@ export interface FileRouteTypes {
     | '/upgrade'
     | '/_dash/dashboard'
     | '/_dash/licenses'
+    | '/_dash/my-license'
     | '/_dash/resellers'
-    | '/_dash/subscription'
     | '/_dash/telegram-bot'
     | '/_dash/tutorials'
     | '/_dash/upgrade-admin'
@@ -292,18 +292,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashTelegramBotRouteImport
       parentRoute: typeof DashRoute
     }
-    '/_dash/subscription': {
-      id: '/_dash/subscription'
-      path: '/subscription'
-      fullPath: '/subscription'
-      preLoaderRoute: typeof DashSubscriptionRouteImport
-      parentRoute: typeof DashRoute
-    }
     '/_dash/resellers': {
       id: '/_dash/resellers'
       path: '/resellers'
       fullPath: '/resellers'
       preLoaderRoute: typeof DashResellersRouteImport
+      parentRoute: typeof DashRoute
+    }
+    '/_dash/my-license': {
+      id: '/_dash/my-license'
+      path: '/my-license'
+      fullPath: '/my-license'
+      preLoaderRoute: typeof DashMyLicenseRouteImport
       parentRoute: typeof DashRoute
     }
     '/_dash/licenses': {
@@ -347,8 +347,8 @@ declare module '@tanstack/react-router' {
 interface DashRouteChildren {
   DashDashboardRoute: typeof DashDashboardRoute
   DashLicensesRoute: typeof DashLicensesRoute
+  DashMyLicenseRoute: typeof DashMyLicenseRoute
   DashResellersRoute: typeof DashResellersRoute
-  DashSubscriptionRoute: typeof DashSubscriptionRoute
   DashTelegramBotRoute: typeof DashTelegramBotRoute
   DashTutorialsRoute: typeof DashTutorialsRoute
   DashUpgradeAdminRoute: typeof DashUpgradeAdminRoute
@@ -357,8 +357,8 @@ interface DashRouteChildren {
 const DashRouteChildren: DashRouteChildren = {
   DashDashboardRoute: DashDashboardRoute,
   DashLicensesRoute: DashLicensesRoute,
+  DashMyLicenseRoute: DashMyLicenseRoute,
   DashResellersRoute: DashResellersRoute,
-  DashSubscriptionRoute: DashSubscriptionRoute,
   DashTelegramBotRoute: DashTelegramBotRoute,
   DashTutorialsRoute: DashTutorialsRoute,
   DashUpgradeAdminRoute: DashUpgradeAdminRoute,

@@ -50,7 +50,7 @@ const RESELLER_STEPS = [
     isFinal: true,
     finalCta: "Entrar no painel",
     finalIcon: ArrowRight,
-    finalRoute: "/subscription" as const,
+    finalRoute: "/my-license" as const,
   },
 ];
 

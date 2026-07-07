@@ -1,5 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { LayoutDashboard, KeyRound, Users, LogOut, Sparkles, ChevronsLeft, ChevronsRight, GraduationCap, Rocket, Bot } from "lucide-react";
+import { LayoutDashboard, KeyRound, Users, LogOut, ChevronsLeft, ChevronsRight, GraduationCap, Rocket, Bot } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth";
@@ -27,9 +27,9 @@ type NavItem = {
 
 const items: NavItem[] = [
   { title: "Visão geral", url: "/dashboard", icon: LayoutDashboard, roles: ["admin"] },
+  { title: "Minhas licenças", url: "/my-license", icon: KeyRound, roles: ["client"] },
   { title: "Licenças", url: "/licenses", icon: KeyRound, roles: ["admin", "client"], permKey: "licenses" },
   { title: "Revendedores", url: "/resellers", icon: Users, roles: ["admin", "client"], permKey: "resellers" },
-  { title: "Assinatura", url: "/subscription", icon: Sparkles, roles: ["admin", "client"], permKey: "subscription" },
   { title: "Tutoriais", url: "/tutorials", icon: GraduationCap, roles: ["admin", "client"], permKey: "tutorials" },
   { title: "Atualização", url: "/upgrade-admin", icon: Rocket, roles: ["admin"] },
   { title: "Bot Telegram", url: "/telegram-bot", icon: Bot, roles: ["admin"], ownerOnly: true },
@@ -198,7 +198,7 @@ export function AppSidebar() {
                   ].join(" ")}
                 >
                   <item.icon className="h-[18px] w-[18px] shrink-0" strokeWidth={2} />
-                  {!isCollapsed && <span>{role === "client" && item.url === "/licenses" ? "Minhas licenças" : item.title}</span>}
+                  {!isCollapsed && <span>{item.title}</span>}
                 </Link>
               </li>
             );
