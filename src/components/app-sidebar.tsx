@@ -88,13 +88,13 @@ export function AppSidebar() {
 
   const visible = items.filter((i) => {
     if (!i.roles.includes(role)) return false;
+    if (i.ownerOnly && !isOwnerAdmin) return false;
     if (role === "admin") return true;
     if (!i.permKey) return true;
     // Enquanto perms ainda não carregou, esconde abas sensíveis (não vazar)
     if (!clientPerms) return i.permKey !== "resellers" && i.permKey !== "licenses";
     return !!clientPerms[i.permKey];
   });
-  void isOwnerAdmin;
 
 
   const initial = (
