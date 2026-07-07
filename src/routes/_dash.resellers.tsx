@@ -646,6 +646,8 @@ function ResellersPage() {
 }
 
 function PartnerCard({ plan: base, override }: { plan: PartnerPlan; override?: PlanOverride | null }) {
+  const [checkoutOpen, setCheckoutOpen] = useState(false);
+  const { session } = useAuth();
   const plan = mergePlan(base, override);
   const Icon = plan.icon;
   const featured = plan.featured;
