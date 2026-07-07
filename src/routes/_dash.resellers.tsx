@@ -632,6 +632,13 @@ function ResellersPage() {
 
       <CreateResellerDialog open={createOpen} onOpenChange={setCreateOpen} ownerUserId={session?.user.id ?? null} isOwner={isOwner} />
       <AdjustBalanceDialog reseller={balanceTarget} onClose={() => setBalanceTarget(null)} />
+      {isOwner && (
+        <PartnerPlansConfigDialog
+          open={configOpen}
+          onOpenChange={setConfigOpen}
+          current={plansConfig ?? {}}
+        />
+      )}
     </div>
   );
 }
