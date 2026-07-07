@@ -114,7 +114,7 @@ function DashInner() {
     if (!isAdmin) {
       const adminOnly = ["/dashboard", "/", "/upgrade-admin", "/telegram-bot"];
       if (adminOnly.includes(pathname)) {
-        navigate({ to: "/subscription", replace: true });
+        navigate({ to: "/my-license", replace: true });
       }
     }
   }, [session, pathname, navigate]);
