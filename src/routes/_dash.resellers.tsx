@@ -478,29 +478,36 @@ function ResellersPage() {
               ].join(" ")}
             >
               <span className="inline-flex items-center gap-1.5">
-                <Handshake className="h-3.5 w-3.5" /> Planos de parceria
+                <Handshake className="h-3.5 w-3.5" /> Planos revenda
               </span>
               {tab === "plans" && <span className="absolute left-0 right-0 -bottom-px h-0.5 bg-foreground rounded-full" />}
             </button>
             <button
-              onClick={() => setTab("list")}
+              onClick={() => canOpenList && setTab("list")}
+              disabled={!canOpenList}
+              title={!canOpenList ? "Disponível apenas para administradores" : undefined}
               className={[
                 "relative px-3 py-2 text-[13px] font-medium transition-colors",
-                tab === "list" ? "text-foreground" : "text-muted-foreground hover:text-foreground",
+                !canOpenList
+                  ? "text-muted-foreground/40 cursor-not-allowed"
+                  : tab === "list"
+                  ? "text-foreground"
+                  : "text-muted-foreground hover:text-foreground",
               ].join(" ")}
             >
               <span className="inline-flex items-center gap-1.5">
-                <Users className="h-3.5 w-3.5" /> Minhas revendas
-                {(data?.length ?? 0) > 0 && (
+                {!canOpenList ? <Lock className="h-3.5 w-3.5" /> : <Users className="h-3.5 w-3.5" />}
+                Minhas revendas
+                {canOpenList && (data?.length ?? 0) > 0 && (
                   <span className="ml-1 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-muted text-[10px] font-mono tabular-nums text-muted-foreground border border-border">
                     {data!.length}
                   </span>
                 )}
               </span>
-              {tab === "list" && <span className="absolute left-0 right-0 -bottom-px h-0.5 bg-foreground rounded-full" />}
+              {tab === "list" && canOpenList && <span className="absolute left-0 right-0 -bottom-px h-0.5 bg-foreground rounded-full" />}
             </button>
           </div>
-          {tab === "list" && (() => {
+          {tab === "list" && canOpenList && (() => {
             const unlimited = isOwner || !!mySlots?.unlimited;
             const total = mySlots?.total ?? 0;
             const used = mySlots?.used ?? (data?.length ?? 0);
