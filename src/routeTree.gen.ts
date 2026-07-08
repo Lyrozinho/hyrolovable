@@ -15,6 +15,7 @@ import { Route as SignupRouteImport } from './routes/signup'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as DashRouteImport } from './routes/_dash'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as VendasCheckoutRouteImport } from './routes/vendas.checkout'
 import { Route as RSlugRouteImport } from './routes/r.$slug'
 import { Route as DashUpgradeAdminRouteImport } from './routes/_dash.upgrade-admin'
 import { Route as DashTutorialsRouteImport } from './routes/_dash.tutorials'
@@ -55,6 +56,11 @@ const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const VendasCheckoutRoute = VendasCheckoutRouteImport.update({
+  id: '/checkout',
+  path: '/checkout',
+  getParentRoute: () => VendasRoute,
 } as any)
 const RSlugRoute = RSlugRouteImport.update({
   id: '/r/$slug',
@@ -118,7 +124,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
   '/upgrade': typeof UpgradeRoute
-  '/vendas': typeof VendasRoute
+  '/vendas': typeof VendasRouteWithChildren
   '/dashboard': typeof DashDashboardRoute
   '/licenses': typeof DashLicensesRoute
   '/my-license': typeof DashMyLicenseRoute
@@ -127,6 +133,7 @@ export interface FileRoutesByFullPath {
   '/tutorials': typeof DashTutorialsRoute
   '/upgrade-admin': typeof DashUpgradeAdminRoute
   '/r/$slug': typeof RSlugRoute
+  '/vendas/checkout': typeof VendasCheckoutRoute
   '/api/public/upgrade-meta': typeof ApiPublicUpgradeMetaRoute
   '/api/public/upgrade-zip': typeof ApiPublicUpgradeZipRoute
   '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
@@ -136,7 +143,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
   '/upgrade': typeof UpgradeRoute
-  '/vendas': typeof VendasRoute
+  '/vendas': typeof VendasRouteWithChildren
   '/dashboard': typeof DashDashboardRoute
   '/licenses': typeof DashLicensesRoute
   '/my-license': typeof DashMyLicenseRoute
@@ -145,6 +152,7 @@ export interface FileRoutesByTo {
   '/tutorials': typeof DashTutorialsRoute
   '/upgrade-admin': typeof DashUpgradeAdminRoute
   '/r/$slug': typeof RSlugRoute
+  '/vendas/checkout': typeof VendasCheckoutRoute
   '/api/public/upgrade-meta': typeof ApiPublicUpgradeMetaRoute
   '/api/public/upgrade-zip': typeof ApiPublicUpgradeZipRoute
   '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
@@ -156,7 +164,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
   '/upgrade': typeof UpgradeRoute
-  '/vendas': typeof VendasRoute
+  '/vendas': typeof VendasRouteWithChildren
   '/_dash/dashboard': typeof DashDashboardRoute
   '/_dash/licenses': typeof DashLicensesRoute
   '/_dash/my-license': typeof DashMyLicenseRoute
@@ -165,6 +173,7 @@ export interface FileRoutesById {
   '/_dash/tutorials': typeof DashTutorialsRoute
   '/_dash/upgrade-admin': typeof DashUpgradeAdminRoute
   '/r/$slug': typeof RSlugRoute
+  '/vendas/checkout': typeof VendasCheckoutRoute
   '/api/public/upgrade-meta': typeof ApiPublicUpgradeMetaRoute
   '/api/public/upgrade-zip': typeof ApiPublicUpgradeZipRoute
   '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
@@ -185,6 +194,7 @@ export interface FileRouteTypes {
     | '/tutorials'
     | '/upgrade-admin'
     | '/r/$slug'
+    | '/vendas/checkout'
     | '/api/public/upgrade-meta'
     | '/api/public/upgrade-zip'
     | '/api/public/telegram/webhook'
@@ -203,6 +213,7 @@ export interface FileRouteTypes {
     | '/tutorials'
     | '/upgrade-admin'
     | '/r/$slug'
+    | '/vendas/checkout'
     | '/api/public/upgrade-meta'
     | '/api/public/upgrade-zip'
     | '/api/public/telegram/webhook'
@@ -222,6 +233,7 @@ export interface FileRouteTypes {
     | '/_dash/tutorials'
     | '/_dash/upgrade-admin'
     | '/r/$slug'
+    | '/vendas/checkout'
     | '/api/public/upgrade-meta'
     | '/api/public/upgrade-zip'
     | '/api/public/telegram/webhook'
@@ -233,7 +245,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   SignupRoute: typeof SignupRoute
   UpgradeRoute: typeof UpgradeRoute
-  VendasRoute: typeof VendasRoute
+  VendasRoute: typeof VendasRouteWithChildren
   RSlugRoute: typeof RSlugRoute
   ApiPublicUpgradeMetaRoute: typeof ApiPublicUpgradeMetaRoute
   ApiPublicUpgradeZipRoute: typeof ApiPublicUpgradeZipRoute
@@ -283,6 +295,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/vendas/checkout': {
+      id: '/vendas/checkout'
+      path: '/checkout'
+      fullPath: '/vendas/checkout'
+      preLoaderRoute: typeof VendasCheckoutRouteImport
+      parentRoute: typeof VendasRoute
     }
     '/r/$slug': {
       id: '/r/$slug'
@@ -386,13 +405,24 @@ const DashRouteChildren: DashRouteChildren = {
 
 const DashRouteWithChildren = DashRoute._addFileChildren(DashRouteChildren)
 
+interface VendasRouteChildren {
+  VendasCheckoutRoute: typeof VendasCheckoutRoute
+}
+
+const VendasRouteChildren: VendasRouteChildren = {
+  VendasCheckoutRoute: VendasCheckoutRoute,
+}
+
+const VendasRouteWithChildren =
+  VendasRoute._addFileChildren(VendasRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   DashRoute: DashRouteWithChildren,
   LoginRoute: LoginRoute,
   SignupRoute: SignupRoute,
   UpgradeRoute: UpgradeRoute,
-  VendasRoute: VendasRoute,
+  VendasRoute: VendasRouteWithChildren,
   RSlugRoute: RSlugRoute,
   ApiPublicUpgradeMetaRoute: ApiPublicUpgradeMetaRoute,
   ApiPublicUpgradeZipRoute: ApiPublicUpgradeZipRoute,
