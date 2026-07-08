@@ -221,7 +221,7 @@ function LoginPage() {
                     </FieldWithIcon>
 
                     <label className="flex items-center gap-2 text-[12.5px] text-muted-foreground select-none cursor-pointer">
-                      <Checkbox checked={remember} onCheckedChange={(v) => setRemember(!!v)} />
+                      <Checkbox checked={remember} onCheckedChange={(v) => setRemember(!!v)} className="border-0 bg-secondary/60 data-[state=checked]:bg-primary" />
                       Salvar senha neste dispositivo
                     </label>
 
