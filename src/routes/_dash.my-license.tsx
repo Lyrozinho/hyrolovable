@@ -271,11 +271,39 @@ function MyLicensePage() {
         </div>
       </section>
 
-      {/* List */}
+      {/* Planos revenda (visíveis para reseller) */}
+      {isReseller && (
+        <section>
+          <div className="flex items-baseline justify-between mb-4">
+            <div>
+              <h2 className="text-[15px] font-semibold tracking-tight">Planos disponíveis</h2>
+              <p className="text-[12.5px] text-muted-foreground mt-0.5">
+                Pacotes configurados para revenda. Selecione o ideal para o seu volume.
+              </p>
+            </div>
+          </div>
+          {plansConfig === undefined ? (
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+              {[0, 1, 2].map((i) => (
+                <div key={i} className="rounded-2xl border border-border bg-card/60 h-[380px] animate-pulse" />
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+              {PARTNER_PLANS.map((p) => (
+                <PlanCard key={p.id} plan={p} override={plansConfig?.[p.id] ?? null} />
+              ))}
+            </div>
+          )}
+        </section>
+      )}
+
+      {/* List de licenças — clientes vêem sempre; reseller vê depois dos planos */}
       <section>
         <div className="flex items-baseline justify-between mb-4">
           <h2 className="text-[15px] font-semibold tracking-tight">
-            Suas licenças {data ? <span className="text-muted-foreground font-mono text-[12px] ml-1">({data.length})</span> : null}
+            {isReseller ? "Licenças da sua carteira" : "Suas licenças"}
+            {data ? <span className="text-muted-foreground font-mono text-[12px] ml-1">({data.length})</span> : null}
           </h2>
         </div>
 
@@ -288,7 +316,9 @@ function MyLicensePage() {
             <KeyRound className="h-6 w-6 text-muted-foreground mx-auto mb-2" />
             <p className="text-[13.5px] font-medium">Nenhuma licença encontrada</p>
             <p className="text-[12px] text-muted-foreground mt-1">
-              Quando uma licença for atribuída à sua conta, ela aparecerá aqui.
+              {isReseller
+                ? "Ao ativar um plano, suas licenças aparecerão aqui."
+                : "Quando uma licença for atribuída à sua conta, ela aparecerá aqui."}
             </p>
           </div>
         ) : (
@@ -378,7 +408,7 @@ function MyLicensePage() {
                     </div>
                   </div>
 
-                  {!life && (
+                  {!life && !isReseller && (
                     <div className="pt-3 mt-3 border-t border-border">
                       <Button
                         size="sm"
