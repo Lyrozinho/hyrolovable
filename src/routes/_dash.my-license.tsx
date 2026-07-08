@@ -42,6 +42,8 @@ function fmtDate(d: string) {
 function MyLicensePage() {
   const { session, sessionKey, authReady } = useAuth();
   const userId = session?.user.id ?? null;
+  const qc = useQueryClient();
+  const [renewTarget, setRenewTarget] = useState<string | null>(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ["my-licenses", sessionKey, userId],
