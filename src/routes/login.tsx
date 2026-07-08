@@ -167,12 +167,12 @@ function LoginPage() {
                 {/* Tabs */}
                 <div className="mb-6">
                   <div className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground mb-3">Acesso seguro</div>
-                  <div className="inline-flex items-center rounded-lg border border-border bg-secondary/40 p-0.5">
+                  <div className="grid grid-cols-2 items-center rounded-lg border border-border bg-secondary/40 p-0.5 w-full">
                     <button
                       type="button"
                       onClick={() => setTab("login")}
                       className={[
-                        "px-4 h-8 text-[12.5px] font-medium rounded-md transition-colors",
+                        "h-9 text-[12.5px] font-medium rounded-md transition-colors w-full",
                         tab === "login" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground",
                       ].join(" ")}
                     >
@@ -182,7 +182,7 @@ function LoginPage() {
                       type="button"
                       onClick={() => setTab("signup")}
                       className={[
-                        "px-4 h-8 text-[12.5px] font-medium rounded-md transition-colors",
+                        "h-9 text-[12.5px] font-medium rounded-md transition-colors w-full",
                         tab === "signup" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground",
                       ].join(" ")}
                     >
