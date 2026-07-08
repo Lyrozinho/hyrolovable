@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as VendasRouteImport } from './routes/vendas'
 import { Route as UpgradeRouteImport } from './routes/upgrade'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as LoginRouteImport } from './routes/login'
@@ -26,6 +27,11 @@ import { Route as ApiPublicUpgradeZipRouteImport } from './routes/api/public/upg
 import { Route as ApiPublicUpgradeMetaRouteImport } from './routes/api/public/upgrade-meta'
 import { Route as ApiPublicTelegramWebhookRouteImport } from './routes/api/public/telegram/webhook'
 
+const VendasRoute = VendasRouteImport.update({
+  id: '/vendas',
+  path: '/vendas',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const UpgradeRoute = UpgradeRouteImport.update({
   id: '/upgrade',
   path: '/upgrade',
@@ -112,6 +118,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
   '/upgrade': typeof UpgradeRoute
+  '/vendas': typeof VendasRoute
   '/dashboard': typeof DashDashboardRoute
   '/licenses': typeof DashLicensesRoute
   '/my-license': typeof DashMyLicenseRoute
@@ -129,6 +136,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
   '/upgrade': typeof UpgradeRoute
+  '/vendas': typeof VendasRoute
   '/dashboard': typeof DashDashboardRoute
   '/licenses': typeof DashLicensesRoute
   '/my-license': typeof DashMyLicenseRoute
@@ -148,6 +156,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
   '/upgrade': typeof UpgradeRoute
+  '/vendas': typeof VendasRoute
   '/_dash/dashboard': typeof DashDashboardRoute
   '/_dash/licenses': typeof DashLicensesRoute
   '/_dash/my-license': typeof DashMyLicenseRoute
@@ -167,6 +176,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/signup'
     | '/upgrade'
+    | '/vendas'
     | '/dashboard'
     | '/licenses'
     | '/my-license'
@@ -184,6 +194,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/signup'
     | '/upgrade'
+    | '/vendas'
     | '/dashboard'
     | '/licenses'
     | '/my-license'
@@ -202,6 +213,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/signup'
     | '/upgrade'
+    | '/vendas'
     | '/_dash/dashboard'
     | '/_dash/licenses'
     | '/_dash/my-license'
@@ -221,6 +233,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   SignupRoute: typeof SignupRoute
   UpgradeRoute: typeof UpgradeRoute
+  VendasRoute: typeof VendasRoute
   RSlugRoute: typeof RSlugRoute
   ApiPublicUpgradeMetaRoute: typeof ApiPublicUpgradeMetaRoute
   ApiPublicUpgradeZipRoute: typeof ApiPublicUpgradeZipRoute
@@ -229,6 +242,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/vendas': {
+      id: '/vendas'
+      path: '/vendas'
+      fullPath: '/vendas'
+      preLoaderRoute: typeof VendasRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/upgrade': {
       id: '/upgrade'
       path: '/upgrade'
@@ -372,6 +392,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   SignupRoute: SignupRoute,
   UpgradeRoute: UpgradeRoute,
+  VendasRoute: VendasRoute,
   RSlugRoute: RSlugRoute,
   ApiPublicUpgradeMetaRoute: ApiPublicUpgradeMetaRoute,
   ApiPublicUpgradeZipRoute: ApiPublicUpgradeZipRoute,
