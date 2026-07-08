@@ -755,6 +755,8 @@ function ResellersPage() {
 
       <CreateResellerDialog open={createOpen} onOpenChange={setCreateOpen} ownerUserId={session?.user.id ?? null} isOwner={isOwner} />
       <AdjustBalanceDialog reseller={balanceTarget} onClose={() => setBalanceTarget(null)} />
+      <EditResellerDialog reseller={editTarget} onClose={() => setEditTarget(null)} />
+      <DeleteResellerDialog reseller={deleteTarget} onClose={() => setDeleteTarget(null)} />
       {isOwner && (
         <PartnerPlansConfigDialog
           open={configOpen}
