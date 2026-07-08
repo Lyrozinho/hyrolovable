@@ -192,11 +192,13 @@ export function AppSidebar() {
           {visible.map((item) => {
             const active =
               pathname === item.url || pathname.startsWith(item.url + "/");
+            const displayTitle = isReseller && item.resellerTitle ? item.resellerTitle : item.title;
+            const DisplayIcon = isReseller && item.resellerIcon ? item.resellerIcon : item.icon;
             return (
               <li key={item.url}>
                 <Link
                   to={item.url}
-                  title={isCollapsed ? item.title : undefined}
+                  title={isCollapsed ? displayTitle : undefined}
                   className={[
                     "flex items-center rounded-md text-[13.5px] font-medium transition-colors",
                     isCollapsed ? "h-10 w-full justify-center" : "px-3 py-2 gap-3",
@@ -205,8 +207,8 @@ export function AppSidebar() {
                       : "text-white/60 hover:text-white hover:bg-white/5",
                   ].join(" ")}
                 >
-                  <item.icon className="h-[18px] w-[18px] shrink-0" strokeWidth={2} />
-                  {!isCollapsed && <span>{item.title}</span>}
+                  <DisplayIcon className="h-[18px] w-[18px] shrink-0" strokeWidth={2} />
+                  {!isCollapsed && <span>{displayTitle}</span>}
                 </Link>
               </li>
             );
