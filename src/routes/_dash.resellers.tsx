@@ -1448,3 +1448,154 @@ function PartnerPlansConfigDialog({
   );
 }
 
+function EditResellerDialog({
+  reseller,
+  onClose,
+}: {
+  reseller: Reseller | null;
+  onClose: () => void;
+}) {
+  const qc = useQueryClient();
+  const [name, setName] = useState(reseller?.name ?? "");
+  const [email, setEmail] = useState(reseller?.email ?? "");
+  const [password, setPassword] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    setName(reseller?.name ?? "");
+    setEmail(reseller?.email ?? "");
+    setPassword("");
+  }, [reseller?.id]);
+
+  if (!reseller) return null;
+
+  const save = async () => {
+    const em = email.trim().toLowerCase();
+    if (!em.includes("@")) { toast.error("E-mail inválido."); return; }
+    setSaving(true);
+    try {
+      const patch: Record<string, unknown> = {
+        name: name.trim() || null,
+        email: em,
+      };
+      if (password) {
+        if (password.length < 6) { toast.error("Senha deve ter no mínimo 6 caracteres."); setSaving(false); return; }
+        patch.password_hash = await sha256Hex(password);
+      }
+      const { error } = await supabase
+        .from("hyro_extension_users")
+        .update(patch)
+        .eq("id", reseller.id);
+      if (error) throw error;
+      toast.success("Revendedor atualizado");
+      qc.invalidateQueries({ queryKey: ["resellers"] });
+      onClose();
+    } catch (e: any) {
+      toast.error(e?.message ?? "Erro ao salvar");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Dialog open={!!reseller} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="glass-panel border-0 sm:max-w-[460px] p-0 overflow-hidden">
+        <DialogHeader className="px-6 pt-6 pb-4 border-b border-border/60">
+          <div className="flex items-start gap-3">
+            <div className="h-9 w-9 rounded-md bg-foreground text-background flex items-center justify-center shrink-0">
+              <Pencil className="h-4 w-4" />
+            </div>
+            <div className="min-w-0">
+              <DialogTitle className="text-[15px] font-semibold tracking-tight">Editar revendedor</DialogTitle>
+              <p className="text-[12.5px] text-muted-foreground mt-0.5 truncate">{reseller.email}</p>
+            </div>
+          </div>
+        </DialogHeader>
+        <div className="px-6 py-5 space-y-4">
+          <div className="space-y-1.5">
+            <Label className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">Nome</Label>
+            <Input value={name} onChange={(e) => setName(e.target.value)} className="h-10 text-[13px]" />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">E-mail</Label>
+            <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="h-10 text-[13px]" />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">
+              Nova senha <span className="text-muted-foreground/70 normal-case tracking-normal">(opcional)</span>
+            </Label>
+            <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Deixe em branco para manter" className="h-10 text-[13px]" />
+          </div>
+        </div>
+        <DialogFooter className="px-6 py-4 border-t border-border/60 bg-muted/30 gap-2">
+          <Button variant="ghost" size="sm" onClick={onClose}>Cancelar</Button>
+          <Button size="sm" onClick={save} disabled={saving}>
+            {saving && <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />}
+            Salvar
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function DeleteResellerDialog({
+  reseller,
+  onClose,
+}: {
+  reseller: Reseller | null;
+  onClose: () => void;
+}) {
+  const qc = useQueryClient();
+  const [saving, setSaving] = useState(false);
+  if (!reseller) return null;
+
+  const confirmDelete = async () => {
+    setSaving(true);
+    try {
+      const { error } = await supabase
+        .from("hyro_extension_users")
+        .delete()
+        .eq("id", reseller.id);
+      if (error) throw error;
+      toast.success("Revendedor excluído");
+      qc.invalidateQueries({ queryKey: ["resellers"] });
+      onClose();
+    } catch (e: any) {
+      toast.error(e?.message ?? "Erro ao excluir");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Dialog open={!!reseller} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="sm:max-w-[440px] p-0 overflow-hidden">
+        <DialogHeader className="px-6 pt-6 pb-4 border-b border-border/60">
+          <div className="flex items-start gap-3">
+            <div className="h-9 w-9 rounded-md bg-destructive text-destructive-foreground flex items-center justify-center shrink-0">
+              <Trash2 className="h-4 w-4" />
+            </div>
+            <div className="min-w-0">
+              <DialogTitle className="text-[15px] font-semibold tracking-tight">Excluir revendedor</DialogTitle>
+              <p className="text-[12.5px] text-muted-foreground mt-0.5 truncate">{reseller.email}</p>
+            </div>
+          </div>
+        </DialogHeader>
+        <div className="px-6 py-5">
+          <p className="text-[13px] text-muted-foreground leading-relaxed">
+            Esta ação é permanente. O acesso deste revendedor será revogado imediatamente.
+          </p>
+        </div>
+        <DialogFooter className="px-6 py-4 border-t border-border/60 bg-muted/30 gap-2">
+          <Button variant="ghost" size="sm" onClick={onClose}>Cancelar</Button>
+          <Button size="sm" variant="destructive" onClick={confirmDelete} disabled={saving}>
+            {saving && <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />}
+            Excluir
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
