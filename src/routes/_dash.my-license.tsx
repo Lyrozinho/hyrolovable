@@ -227,13 +227,15 @@ function MyLicensePage() {
       <div className="relative overflow-hidden rounded-xl border border-border bg-gradient-to-br from-card via-card to-secondary/40 px-6 py-5">
         <div className="inline-flex items-center gap-2 px-2 py-0.5 rounded-full border border-border bg-background/80 backdrop-blur text-[10px] uppercase tracking-[0.16em] text-muted-foreground font-medium mb-2">
           <span className="h-1.5 w-1.5 rounded-full bg-success animate-pulse" />
-          Minhas licenças
+          {isReseller ? "Dashboard" : "Minhas licenças"}
         </div>
         <h1 className="text-[22px] leading-[1.15] font-semibold tracking-tight">
-          Acompanhe suas licenças e validades
+          {isReseller ? "Bem-vindo, revendedor" : "Acompanhe suas licenças e validades"}
         </h1>
         <p className="text-[12.5px] text-muted-foreground mt-1.5 leading-relaxed">
-          Visualização somente-leitura das licenças vinculadas à sua conta.
+          {isReseller
+            ? "Confira os pacotes disponíveis e acompanhe suas licenças ativas."
+            : "Visualização somente-leitura das licenças vinculadas à sua conta."}
         </p>
       </div>
 
