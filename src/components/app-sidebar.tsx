@@ -23,6 +23,7 @@ type NavItem = {
   roles: Array<"admin" | "client">;
   permKey?: MenuKey; // se definido, respeita permissões para role=client
   ownerOnly?: boolean; // visível apenas para OWNER_EMAIL
+  resellerOrAdminOnly?: boolean; // visível somente para admin ou usuário reseller
 };
 
 const items: NavItem[] = [
@@ -30,6 +31,7 @@ const items: NavItem[] = [
   { title: "Minhas licenças", url: "/my-license", icon: KeyRound, roles: ["client"] },
   { title: "Licenças", url: "/licenses", icon: KeyRound, roles: ["admin", "client"], permKey: "licenses" },
   { title: "Revendedores", url: "/resellers", icon: Users, roles: ["admin", "client"], permKey: "resellers" },
+  { title: "Integrações", url: "/integrations", icon: Plug, roles: ["admin", "client"], resellerOrAdminOnly: true },
   { title: "Tutoriais", url: "/tutorials", icon: GraduationCap, roles: ["admin", "client"], permKey: "tutorials" },
   { title: "Atualização", url: "/upgrade-admin", icon: Rocket, roles: ["admin"] },
   { title: "Bot Telegram", url: "/telegram-bot", icon: Bot, roles: ["admin"], ownerOnly: true },
