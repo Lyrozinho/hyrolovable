@@ -145,30 +145,52 @@ function MyLicensePage() {
   const qc = useQueryClient();
   const [renewTarget, setRenewTarget] = useState<string | null>(null);
 
-  const { data, isLoading } = useQuery({
-    queryKey: ["my-licenses", sessionKey, userId],
+  const { data: roleData } = useQuery({
+    queryKey: ["my-role", sessionKey, userId],
     enabled: authReady && !!userId,
+    staleTime: 60_000,
     queryFn: async () => {
-      // Descobre role no ext-users
       const { data: u } = await supabase
         .from("hyro_extension_users")
         .select("role")
         .eq("id", userId!)
         .maybeSingle();
-      const role = (u as any)?.role;
+      return (u as any)?.role ?? null;
+    },
+  });
+  const isReseller = roleData === "reseller";
+
+  const { data: plansConfig } = useQuery({
+    queryKey: ["partner-plans-config"],
+    enabled: authReady && isReseller,
+    staleTime: 30_000,
+    queryFn: async () => {
+      const { data } = await (cloud as any)
+        .from("hyro_partner_plans_config")
+        .select("plans")
+        .eq("id", 1)
+        .maybeSingle();
+      return ((data as any)?.plans ?? {}) as PlansConfig;
+    },
+  });
+
+  const { data, isLoading } = useQuery({
+    queryKey: ["my-licenses", sessionKey, userId, roleData],
+    enabled: authReady && !!userId && roleData !== undefined,
+    queryFn: async () => {
       let q = supabase
         .from("hyro_extension_licenses")
         .select("id, status, expires_at, created_at, user_id, created_by, reseller_id")
         .order("created_at", { ascending: false });
-      q = role === "reseller"
+      q = roleData === "reseller"
         ? q.or(`created_by.eq.${userId},reseller_id.eq.${userId}`)
         : q.eq("user_id", userId!);
       const { data, error } = await q;
       if (error) throw error;
       return (data ?? []) as LicenseRow[];
     },
-    staleTime: 0,
-    refetchInterval: 15_000,
+    staleTime: 10_000,
+    refetchInterval: 20_000,
     refetchOnWindowFocus: true,
   });
 
