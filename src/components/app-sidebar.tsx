@@ -56,10 +56,12 @@ export function AppSidebar() {
 
   // Carrega perms quando é cliente
   const [clientPerms, setClientPerms] = useState<SidePerms | null>(null);
+  const [isReseller, setIsReseller] = useState(false);
   useEffect(() => {
     let cancelled = false;
     if (!authReady || role !== "client" || !session?.user.id) {
       setClientPerms(null);
+      setIsReseller(false);
       return;
     }
     setClientPerms(null);
@@ -71,16 +73,17 @@ export function AppSidebar() {
           .select("role")
           .eq("id", session.user.id)
           .maybeSingle();
-        const isReseller = (u as any)?.role === "reseller";
-        const licId = isReseller
+        const _isReseller = (u as any)?.role === "reseller";
+        if (!cancelled) setIsReseller(_isReseller);
+        const licId = _isReseller
           ? await fetchParentLicenseForReseller(session.user.id)
           : await fetchPrimaryLicenseForUser(session.user.id);
         if (!licId) {
-          if (!cancelled) setClientPerms(DEFAULT_PERMS[isReseller ? "resellers" : "owner"]);
+          if (!cancelled) setClientPerms(DEFAULT_PERMS[_isReseller ? "resellers" : "owner"]);
           return;
         }
         const p = await fetchLicensePerms(licId);
-        if (!cancelled) setClientPerms(isReseller ? p.resellers : p.owner);
+        if (!cancelled) setClientPerms(_isReseller ? p.resellers : p.owner);
       } catch {
         if (!cancelled) setClientPerms(DEFAULT_PERMS.owner);
       }
@@ -91,6 +94,7 @@ export function AppSidebar() {
   const visible = items.filter((i) => {
     if (!i.roles.includes(role)) return false;
     if (i.ownerOnly && !isOwnerAdmin) return false;
+    if (i.resellerOrAdminOnly && role !== "admin" && !isReseller) return false;
     if (role === "admin") return true;
     if (!i.permKey) return true;
     // Enquanto perms ainda não carregou, esconde abas sensíveis (não vazar)
