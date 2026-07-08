@@ -24,6 +24,8 @@ type NavItem = {
   permKey?: MenuKey; // se definido, respeita permissões para role=client
   ownerOnly?: boolean; // visível apenas para OWNER_EMAIL
   resellerOrAdminOnly?: boolean; // visível somente para admin ou usuário reseller
+  resellerTitle?: string; // título alternativo quando o usuário é reseller
+  resellerIcon?: typeof LayoutDashboard; // ícone alternativo quando reseller
 };
 
 const items: NavItem[] = [
