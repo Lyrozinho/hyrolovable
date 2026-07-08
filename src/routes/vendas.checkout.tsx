@@ -122,7 +122,8 @@ function maskPhone(v: string) {
 }
 
 function CheckoutPage() {
-  const { plan: planId } = Route.useSearch();
+  const search = Route.useSearch() as { plan: PlanId };
+  const planId: PlanId = search.plan;
   const plan = PLANS[planId];
   const navigate = useNavigate();
 
