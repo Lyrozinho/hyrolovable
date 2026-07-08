@@ -27,6 +27,7 @@ import { Route as DashDashboardRouteImport } from './routes/_dash.dashboard'
 import { Route as ApiPublicUpgradeZipRouteImport } from './routes/api/public/upgrade-zip'
 import { Route as ApiPublicUpgradeMetaRouteImport } from './routes/api/public/upgrade-meta'
 import { Route as ApiPublicTelegramWebhookRouteImport } from './routes/api/public/telegram/webhook'
+import { Route as ApiPublicMercadopagoWebhookRouteImport } from './routes/api/public/mercadopago/webhook'
 
 const VendasRoute = VendasRouteImport.update({
   id: '/vendas',
@@ -118,6 +119,12 @@ const ApiPublicTelegramWebhookRoute =
     path: '/api/public/telegram/webhook',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicMercadopagoWebhookRoute =
+  ApiPublicMercadopagoWebhookRouteImport.update({
+    id: '/api/public/mercadopago/webhook',
+    path: '/api/public/mercadopago/webhook',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -136,6 +143,7 @@ export interface FileRoutesByFullPath {
   '/vendas/checkout': typeof VendasCheckoutRoute
   '/api/public/upgrade-meta': typeof ApiPublicUpgradeMetaRoute
   '/api/public/upgrade-zip': typeof ApiPublicUpgradeZipRoute
+  '/api/public/mercadopago/webhook': typeof ApiPublicMercadopagoWebhookRoute
   '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
 }
 export interface FileRoutesByTo {
@@ -155,6 +163,7 @@ export interface FileRoutesByTo {
   '/vendas/checkout': typeof VendasCheckoutRoute
   '/api/public/upgrade-meta': typeof ApiPublicUpgradeMetaRoute
   '/api/public/upgrade-zip': typeof ApiPublicUpgradeZipRoute
+  '/api/public/mercadopago/webhook': typeof ApiPublicMercadopagoWebhookRoute
   '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
 }
 export interface FileRoutesById {
@@ -176,6 +185,7 @@ export interface FileRoutesById {
   '/vendas/checkout': typeof VendasCheckoutRoute
   '/api/public/upgrade-meta': typeof ApiPublicUpgradeMetaRoute
   '/api/public/upgrade-zip': typeof ApiPublicUpgradeZipRoute
+  '/api/public/mercadopago/webhook': typeof ApiPublicMercadopagoWebhookRoute
   '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
 }
 export interface FileRouteTypes {
@@ -197,6 +207,7 @@ export interface FileRouteTypes {
     | '/vendas/checkout'
     | '/api/public/upgrade-meta'
     | '/api/public/upgrade-zip'
+    | '/api/public/mercadopago/webhook'
     | '/api/public/telegram/webhook'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -216,6 +227,7 @@ export interface FileRouteTypes {
     | '/vendas/checkout'
     | '/api/public/upgrade-meta'
     | '/api/public/upgrade-zip'
+    | '/api/public/mercadopago/webhook'
     | '/api/public/telegram/webhook'
   id:
     | '__root__'
@@ -236,6 +248,7 @@ export interface FileRouteTypes {
     | '/vendas/checkout'
     | '/api/public/upgrade-meta'
     | '/api/public/upgrade-zip'
+    | '/api/public/mercadopago/webhook'
     | '/api/public/telegram/webhook'
   fileRoutesById: FileRoutesById
 }
@@ -249,6 +262,7 @@ export interface RootRouteChildren {
   RSlugRoute: typeof RSlugRoute
   ApiPublicUpgradeMetaRoute: typeof ApiPublicUpgradeMetaRoute
   ApiPublicUpgradeZipRoute: typeof ApiPublicUpgradeZipRoute
+  ApiPublicMercadopagoWebhookRoute: typeof ApiPublicMercadopagoWebhookRoute
   ApiPublicTelegramWebhookRoute: typeof ApiPublicTelegramWebhookRoute
 }
 
@@ -380,6 +394,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicTelegramWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/mercadopago/webhook': {
+      id: '/api/public/mercadopago/webhook'
+      path: '/api/public/mercadopago/webhook'
+      fullPath: '/api/public/mercadopago/webhook'
+      preLoaderRoute: typeof ApiPublicMercadopagoWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -426,18 +447,9 @@ const rootRouteChildren: RootRouteChildren = {
   RSlugRoute: RSlugRoute,
   ApiPublicUpgradeMetaRoute: ApiPublicUpgradeMetaRoute,
   ApiPublicUpgradeZipRoute: ApiPublicUpgradeZipRoute,
+  ApiPublicMercadopagoWebhookRoute: ApiPublicMercadopagoWebhookRoute,
   ApiPublicTelegramWebhookRoute: ApiPublicTelegramWebhookRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

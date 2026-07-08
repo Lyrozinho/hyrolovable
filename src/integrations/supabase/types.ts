@@ -53,6 +53,123 @@ export type Database = {
         }
         Relationships: []
       }
+      hyro_payment_integrations: {
+        Row: {
+          access_token: string
+          account_info: Json
+          active: boolean
+          created_at: string
+          id: string
+          mode: string
+          provider: string
+          public_key: string | null
+          updated_at: string
+          user_id: string
+          webhook_secret: string | null
+        }
+        Insert: {
+          access_token: string
+          account_info?: Json
+          active?: boolean
+          created_at?: string
+          id?: string
+          mode?: string
+          provider: string
+          public_key?: string | null
+          updated_at?: string
+          user_id: string
+          webhook_secret?: string | null
+        }
+        Update: {
+          access_token?: string
+          account_info?: Json
+          active?: boolean
+          created_at?: string
+          id?: string
+          mode?: string
+          provider?: string
+          public_key?: string | null
+          updated_at?: string
+          user_id?: string
+          webhook_secret?: string | null
+        }
+        Relationships: []
+      }
+      hyro_payment_orders: {
+        Row: {
+          amount_cents: number
+          client_user_id: string
+          created_at: string
+          currency: string
+          expires_at: string | null
+          external_reference: string | null
+          id: string
+          license_id: string
+          paid_at: string | null
+          payer_cpf: string | null
+          payer_email: string | null
+          payer_name: string | null
+          provider: string
+          provider_payment_id: string | null
+          qr_code: string | null
+          qr_code_base64: string | null
+          raw_payload: Json | null
+          renewal_days: number
+          reseller_user_id: string
+          status: string
+          ticket_url: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount_cents: number
+          client_user_id: string
+          created_at?: string
+          currency?: string
+          expires_at?: string | null
+          external_reference?: string | null
+          id?: string
+          license_id: string
+          paid_at?: string | null
+          payer_cpf?: string | null
+          payer_email?: string | null
+          payer_name?: string | null
+          provider?: string
+          provider_payment_id?: string | null
+          qr_code?: string | null
+          qr_code_base64?: string | null
+          raw_payload?: Json | null
+          renewal_days: number
+          reseller_user_id: string
+          status?: string
+          ticket_url?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount_cents?: number
+          client_user_id?: string
+          created_at?: string
+          currency?: string
+          expires_at?: string | null
+          external_reference?: string | null
+          id?: string
+          license_id?: string
+          paid_at?: string | null
+          payer_cpf?: string | null
+          payer_email?: string | null
+          payer_name?: string | null
+          provider?: string
+          provider_payment_id?: string | null
+          qr_code?: string | null
+          qr_code_base64?: string | null
+          raw_payload?: Json | null
+          renewal_days?: number
+          reseller_user_id?: string
+          status?: string
+          ticket_url?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       hyro_redemption_links: {
         Row: {
           claimed_at: string | null
@@ -97,6 +214,39 @@ export type Database = {
           slug?: string
           target_email?: string
           target_name?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      hyro_reseller_pricing: {
+        Row: {
+          active: boolean
+          created_at: string
+          currency: string
+          id: string
+          renewal_days: number
+          renewal_price_cents: number
+          reseller_user_id: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          currency?: string
+          id?: string
+          renewal_days?: number
+          renewal_price_cents?: number
+          reseller_user_id: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          currency?: string
+          id?: string
+          renewal_days?: number
+          renewal_price_cents?: number
+          reseller_user_id?: string
           updated_at?: string
         }
         Relationships: []
@@ -227,15 +377,42 @@ export type Database = {
         }
         Relationships: []
       }
+      hyro_user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "moderator" | "user"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -362,6 +539,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "moderator", "user"],
+    },
   },
 } as const
