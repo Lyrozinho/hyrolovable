@@ -606,17 +606,25 @@ function ResellersPage() {
                         <div className="text-[11.5px] text-muted-foreground mt-0.5">{r.email}</div>
                       </TableCell>
                       <TableCell>
-                        <Badge
-                          variant="outline"
-                          className={`gap-1.5 h-6 px-2 text-[11px] font-medium ${
-                            r.active
-                              ? "border-success/30 text-success bg-success/10"
-                              : "border-border text-muted-foreground bg-muted/40"
-                          }`}
-                        >
-                          <span className={`h-1.5 w-1.5 rounded-full ${r.active ? "bg-success" : "bg-muted-foreground"}`} />
-                          {r.pending ? "Pendente" : r.active ? "Ativo" : "Inativo"}
-                        </Badge>
+                        {(() => {
+                          const pendingSignup = !r.active && !r.pending && !r.inviteSlug && !String(r.id).startsWith("invite:");
+                          const isPending = r.pending || pendingSignup;
+                          return (
+                            <Badge
+                              variant="outline"
+                              className={`gap-1.5 h-6 px-2 text-[11px] font-medium ${
+                                r.active
+                                  ? "border-success/30 text-success bg-success/10"
+                                  : pendingSignup
+                                  ? "border-warning/40 text-warning bg-warning/10"
+                                  : "border-border text-muted-foreground bg-muted/40"
+                              }`}
+                            >
+                              <span className={`h-1.5 w-1.5 rounded-full ${r.active ? "bg-success" : pendingSignup ? "bg-warning" : "bg-muted-foreground"}`} />
+                              {pendingSignup ? "Aguardando aprovação" : isPending ? "Pendente" : r.active ? "Ativo" : "Inativo"}
+                            </Badge>
+                          );
+                        })()}
                       </TableCell>
                       <TableCell className="font-mono text-[13px] tabular-nums text-foreground">{allocated}</TableCell>
                       <TableCell className="font-mono text-[13px] tabular-nums text-muted-foreground">{used}</TableCell>
@@ -647,23 +655,92 @@ function ResellersPage() {
                         </div>
                       </TableCell>
                       <TableCell className="text-right">
-                        {r.pending && r.inviteUrl ? (
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="h-8"
-                            onClick={async () => {
-                              await navigator.clipboard.writeText(r.inviteUrl!);
-                              toast.success("Link copiado");
-                            }}
-                          >
-                            Copiar link
-                          </Button>
-                        ) : (
-                          <Button size="sm" variant="ghost" className="h-8" onClick={() => setBalanceTarget(r)}>
-                            <Coins className="h-3.5 w-3.5 mr-1" /> Saldo
-                          </Button>
-                        )}
+                        {(() => {
+                          const pendingSignup = !r.active && !r.pending && !r.inviteSlug && !String(r.id).startsWith("invite:");
+                          if (pendingSignup) {
+                            return (
+                              <div className="flex items-center justify-end gap-1">
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="h-8 px-2 text-success hover:text-success hover:bg-success/10"
+                                  title="Aprovar cadastro"
+                                  onClick={async () => {
+                                    try {
+                                      const { error } = await supabase
+                                        .from("hyro_extension_users")
+                                        .update({ active: true })
+                                        .eq("id", r.id);
+                                      if (error) throw error;
+                                      toast.success("Cadastro aprovado");
+                                      qc.invalidateQueries({ queryKey: ["resellers"] });
+                                    } catch (e: any) {
+                                      toast.error(e?.message ?? "Erro ao aprovar");
+                                    }
+                                  }}
+                                >
+                                  <Check className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="h-8 px-2 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                  title="Recusar cadastro"
+                                  onClick={async () => {
+                                    if (!confirm(`Recusar cadastro de ${r.email}? Esta ação exclui o usuário.`)) return;
+                                    try {
+                                      const { error } = await supabase
+                                        .from("hyro_extension_users")
+                                        .delete()
+                                        .eq("id", r.id);
+                                      if (error) throw error;
+                                      toast.success("Cadastro recusado");
+                                      qc.invalidateQueries({ queryKey: ["resellers"] });
+                                    } catch (e: any) {
+                                      toast.error(e?.message ?? "Erro ao recusar");
+                                    }
+                                  }}
+                                >
+                                  <X className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            );
+                          }
+                          if (r.pending && r.inviteUrl) {
+                            return (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-8"
+                                onClick={async () => {
+                                  await navigator.clipboard.writeText(r.inviteUrl!);
+                                  toast.success("Link copiado");
+                                }}
+                              >
+                                Copiar link
+                              </Button>
+                            );
+                          }
+                          return (
+                            <div className="flex items-center justify-end gap-1">
+                              <Button size="sm" variant="ghost" className="h-8 px-2" title="Saldo" onClick={() => setBalanceTarget(r)}>
+                                <Coins className="h-3.5 w-3.5" />
+                              </Button>
+                              <Button size="sm" variant="ghost" className="h-8 px-2" title="Editar" onClick={() => setEditTarget(r)}>
+                                <Pencil className="h-3.5 w-3.5" />
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-8 px-2 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                title="Excluir"
+                                onClick={() => setDeleteTarget(r)}
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </Button>
+                            </div>
+                          );
+                        })()}
                       </TableCell>
                     </TableRow>
                   );})
