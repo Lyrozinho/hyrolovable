@@ -198,8 +198,34 @@ function ResellersPage() {
   const isOwner = isCloudAdmin && session?.user.email?.toLowerCase() === OWNER_EMAIL;
   const [createOpen, setCreateOpen] = useState(false);
   const [balanceTarget, setBalanceTarget] = useState<Reseller | null>(null);
+  const [editTarget, setEditTarget] = useState<Reseller | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Reseller | null>(null);
   const [tab, setTab] = useState<"plans" | "list">("plans");
   const [configOpen, setConfigOpen] = useState(false);
+  const [isReseller, setIsReseller] = useState(false);
+
+  // Detecta se o usuário logado é um revendedor (papel na tabela extension_users)
+  useEffect(() => {
+    let cancelled = false;
+    if (isCloudAdmin || !session?.user.id) { setIsReseller(false); return; }
+    (async () => {
+      try {
+        const { data } = await supabase
+          .from("hyro_extension_users")
+          .select("role")
+          .eq("id", session.user.id)
+          .maybeSingle();
+        if (!cancelled) setIsReseller((data as any)?.role === "reseller");
+      } catch { if (!cancelled) setIsReseller(false); }
+    })();
+    return () => { cancelled = true; };
+  }, [isCloudAdmin, session?.user.id]);
+
+  // Revendedores não podem clicar em "Minhas revendas"
+  const canOpenList = isCloudAdmin || !isReseller;
+  useEffect(() => {
+    if (!canOpenList && tab === "list") setTab("plans");
+  }, [canOpenList, tab]);
 
   const { data: plansConfig } = useQuery({
     queryKey: ["partner-plans-config"],
