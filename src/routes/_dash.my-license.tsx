@@ -4,16 +4,116 @@ import { useMemo, useState } from "react";
 import {
   KeyRound, CalendarClock, ShieldCheck, AlertTriangle,
   CheckCircle2, XCircle, Infinity as InfinityIcon, Clock, Copy, RefreshCw,
+  Check, ArrowRight, MessageCircle,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import { supabase as cloud } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { RenewLicenseDialog } from "@/components/renew-license-dialog";
+import { VexoPayCheckoutDialog } from "@/components/vexopay-checkout-dialog";
 
 export const Route = createFileRoute("/_dash/my-license")({
   component: MyLicensePage,
 });
+
+const WHATSAPP_NUMBER = "5527981359051";
+
+type PartnerPlan = {
+  id: string;
+  name: string;
+  tagline: string;
+  setup: number;
+  monthly: number;
+  licensesMonth: number | "ilimitado";
+  commission: number;
+  featured?: boolean;
+  badge?: string;
+  perks: string[];
+};
+
+const PARTNER_PLANS: PartnerPlan[] = [
+  {
+    id: "starter",
+    name: "Pacote Essencial",
+    tagline: "Comece a revender com um pacote enxuto de chaves mensais.",
+    setup: 0, monthly: 149, licensesMonth: 5, commission: 0,
+    perks: [
+      "Chaves entregues instantaneamente",
+      "Painel próprio de gestão",
+      "Renovação mensal simplificada",
+      "Suporte via WhatsApp",
+    ],
+  },
+  {
+    id: "growth",
+    name: "Pacote Pro",
+    tagline: "Mais chaves por mês com melhor custo por chave.",
+    setup: 0, monthly: 349, licensesMonth: 15, commission: 0,
+    featured: true, badge: "Mais escolhido",
+    perks: [
+      "Volume maior de chaves mensais",
+      "Melhor custo por chave",
+      "Prioridade em ativações",
+      "Suporte prioritário",
+    ],
+  },
+  {
+    id: "elite",
+    name: "Pacote Elite",
+    tagline: "Alto volume de chaves com o melhor valor unitário.",
+    setup: 0, monthly: 897, licensesMonth: 50, commission: 0,
+    badge: "Melhor valor por chave",
+    perks: [
+      "Grande volume de chaves mensais",
+      "Menor custo por chave",
+      "Atendimento dedicado",
+      "Fluxo de revenda otimizado",
+    ],
+  },
+];
+
+type PlanOverride = {
+  setup?: number | null;
+  monthly?: number | null;
+  licensesMonth?: number | "ilimitado" | null;
+  commission?: number | null;
+};
+type PlansConfig = Record<string, PlanOverride>;
+
+function fmtBRL(n: number) {
+  return n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+}
+
+function mergePlan(plan: PartnerPlan, cfg?: PlanOverride | null): PartnerPlan {
+  if (!cfg) return plan;
+  return {
+    ...plan,
+    setup: cfg.setup ?? plan.setup,
+    monthly: cfg.monthly ?? plan.monthly,
+    licensesMonth: (cfg.licensesMonth ?? plan.licensesMonth) as PartnerPlan["licensesMonth"],
+    commission: cfg.commission ?? plan.commission,
+  };
+}
+
+function perLicensePrice(plan: PartnerPlan): number | null {
+  if (typeof plan.licensesMonth !== "number" || plan.licensesMonth <= 0) return null;
+  if (!Number.isFinite(plan.monthly) || plan.monthly <= 0) return null;
+  return plan.monthly / plan.licensesMonth;
+}
+
+function buildPartnerWhatsapp(plan: PartnerPlan, hasValues: boolean) {
+  const per = perLicensePrice(plan);
+  const pricing = hasValues
+    ? `Valor: ${fmtBRL(plan.monthly)} / mês\nChaves: ${plan.licensesMonth === "ilimitado" ? "Ilimitadas" : plan.licensesMonth}${per ? ` · ${fmtBRL(per)} por chave/mês` : ""}\n\n`
+    : "";
+  const msg =
+    `Olá! Quero ativar o *${plan.name}* do Programa de Parceiros Hyro.\n` +
+    pricing +
+    `Aguardo os próximos passos para começar a revender.`;
+  return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`;
+}
 
 type LicenseRow = {
   id: string;
