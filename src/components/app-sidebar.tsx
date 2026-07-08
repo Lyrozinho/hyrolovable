@@ -28,7 +28,7 @@ type NavItem = {
 
 const items: NavItem[] = [
   { title: "Visão geral", url: "/dashboard", icon: LayoutDashboard, roles: ["admin"] },
-  { title: "Minhas licenças", url: "/my-license", icon: KeyRound, roles: ["client"] },
+  { title: "Minhas licenças", url: "/my-license", icon: KeyRound, roles: ["client"], resellerTitle: "Dashboard", resellerIcon: LayoutDashboard },
   { title: "Licenças", url: "/licenses", icon: KeyRound, roles: ["admin", "client"], permKey: "licenses" },
   { title: "Planos revenda", url: "/resellers", icon: Users, roles: ["admin", "client"], permKey: "resellers" },
   { title: "Integrações", url: "/integrations", icon: Plug, roles: ["admin", "client"], resellerOrAdminOnly: true },
