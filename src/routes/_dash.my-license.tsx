@@ -253,12 +253,38 @@ function MyLicensePage() {
                       </div>
                     </div>
                   </div>
+
+                  {!life && (
+                    <div className="pt-3 mt-3 border-t border-border">
+                      <Button
+                        size="sm"
+                        variant={tone === "danger" || tone === "warn" ? "default" : "secondary"}
+                        className="w-full"
+                        onClick={() => setRenewTarget(l.id)}
+                      >
+                        <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
+                        Renovar licença
+                      </Button>
+                    </div>
+                  )}
                 </div>
               );
             })}
           </div>
         )}
       </section>
+
+      {renewTarget && userId && (
+        <RenewLicenseDialog
+          open={!!renewTarget}
+          onOpenChange={(v) => !v && setRenewTarget(null)}
+          licenseId={renewTarget}
+          clientUserId={userId}
+          clientName={session?.user.name ?? null}
+          clientEmail={session?.user.email ?? null}
+          onRenewed={() => qc.invalidateQueries({ queryKey: ["my-licenses"] })}
+        />
+      )}
     </div>
   );
 }
