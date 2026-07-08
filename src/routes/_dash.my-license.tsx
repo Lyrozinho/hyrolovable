@@ -1,13 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
-import { useMemo } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMemo, useState } from "react";
 import {
   KeyRound, CalendarClock, ShieldCheck, AlertTriangle,
-  CheckCircle2, XCircle, Infinity as InfinityIcon, Clock, Copy,
+  CheckCircle2, XCircle, Infinity as InfinityIcon, Clock, Copy, RefreshCw,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { RenewLicenseDialog } from "@/components/renew-license-dialog";
 
 export const Route = createFileRoute("/_dash/my-license")({
   component: MyLicensePage,
@@ -40,6 +42,8 @@ function fmtDate(d: string) {
 function MyLicensePage() {
   const { session, sessionKey, authReady } = useAuth();
   const userId = session?.user.id ?? null;
+  const qc = useQueryClient();
+  const [renewTarget, setRenewTarget] = useState<string | null>(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ["my-licenses", sessionKey, userId],
@@ -249,12 +253,38 @@ function MyLicensePage() {
                       </div>
                     </div>
                   </div>
+
+                  {!life && (
+                    <div className="pt-3 mt-3 border-t border-border">
+                      <Button
+                        size="sm"
+                        variant={tone === "danger" || tone === "warn" ? "default" : "secondary"}
+                        className="w-full"
+                        onClick={() => setRenewTarget(l.id)}
+                      >
+                        <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
+                        Renovar licença
+                      </Button>
+                    </div>
+                  )}
                 </div>
               );
             })}
           </div>
         )}
       </section>
+
+      {renewTarget && userId && (
+        <RenewLicenseDialog
+          open={!!renewTarget}
+          onOpenChange={(v) => !v && setRenewTarget(null)}
+          licenseId={renewTarget}
+          clientUserId={userId}
+          clientName={session?.user.name ?? null}
+          clientEmail={session?.user.email ?? null}
+          onRenewed={() => qc.invalidateQueries({ queryKey: ["my-licenses"] })}
+        />
+      )}
     </div>
   );
 }

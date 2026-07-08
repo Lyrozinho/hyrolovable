@@ -1,5 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { LayoutDashboard, KeyRound, Users, LogOut, ChevronsLeft, ChevronsRight, GraduationCap, Rocket, Bot } from "lucide-react";
+import { LayoutDashboard, KeyRound, Users, LogOut, ChevronsLeft, ChevronsRight, GraduationCap, Rocket, Bot, Plug } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth";
@@ -23,6 +23,7 @@ type NavItem = {
   roles: Array<"admin" | "client">;
   permKey?: MenuKey; // se definido, respeita permissões para role=client
   ownerOnly?: boolean; // visível apenas para OWNER_EMAIL
+  resellerOrAdminOnly?: boolean; // visível somente para admin ou usuário reseller
 };
 
 const items: NavItem[] = [
@@ -30,6 +31,7 @@ const items: NavItem[] = [
   { title: "Minhas licenças", url: "/my-license", icon: KeyRound, roles: ["client"] },
   { title: "Licenças", url: "/licenses", icon: KeyRound, roles: ["admin", "client"], permKey: "licenses" },
   { title: "Revendedores", url: "/resellers", icon: Users, roles: ["admin", "client"], permKey: "resellers" },
+  { title: "Integrações", url: "/integrations", icon: Plug, roles: ["admin", "client"], resellerOrAdminOnly: true },
   { title: "Tutoriais", url: "/tutorials", icon: GraduationCap, roles: ["admin", "client"], permKey: "tutorials" },
   { title: "Atualização", url: "/upgrade-admin", icon: Rocket, roles: ["admin"] },
   { title: "Bot Telegram", url: "/telegram-bot", icon: Bot, roles: ["admin"], ownerOnly: true },
@@ -54,10 +56,12 @@ export function AppSidebar() {
 
   // Carrega perms quando é cliente
   const [clientPerms, setClientPerms] = useState<SidePerms | null>(null);
+  const [isReseller, setIsReseller] = useState(false);
   useEffect(() => {
     let cancelled = false;
     if (!authReady || role !== "client" || !session?.user.id) {
       setClientPerms(null);
+      setIsReseller(false);
       return;
     }
     setClientPerms(null);
@@ -69,16 +73,17 @@ export function AppSidebar() {
           .select("role")
           .eq("id", session.user.id)
           .maybeSingle();
-        const isReseller = (u as any)?.role === "reseller";
-        const licId = isReseller
+        const _isReseller = (u as any)?.role === "reseller";
+        if (!cancelled) setIsReseller(_isReseller);
+        const licId = _isReseller
           ? await fetchParentLicenseForReseller(session.user.id)
           : await fetchPrimaryLicenseForUser(session.user.id);
         if (!licId) {
-          if (!cancelled) setClientPerms(DEFAULT_PERMS[isReseller ? "resellers" : "owner"]);
+          if (!cancelled) setClientPerms(DEFAULT_PERMS[_isReseller ? "resellers" : "owner"]);
           return;
         }
         const p = await fetchLicensePerms(licId);
-        if (!cancelled) setClientPerms(isReseller ? p.resellers : p.owner);
+        if (!cancelled) setClientPerms(_isReseller ? p.resellers : p.owner);
       } catch {
         if (!cancelled) setClientPerms(DEFAULT_PERMS.owner);
       }
@@ -89,6 +94,7 @@ export function AppSidebar() {
   const visible = items.filter((i) => {
     if (!i.roles.includes(role)) return false;
     if (i.ownerOnly && !isOwnerAdmin) return false;
+    if (i.resellerOrAdminOnly && role !== "admin" && !isReseller) return false;
     if (role === "admin") return true;
     if (!i.permKey) return true;
     // Enquanto perms ainda não carregou, esconde abas sensíveis (não vazar)
