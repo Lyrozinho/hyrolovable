@@ -30,7 +30,7 @@ const items: NavItem[] = [
   { title: "Visão geral", url: "/dashboard", icon: LayoutDashboard, roles: ["admin"] },
   { title: "Minhas licenças", url: "/my-license", icon: KeyRound, roles: ["client"] },
   { title: "Licenças", url: "/licenses", icon: KeyRound, roles: ["admin", "client"], permKey: "licenses" },
-  { title: "Revendedores", url: "/resellers", icon: Users, roles: ["admin", "client"], permKey: "resellers" },
+  { title: "Planos revenda", url: "/resellers", icon: Users, roles: ["admin", "client"], permKey: "resellers" },
   { title: "Integrações", url: "/integrations", icon: Plug, roles: ["admin", "client"], resellerOrAdminOnly: true },
   { title: "Tutoriais", url: "/tutorials", icon: GraduationCap, roles: ["admin", "client"], permKey: "tutorials" },
   { title: "Atualização", url: "/upgrade-admin", icon: Rocket, roles: ["admin"] },

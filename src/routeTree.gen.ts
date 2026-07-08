@@ -9,13 +9,11 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as VendasRouteImport } from './routes/vendas'
 import { Route as UpgradeRouteImport } from './routes/upgrade'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as DashRouteImport } from './routes/_dash'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as VendasCheckoutRouteImport } from './routes/vendas.checkout'
 import { Route as RSlugRouteImport } from './routes/r.$slug'
 import { Route as DashUpgradeAdminRouteImport } from './routes/_dash.upgrade-admin'
 import { Route as DashTutorialsRouteImport } from './routes/_dash.tutorials'
@@ -30,11 +28,6 @@ import { Route as ApiPublicUpgradeMetaRouteImport } from './routes/api/public/up
 import { Route as ApiPublicTelegramWebhookRouteImport } from './routes/api/public/telegram/webhook'
 import { Route as ApiPublicMercadopagoWebhookRouteImport } from './routes/api/public/mercadopago/webhook'
 
-const VendasRoute = VendasRouteImport.update({
-  id: '/vendas',
-  path: '/vendas',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const UpgradeRoute = UpgradeRouteImport.update({
   id: '/upgrade',
   path: '/upgrade',
@@ -58,11 +51,6 @@ const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
-} as any)
-const VendasCheckoutRoute = VendasCheckoutRouteImport.update({
-  id: '/checkout',
-  path: '/checkout',
-  getParentRoute: () => VendasRoute,
 } as any)
 const RSlugRoute = RSlugRouteImport.update({
   id: '/r/$slug',
@@ -137,7 +125,6 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
   '/upgrade': typeof UpgradeRoute
-  '/vendas': typeof VendasRouteWithChildren
   '/dashboard': typeof DashDashboardRoute
   '/integrations': typeof DashIntegrationsRoute
   '/licenses': typeof DashLicensesRoute
@@ -147,7 +134,6 @@ export interface FileRoutesByFullPath {
   '/tutorials': typeof DashTutorialsRoute
   '/upgrade-admin': typeof DashUpgradeAdminRoute
   '/r/$slug': typeof RSlugRoute
-  '/vendas/checkout': typeof VendasCheckoutRoute
   '/api/public/upgrade-meta': typeof ApiPublicUpgradeMetaRoute
   '/api/public/upgrade-zip': typeof ApiPublicUpgradeZipRoute
   '/api/public/mercadopago/webhook': typeof ApiPublicMercadopagoWebhookRoute
@@ -158,7 +144,6 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
   '/upgrade': typeof UpgradeRoute
-  '/vendas': typeof VendasRouteWithChildren
   '/dashboard': typeof DashDashboardRoute
   '/integrations': typeof DashIntegrationsRoute
   '/licenses': typeof DashLicensesRoute
@@ -168,7 +153,6 @@ export interface FileRoutesByTo {
   '/tutorials': typeof DashTutorialsRoute
   '/upgrade-admin': typeof DashUpgradeAdminRoute
   '/r/$slug': typeof RSlugRoute
-  '/vendas/checkout': typeof VendasCheckoutRoute
   '/api/public/upgrade-meta': typeof ApiPublicUpgradeMetaRoute
   '/api/public/upgrade-zip': typeof ApiPublicUpgradeZipRoute
   '/api/public/mercadopago/webhook': typeof ApiPublicMercadopagoWebhookRoute
@@ -181,7 +165,6 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
   '/upgrade': typeof UpgradeRoute
-  '/vendas': typeof VendasRouteWithChildren
   '/_dash/dashboard': typeof DashDashboardRoute
   '/_dash/integrations': typeof DashIntegrationsRoute
   '/_dash/licenses': typeof DashLicensesRoute
@@ -191,7 +174,6 @@ export interface FileRoutesById {
   '/_dash/tutorials': typeof DashTutorialsRoute
   '/_dash/upgrade-admin': typeof DashUpgradeAdminRoute
   '/r/$slug': typeof RSlugRoute
-  '/vendas/checkout': typeof VendasCheckoutRoute
   '/api/public/upgrade-meta': typeof ApiPublicUpgradeMetaRoute
   '/api/public/upgrade-zip': typeof ApiPublicUpgradeZipRoute
   '/api/public/mercadopago/webhook': typeof ApiPublicMercadopagoWebhookRoute
@@ -204,7 +186,6 @@ export interface FileRouteTypes {
     | '/login'
     | '/signup'
     | '/upgrade'
-    | '/vendas'
     | '/dashboard'
     | '/integrations'
     | '/licenses'
@@ -214,7 +195,6 @@ export interface FileRouteTypes {
     | '/tutorials'
     | '/upgrade-admin'
     | '/r/$slug'
-    | '/vendas/checkout'
     | '/api/public/upgrade-meta'
     | '/api/public/upgrade-zip'
     | '/api/public/mercadopago/webhook'
@@ -225,7 +205,6 @@ export interface FileRouteTypes {
     | '/login'
     | '/signup'
     | '/upgrade'
-    | '/vendas'
     | '/dashboard'
     | '/integrations'
     | '/licenses'
@@ -235,7 +214,6 @@ export interface FileRouteTypes {
     | '/tutorials'
     | '/upgrade-admin'
     | '/r/$slug'
-    | '/vendas/checkout'
     | '/api/public/upgrade-meta'
     | '/api/public/upgrade-zip'
     | '/api/public/mercadopago/webhook'
@@ -247,7 +225,6 @@ export interface FileRouteTypes {
     | '/login'
     | '/signup'
     | '/upgrade'
-    | '/vendas'
     | '/_dash/dashboard'
     | '/_dash/integrations'
     | '/_dash/licenses'
@@ -257,7 +234,6 @@ export interface FileRouteTypes {
     | '/_dash/tutorials'
     | '/_dash/upgrade-admin'
     | '/r/$slug'
-    | '/vendas/checkout'
     | '/api/public/upgrade-meta'
     | '/api/public/upgrade-zip'
     | '/api/public/mercadopago/webhook'
@@ -270,7 +246,6 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   SignupRoute: typeof SignupRoute
   UpgradeRoute: typeof UpgradeRoute
-  VendasRoute: typeof VendasRouteWithChildren
   RSlugRoute: typeof RSlugRoute
   ApiPublicUpgradeMetaRoute: typeof ApiPublicUpgradeMetaRoute
   ApiPublicUpgradeZipRoute: typeof ApiPublicUpgradeZipRoute
@@ -280,13 +255,6 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/vendas': {
-      id: '/vendas'
-      path: '/vendas'
-      fullPath: '/vendas'
-      preLoaderRoute: typeof VendasRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/upgrade': {
       id: '/upgrade'
       path: '/upgrade'
@@ -321,13 +289,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
-    }
-    '/vendas/checkout': {
-      id: '/vendas/checkout'
-      path: '/checkout'
-      fullPath: '/vendas/checkout'
-      preLoaderRoute: typeof VendasCheckoutRouteImport
-      parentRoute: typeof VendasRoute
     }
     '/r/$slug': {
       id: '/r/$slug'
@@ -447,24 +408,12 @@ const DashRouteChildren: DashRouteChildren = {
 
 const DashRouteWithChildren = DashRoute._addFileChildren(DashRouteChildren)
 
-interface VendasRouteChildren {
-  VendasCheckoutRoute: typeof VendasCheckoutRoute
-}
-
-const VendasRouteChildren: VendasRouteChildren = {
-  VendasCheckoutRoute: VendasCheckoutRoute,
-}
-
-const VendasRouteWithChildren =
-  VendasRoute._addFileChildren(VendasRouteChildren)
-
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   DashRoute: DashRouteWithChildren,
   LoginRoute: LoginRoute,
   SignupRoute: SignupRoute,
   UpgradeRoute: UpgradeRoute,
-  VendasRoute: VendasRouteWithChildren,
   RSlugRoute: RSlugRoute,
   ApiPublicUpgradeMetaRoute: ApiPublicUpgradeMetaRoute,
   ApiPublicUpgradeZipRoute: ApiPublicUpgradeZipRoute,

@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,6 +23,7 @@ import {
 import {
   Loader2, Coins, MessageCircle, Rocket, Crown, Building2,
   Check, ArrowRight, Users, ShieldCheck, TrendingUp, Handshake, Settings, KeyRound,
+  X, Pencil, Trash2, Lock,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { supabase as cloud } from "@/integrations/supabase/client";
@@ -193,12 +194,39 @@ function buildPartnerWhatsapp(plan: PartnerPlan, hasValues: boolean) {
 
 function ResellersPage() {
   const { session, sessionKey, authReady } = useAuth();
+  const qc = useQueryClient();
   const isCloudAdmin = session?.user.role === "admin";
   const isOwner = isCloudAdmin && session?.user.email?.toLowerCase() === OWNER_EMAIL;
   const [createOpen, setCreateOpen] = useState(false);
   const [balanceTarget, setBalanceTarget] = useState<Reseller | null>(null);
+  const [editTarget, setEditTarget] = useState<Reseller | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Reseller | null>(null);
   const [tab, setTab] = useState<"plans" | "list">("plans");
   const [configOpen, setConfigOpen] = useState(false);
+  const [isReseller, setIsReseller] = useState(false);
+
+  // Detecta se o usuário logado é um revendedor (papel na tabela extension_users)
+  useEffect(() => {
+    let cancelled = false;
+    if (isCloudAdmin || !session?.user.id) { setIsReseller(false); return; }
+    (async () => {
+      try {
+        const { data } = await supabase
+          .from("hyro_extension_users")
+          .select("role")
+          .eq("id", session.user.id)
+          .maybeSingle();
+        if (!cancelled) setIsReseller((data as any)?.role === "reseller");
+      } catch { if (!cancelled) setIsReseller(false); }
+    })();
+    return () => { cancelled = true; };
+  }, [isCloudAdmin, session?.user.id]);
+
+  // Revendedores não podem clicar em "Minhas revendas"
+  const canOpenList = isCloudAdmin || !isReseller;
+  useEffect(() => {
+    if (!canOpenList && tab === "list") setTab("plans");
+  }, [canOpenList, tab]);
 
   const { data: plansConfig } = useQuery({
     queryKey: ["partner-plans-config"],
@@ -451,29 +479,36 @@ function ResellersPage() {
               ].join(" ")}
             >
               <span className="inline-flex items-center gap-1.5">
-                <Handshake className="h-3.5 w-3.5" /> Planos de parceria
+                <Handshake className="h-3.5 w-3.5" /> Planos revenda
               </span>
               {tab === "plans" && <span className="absolute left-0 right-0 -bottom-px h-0.5 bg-foreground rounded-full" />}
             </button>
             <button
-              onClick={() => setTab("list")}
+              onClick={() => canOpenList && setTab("list")}
+              disabled={!canOpenList}
+              title={!canOpenList ? "Disponível apenas para administradores" : undefined}
               className={[
                 "relative px-3 py-2 text-[13px] font-medium transition-colors",
-                tab === "list" ? "text-foreground" : "text-muted-foreground hover:text-foreground",
+                !canOpenList
+                  ? "text-muted-foreground/40 cursor-not-allowed"
+                  : tab === "list"
+                  ? "text-foreground"
+                  : "text-muted-foreground hover:text-foreground",
               ].join(" ")}
             >
               <span className="inline-flex items-center gap-1.5">
-                <Users className="h-3.5 w-3.5" /> Minhas revendas
-                {(data?.length ?? 0) > 0 && (
+                {!canOpenList ? <Lock className="h-3.5 w-3.5" /> : <Users className="h-3.5 w-3.5" />}
+                Minhas revendas
+                {canOpenList && (data?.length ?? 0) > 0 && (
                   <span className="ml-1 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-muted text-[10px] font-mono tabular-nums text-muted-foreground border border-border">
                     {data!.length}
                   </span>
                 )}
               </span>
-              {tab === "list" && <span className="absolute left-0 right-0 -bottom-px h-0.5 bg-foreground rounded-full" />}
+              {tab === "list" && canOpenList && <span className="absolute left-0 right-0 -bottom-px h-0.5 bg-foreground rounded-full" />}
             </button>
           </div>
-          {tab === "list" && (() => {
+          {tab === "list" && canOpenList && (() => {
             const unlimited = isOwner || !!mySlots?.unlimited;
             const total = mySlots?.total ?? 0;
             const used = mySlots?.used ?? (data?.length ?? 0);
@@ -572,17 +607,25 @@ function ResellersPage() {
                         <div className="text-[11.5px] text-muted-foreground mt-0.5">{r.email}</div>
                       </TableCell>
                       <TableCell>
-                        <Badge
-                          variant="outline"
-                          className={`gap-1.5 h-6 px-2 text-[11px] font-medium ${
-                            r.active
-                              ? "border-success/30 text-success bg-success/10"
-                              : "border-border text-muted-foreground bg-muted/40"
-                          }`}
-                        >
-                          <span className={`h-1.5 w-1.5 rounded-full ${r.active ? "bg-success" : "bg-muted-foreground"}`} />
-                          {r.pending ? "Pendente" : r.active ? "Ativo" : "Inativo"}
-                        </Badge>
+                        {(() => {
+                          const pendingSignup = !r.active && !r.pending && !r.inviteSlug && !String(r.id).startsWith("invite:");
+                          const isPending = r.pending || pendingSignup;
+                          return (
+                            <Badge
+                              variant="outline"
+                              className={`gap-1.5 h-6 px-2 text-[11px] font-medium ${
+                                r.active
+                                  ? "border-success/30 text-success bg-success/10"
+                                  : pendingSignup
+                                  ? "border-warning/40 text-warning bg-warning/10"
+                                  : "border-border text-muted-foreground bg-muted/40"
+                              }`}
+                            >
+                              <span className={`h-1.5 w-1.5 rounded-full ${r.active ? "bg-success" : pendingSignup ? "bg-warning" : "bg-muted-foreground"}`} />
+                              {pendingSignup ? "Aguardando aprovação" : isPending ? "Pendente" : r.active ? "Ativo" : "Inativo"}
+                            </Badge>
+                          );
+                        })()}
                       </TableCell>
                       <TableCell className="font-mono text-[13px] tabular-nums text-foreground">{allocated}</TableCell>
                       <TableCell className="font-mono text-[13px] tabular-nums text-muted-foreground">{used}</TableCell>
@@ -613,23 +656,92 @@ function ResellersPage() {
                         </div>
                       </TableCell>
                       <TableCell className="text-right">
-                        {r.pending && r.inviteUrl ? (
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="h-8"
-                            onClick={async () => {
-                              await navigator.clipboard.writeText(r.inviteUrl!);
-                              toast.success("Link copiado");
-                            }}
-                          >
-                            Copiar link
-                          </Button>
-                        ) : (
-                          <Button size="sm" variant="ghost" className="h-8" onClick={() => setBalanceTarget(r)}>
-                            <Coins className="h-3.5 w-3.5 mr-1" /> Saldo
-                          </Button>
-                        )}
+                        {(() => {
+                          const pendingSignup = !r.active && !r.pending && !r.inviteSlug && !String(r.id).startsWith("invite:");
+                          if (pendingSignup) {
+                            return (
+                              <div className="flex items-center justify-end gap-1">
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="h-8 px-2 text-success hover:text-success hover:bg-success/10"
+                                  title="Aprovar cadastro"
+                                  onClick={async () => {
+                                    try {
+                                      const { error } = await supabase
+                                        .from("hyro_extension_users")
+                                        .update({ active: true })
+                                        .eq("id", r.id);
+                                      if (error) throw error;
+                                      toast.success("Cadastro aprovado");
+                                      qc.invalidateQueries({ queryKey: ["resellers"] });
+                                    } catch (e: any) {
+                                      toast.error(e?.message ?? "Erro ao aprovar");
+                                    }
+                                  }}
+                                >
+                                  <Check className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="h-8 px-2 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                  title="Recusar cadastro"
+                                  onClick={async () => {
+                                    if (!confirm(`Recusar cadastro de ${r.email}? Esta ação exclui o usuário.`)) return;
+                                    try {
+                                      const { error } = await supabase
+                                        .from("hyro_extension_users")
+                                        .delete()
+                                        .eq("id", r.id);
+                                      if (error) throw error;
+                                      toast.success("Cadastro recusado");
+                                      qc.invalidateQueries({ queryKey: ["resellers"] });
+                                    } catch (e: any) {
+                                      toast.error(e?.message ?? "Erro ao recusar");
+                                    }
+                                  }}
+                                >
+                                  <X className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            );
+                          }
+                          if (r.pending && r.inviteUrl) {
+                            return (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-8"
+                                onClick={async () => {
+                                  await navigator.clipboard.writeText(r.inviteUrl!);
+                                  toast.success("Link copiado");
+                                }}
+                              >
+                                Copiar link
+                              </Button>
+                            );
+                          }
+                          return (
+                            <div className="flex items-center justify-end gap-1">
+                              <Button size="sm" variant="ghost" className="h-8 px-2" title="Saldo" onClick={() => setBalanceTarget(r)}>
+                                <Coins className="h-3.5 w-3.5" />
+                              </Button>
+                              <Button size="sm" variant="ghost" className="h-8 px-2" title="Editar" onClick={() => setEditTarget(r)}>
+                                <Pencil className="h-3.5 w-3.5" />
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-8 px-2 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                title="Excluir"
+                                onClick={() => setDeleteTarget(r)}
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </Button>
+                            </div>
+                          );
+                        })()}
                       </TableCell>
                     </TableRow>
                   );})
@@ -643,6 +755,8 @@ function ResellersPage() {
 
       <CreateResellerDialog open={createOpen} onOpenChange={setCreateOpen} ownerUserId={session?.user.id ?? null} isOwner={isOwner} />
       <AdjustBalanceDialog reseller={balanceTarget} onClose={() => setBalanceTarget(null)} />
+      <EditResellerDialog reseller={editTarget} onClose={() => setEditTarget(null)} />
+      <DeleteResellerDialog reseller={deleteTarget} onClose={() => setDeleteTarget(null)} />
       {isOwner && (
         <PartnerPlansConfigDialog
           open={configOpen}
@@ -1327,6 +1441,157 @@ function PartnerPlansConfigDialog({
           <Button size="sm" onClick={save} disabled={saving}>
             {saving && <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />}
             Salvar valores
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function EditResellerDialog({
+  reseller,
+  onClose,
+}: {
+  reseller: Reseller | null;
+  onClose: () => void;
+}) {
+  const qc = useQueryClient();
+  const [name, setName] = useState(reseller?.name ?? "");
+  const [email, setEmail] = useState(reseller?.email ?? "");
+  const [password, setPassword] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    setName(reseller?.name ?? "");
+    setEmail(reseller?.email ?? "");
+    setPassword("");
+  }, [reseller?.id]);
+
+  if (!reseller) return null;
+
+  const save = async () => {
+    const em = email.trim().toLowerCase();
+    if (!em.includes("@")) { toast.error("E-mail inválido."); return; }
+    setSaving(true);
+    try {
+      const patch: Record<string, unknown> = {
+        name: name.trim() || null,
+        email: em,
+      };
+      if (password) {
+        if (password.length < 6) { toast.error("Senha deve ter no mínimo 6 caracteres."); setSaving(false); return; }
+        patch.password_hash = await sha256Hex(password);
+      }
+      const { error } = await supabase
+        .from("hyro_extension_users")
+        .update(patch)
+        .eq("id", reseller.id);
+      if (error) throw error;
+      toast.success("Revendedor atualizado");
+      qc.invalidateQueries({ queryKey: ["resellers"] });
+      onClose();
+    } catch (e: any) {
+      toast.error(e?.message ?? "Erro ao salvar");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Dialog open={!!reseller} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="glass-panel border-0 sm:max-w-[460px] p-0 overflow-hidden">
+        <DialogHeader className="px-6 pt-6 pb-4 border-b border-border/60">
+          <div className="flex items-start gap-3">
+            <div className="h-9 w-9 rounded-md bg-foreground text-background flex items-center justify-center shrink-0">
+              <Pencil className="h-4 w-4" />
+            </div>
+            <div className="min-w-0">
+              <DialogTitle className="text-[15px] font-semibold tracking-tight">Editar revendedor</DialogTitle>
+              <p className="text-[12.5px] text-muted-foreground mt-0.5 truncate">{reseller.email}</p>
+            </div>
+          </div>
+        </DialogHeader>
+        <div className="px-6 py-5 space-y-4">
+          <div className="space-y-1.5">
+            <Label className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">Nome</Label>
+            <Input value={name} onChange={(e) => setName(e.target.value)} className="h-10 text-[13px]" />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">E-mail</Label>
+            <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="h-10 text-[13px]" />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">
+              Nova senha <span className="text-muted-foreground/70 normal-case tracking-normal">(opcional)</span>
+            </Label>
+            <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Deixe em branco para manter" className="h-10 text-[13px]" />
+          </div>
+        </div>
+        <DialogFooter className="px-6 py-4 border-t border-border/60 bg-muted/30 gap-2">
+          <Button variant="ghost" size="sm" onClick={onClose}>Cancelar</Button>
+          <Button size="sm" onClick={save} disabled={saving}>
+            {saving && <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />}
+            Salvar
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function DeleteResellerDialog({
+  reseller,
+  onClose,
+}: {
+  reseller: Reseller | null;
+  onClose: () => void;
+}) {
+  const qc = useQueryClient();
+  const [saving, setSaving] = useState(false);
+  if (!reseller) return null;
+
+  const confirmDelete = async () => {
+    setSaving(true);
+    try {
+      const { error } = await supabase
+        .from("hyro_extension_users")
+        .delete()
+        .eq("id", reseller.id);
+      if (error) throw error;
+      toast.success("Revendedor excluído");
+      qc.invalidateQueries({ queryKey: ["resellers"] });
+      onClose();
+    } catch (e: any) {
+      toast.error(e?.message ?? "Erro ao excluir");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Dialog open={!!reseller} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="sm:max-w-[440px] p-0 overflow-hidden">
+        <DialogHeader className="px-6 pt-6 pb-4 border-b border-border/60">
+          <div className="flex items-start gap-3">
+            <div className="h-9 w-9 rounded-md bg-destructive text-destructive-foreground flex items-center justify-center shrink-0">
+              <Trash2 className="h-4 w-4" />
+            </div>
+            <div className="min-w-0">
+              <DialogTitle className="text-[15px] font-semibold tracking-tight">Excluir revendedor</DialogTitle>
+              <p className="text-[12.5px] text-muted-foreground mt-0.5 truncate">{reseller.email}</p>
+            </div>
+          </div>
+        </DialogHeader>
+        <div className="px-6 py-5">
+          <p className="text-[13px] text-muted-foreground leading-relaxed">
+            Esta ação é permanente. O acesso deste revendedor será revogado imediatamente.
+          </p>
+        </div>
+        <DialogFooter className="px-6 py-4 border-t border-border/60 bg-muted/30 gap-2">
+          <Button variant="ghost" size="sm" onClick={onClose}>Cancelar</Button>
+          <Button size="sm" variant="destructive" onClick={confirmDelete} disabled={saving}>
+            {saving && <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />}
+            Excluir
           </Button>
         </DialogFooter>
       </DialogContent>
