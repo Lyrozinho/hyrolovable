@@ -1,13 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
-import { useMemo } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMemo, useState } from "react";
 import {
   KeyRound, CalendarClock, ShieldCheck, AlertTriangle,
-  CheckCircle2, XCircle, Infinity as InfinityIcon, Clock, Copy,
+  CheckCircle2, XCircle, Infinity as InfinityIcon, Clock, Copy, RefreshCw,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { RenewLicenseDialog } from "@/components/renew-license-dialog";
 
 export const Route = createFileRoute("/_dash/my-license")({
   component: MyLicensePage,
