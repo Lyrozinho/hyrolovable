@@ -484,3 +484,161 @@ function StatusBadge({ active, expired }: { active: boolean; expired: boolean })
     </span>
   );
 }
+
+function PlanCard({ plan: base, override }: { plan: PartnerPlan; override?: PlanOverride | null }) {
+  const [checkoutOpen, setCheckoutOpen] = useState(false);
+  const { session } = useAuth();
+  const plan = mergePlan(base, override);
+  const featured = plan.featured;
+  const hasMonthly = override?.monthly != null || base.monthly > 0;
+  const hasLicenses = override?.licensesMonth != null || (typeof base.licensesMonth === "number" && base.licensesMonth > 0) || base.licensesMonth === "ilimitado";
+  const hasAny = hasMonthly || hasLicenses;
+  const per = perLicensePrice(plan);
+  const licensesLabel = plan.licensesMonth === "ilimitado" ? "Ilimitadas" : `${plan.licensesMonth} chaves`;
+  return (
+    <div
+      className={[
+        "relative rounded-2xl p-6 flex flex-col transition-all duration-300",
+        featured
+          ? "bg-foreground text-background border border-foreground shadow-elegant lg:-translate-y-1.5"
+          : "bg-card text-foreground border border-border hover:border-foreground/30 hover:-translate-y-0.5",
+      ].join(" ")}
+    >
+      {plan.badge && (
+        <div
+          className={[
+            "absolute -top-2.5 left-1/2 -translate-x-1/2 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-[0.16em] whitespace-nowrap",
+            featured ? "bg-background text-foreground" : "bg-foreground text-background",
+          ].join(" ")}
+        >
+          {plan.badge}
+        </div>
+      )}
+
+      <div className="flex items-center gap-2.5 mb-3">
+        <div
+          className={[
+            "h-10 w-10 rounded-xl flex items-center justify-center border shadow-inner",
+            featured
+              ? "bg-background/10 border-background/20"
+              : "bg-gradient-to-br from-amber-100 to-amber-300/60 border-amber-300/60 dark:from-amber-500/20 dark:to-amber-700/10 dark:border-amber-400/30",
+          ].join(" ")}
+        >
+          <KeyRound
+            className={featured ? "h-5 w-5" : "h-5 w-5 text-amber-700 dark:text-amber-300 -rotate-45"}
+            strokeWidth={2.2}
+          />
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="text-[15px] font-semibold tracking-tight leading-none">{plan.name}</div>
+          <div className={["text-[10.5px] font-mono uppercase tracking-wider mt-1.5", featured ? "text-background/60" : "text-muted-foreground"].join(" ")}>
+            {hasLicenses ? licensesLabel : "Volume sob consulta"}
+          </div>
+        </div>
+      </div>
+
+      <p className={["text-[12.5px] leading-relaxed mb-5 min-h-[36px]", featured ? "text-background/75" : "text-muted-foreground"].join(" ")}>
+        {plan.tagline}
+      </p>
+
+      <div className="mb-5">
+        {hasMonthly ? (
+          <div className="flex items-baseline gap-1.5">
+            <span className={["text-[13px] font-medium", featured ? "text-background/80" : "text-muted-foreground"].join(" ")}>R$</span>
+            <span className="text-[40px] leading-none font-semibold tracking-tight font-mono tabular-nums">
+              {plan.monthly.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </span>
+            <span className={["text-[12.5px] ml-1", featured ? "text-background/60" : "text-muted-foreground"].join(" ")}>/mês</span>
+          </div>
+        ) : (
+          <div className="flex items-baseline gap-1.5">
+            <span className="text-[28px] leading-none font-semibold tracking-tight">Sob consulta</span>
+          </div>
+        )}
+        <div className={["text-[11.5px] mt-1.5", featured ? "text-background/60" : "text-muted-foreground"].join(" ")}>
+          {per
+            ? <><span className="font-medium">{fmtBRL(per)}</span> por chave/mês</>
+            : plan.licensesMonth === "ilimitado"
+              ? "Chaves ilimitadas por mês"
+              : "Valor por chave sob consulta"}
+        </div>
+      </div>
+
+      <div className={["grid grid-cols-2 gap-2 p-2.5 rounded-lg mb-5", featured ? "bg-background/10" : "bg-muted/40 border border-border"].join(" ")}>
+        <div>
+          <div className={["text-[10px] uppercase tracking-wider font-semibold", featured ? "text-background/60" : "text-muted-foreground"].join(" ")}>Chaves/mês</div>
+          <div className="text-[15px] font-semibold font-mono mt-0.5">
+            {hasLicenses ? (plan.licensesMonth === "ilimitado" ? "∞" : plan.licensesMonth) : "—"}
+          </div>
+        </div>
+        <div>
+          <div className={["text-[10px] uppercase tracking-wider font-semibold", featured ? "text-background/60" : "text-muted-foreground"].join(" ")}>Por chave</div>
+          <div className="text-[15px] font-semibold font-mono mt-0.5">{per ? fmtBRL(per) : "—"}</div>
+        </div>
+      </div>
+
+      <div className={["h-px w-full mb-4", featured ? "bg-background/15" : "bg-border"].join(" ")} />
+
+      <ul className="space-y-2.5 mb-6 flex-1">
+        {plan.perks.map((perk) => (
+          <li key={perk} className="flex items-start gap-2 text-[12.5px] leading-snug">
+            <span
+              className={[
+                "h-4 w-4 mt-0.5 rounded-full flex items-center justify-center shrink-0",
+                featured ? "bg-background/15" : "bg-secondary border border-border",
+              ].join(" ")}
+            >
+              <Check className="h-2.5 w-2.5" strokeWidth={3.5} />
+            </span>
+            <span className={featured ? "text-background/90" : "text-foreground/90"}>{perk}</span>
+          </li>
+        ))}
+      </ul>
+
+      {hasMonthly ? (
+        <Button
+          onClick={() => setCheckoutOpen(true)}
+          className={[
+            "w-full h-11 text-[13px] font-semibold group/btn",
+            featured ? "bg-background text-foreground hover:bg-background/90" : "bg-foreground text-background hover:bg-foreground/90",
+          ].join(" ")}
+        >
+          <KeyRound className="h-3.5 w-3.5" />
+          Comprar
+          <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover/btn:translate-x-0.5" />
+        </Button>
+      ) : (
+        <Button
+          asChild
+          className={[
+            "w-full h-11 text-[13px] font-semibold group/btn",
+            featured ? "bg-background text-foreground hover:bg-background/90" : "bg-foreground text-background hover:bg-foreground/90",
+          ].join(" ")}
+        >
+          <a href={buildPartnerWhatsapp(plan, hasAny)} target="_blank" rel="noreferrer">
+            <MessageCircle className="h-3.5 w-3.5" />
+            Falar com comercial
+            <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover/btn:translate-x-0.5" />
+          </a>
+        </Button>
+      )}
+
+      <p className={["text-[10.5px] mt-3 text-center", featured ? "text-background/50" : "text-muted-foreground"].join(" ")}>
+        {hasMonthly ? "Pagamento seguro via PIX" : "Ativação sujeita a análise comercial"}
+      </p>
+
+      {hasMonthly && (
+        <VexoPayCheckoutDialog
+          open={checkoutOpen}
+          onOpenChange={setCheckoutOpen}
+          planId={plan.id}
+          planName={plan.name}
+          amountCents={Math.round(plan.monthly * 100)}
+          licensesCount={typeof plan.licensesMonth === "number" ? plan.licensesMonth : 0}
+          resellerUserId={session?.user.id ?? null}
+          defaultEmail={session?.user.email ?? null}
+        />
+      )}
+    </div>
+  );
+}
