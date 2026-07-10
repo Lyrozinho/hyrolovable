@@ -53,14 +53,14 @@ export const getRouter = () => {
   const queryClient = new QueryClient({
     defaultOptions: {
       queries: {
-        staleTime: 0,
+        // Cache curto: navegações rápidas reaproveitam dados já buscados.
+        // Realtime (useRealtimeInvalidation) força refetch quando algo muda.
+        staleTime: 30_000,
         gcTime: 5 * 60_000,
-        refetchOnMount: "always",
-        refetchOnWindowFocus: true,
+        refetchOnMount: false,
+        refetchOnWindowFocus: false,
         refetchOnReconnect: true,
         retry: 0,
-        // Evita que um erro transiente de fetch dispare o errorComponent do root
-        // ("This page didn't load"). Componentes tratam o estado via `error`.
         throwOnError: false,
       },
       mutations: { throwOnError: false },
@@ -71,7 +71,8 @@ export const getRouter = () => {
     routeTree,
     context: { queryClient },
     scrollRestoration: true,
-    defaultPreloadStaleTime: 0,
+    defaultPreload: "intent",
+    defaultPreloadStaleTime: 30_000,
     defaultErrorComponent: DefaultRouterError,
   });
 
