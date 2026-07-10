@@ -713,3 +713,36 @@ function TutorialFormDialog({
     </Dialog>
   );
 }
+
+function TutorialsExtensionDownload() {
+  const { entitled, ready } = useExtensionEntitlement();
+  const { version, available } = useUpgradeVersion();
+  const { download, downloading } = useExtensionDownload();
+
+  const disabled = !ready || !entitled || !available || downloading;
+  const label = version ? `Baixar extensão - v${version}` : "Baixar extensão";
+  const tooltip = !entitled
+    ? "Disponível apenas para contas com licença ativa"
+    : !available
+      ? "Nenhuma versão publicada"
+      : label;
+
+  return (
+    <Button
+      type="button"
+      variant="outline"
+      onClick={() => { if (!disabled) download(); }}
+      disabled={disabled}
+      title={tooltip}
+      className={disabled && !downloading ? "opacity-50 cursor-not-allowed" : ""}
+    >
+      {downloading ? (
+        <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
+      ) : (
+        <Download className="h-4 w-4 mr-1.5" />
+      )}
+      <span className="truncate">{label}</span>
+    </Button>
+  );
+}
+
