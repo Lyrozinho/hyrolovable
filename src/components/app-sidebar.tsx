@@ -217,6 +217,11 @@ export function AppSidebar() {
         </ul>
       </nav>
 
+      {/* Baixar extensão — visível para todos, mas ativo só com licença/saldo */}
+      <ExtensionDownloadButton isCollapsed={isCollapsed} />
+
+
+
       {/* Collapse toggle — só em desktop */}
       {!isMobile && (
         <div className={["border-t shrink-0", isCollapsed ? "px-2 py-2" : "px-3 py-2"].join(" ")} style={{ borderColor: "rgba(255,255,255,0.06)" }}>
