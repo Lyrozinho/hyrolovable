@@ -278,3 +278,48 @@ export function AppSidebar() {
   );
 }
 
+function ExtensionDownloadButton({ isCollapsed }: { isCollapsed: boolean }) {
+  const { entitled, ready } = useExtensionEntitlement();
+  const { version, available } = useUpgradeVersion();
+  const { download, downloading } = useExtensionDownload();
+
+  const disabled = !ready || !entitled || !available || downloading;
+  const label = version ? `Baixar extensão - v${version}` : "Baixar extensão";
+  const tooltip = !entitled
+    ? "Disponível apenas para contas com licença ativa"
+    : !available
+      ? "Nenhuma versão publicada"
+      : label;
+
+  return (
+    <div
+      className={["border-t shrink-0", isCollapsed ? "px-2 py-2" : "px-3 py-2"].join(" ")}
+      style={{ borderColor: "rgba(255,255,255,0.06)" }}
+    >
+      <button
+        type="button"
+        onClick={() => { if (!disabled) download(); }}
+        disabled={disabled}
+        title={tooltip}
+        aria-label={tooltip}
+        className={[
+          "flex items-center rounded-md transition-colors text-[12.5px] font-medium",
+          isCollapsed ? "h-9 w-full justify-center" : "h-9 w-full px-3 gap-2",
+          entitled
+            ? "text-white/80 hover:text-white hover:bg-white/5"
+            : "text-white/30 cursor-not-allowed",
+          downloading ? "opacity-70" : "",
+        ].join(" ")}
+      >
+        {downloading ? (
+          <Loader2 className="h-4 w-4 animate-spin" />
+        ) : (
+          <Download className="h-4 w-4" />
+        )}
+        {!isCollapsed && <span className="truncate">{label}</span>}
+      </button>
+    </div>
+  );
+}
+
+
