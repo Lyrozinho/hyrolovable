@@ -289,8 +289,7 @@ function LoginPage() {
         </div>
       </div>
 
-      <footer className="relative h-12 border-t border-border/60 flex items-center justify-between px-6 text-[11px] text-muted-foreground">
-        <span>© {new Date().getFullYear()} Hyro — Admin Console</span>
+      <footer className="relative h-12 border-t border-border/60 flex items-center justify-end px-6 text-[11px] text-muted-foreground">
         <span className="font-mono tracking-tight">v1.0 · secure</span>
       </footer>
     </div>
