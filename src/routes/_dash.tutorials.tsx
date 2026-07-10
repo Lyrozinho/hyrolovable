@@ -14,7 +14,9 @@ import {
   ImageIcon,
   FileVideo,
   Loader2,
+  Download,
 } from "lucide-react";
+import { useExtensionEntitlement, useUpgradeVersion, useExtensionDownload } from "@/lib/extension-download";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
