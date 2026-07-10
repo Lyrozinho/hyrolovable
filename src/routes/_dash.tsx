@@ -124,11 +124,7 @@ function DashInner() {
   const { data: resellerInfo } = useQuery({
     queryKey: ["reseller-balance", sessionKey],
     enabled: authReady && !!session && isReseller,
-    refetchInterval: 5_000,
-    staleTime: 0,
-    refetchOnMount: "always",
-    refetchOnWindowFocus: true,
-    refetchOnReconnect: true,
+    staleTime: 30_000,
     queryFn: async () => {
       try {
         const uid = session!.user.id;
