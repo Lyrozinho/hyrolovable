@@ -93,12 +93,15 @@ function TutorialsPage() {
             </p>
           </div>
         </div>
-        {isAdmin && (
-          <Button onClick={() => setCreating(true)} className="shrink-0">
-            <Plus className="h-4 w-4 mr-1.5" />
-            Novo tutorial
-          </Button>
-        )}
+        <div className="flex items-center gap-2 shrink-0">
+          <TutorialsExtensionDownload />
+          {isAdmin && (
+            <Button onClick={() => setCreating(true)} className="shrink-0">
+              <Plus className="h-4 w-4 mr-1.5" />
+              Novo tutorial
+            </Button>
+          )}
+        </div>
       </div>
 
       {list.length === 0 ? (
