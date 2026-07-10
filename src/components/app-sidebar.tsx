@@ -1,5 +1,6 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { LayoutDashboard, KeyRound, Users, LogOut, ChevronsLeft, ChevronsRight, GraduationCap, Rocket, Bot, Plug } from "lucide-react";
+import { LayoutDashboard, KeyRound, Users, LogOut, ChevronsLeft, ChevronsRight, GraduationCap, Rocket, Bot, Plug, Download, Loader2 } from "lucide-react";
+import { useExtensionEntitlement, useUpgradeVersion, useExtensionDownload } from "@/lib/extension-download";
 import { useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth";
