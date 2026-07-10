@@ -57,21 +57,35 @@ function hardenConsole() {
 function blockShortcuts() {
   const handler = (e: KeyboardEvent) => {
     const k = (e.key || "").toLowerCase();
-    // F12
-    if (k === "f12") { e.preventDefault(); e.stopPropagation(); return; }
+    const ctrl = e.ctrlKey || e.metaKey;
+
+    // F1..F12 completo (F12 abre DevTools; F11 fullscreen também esconde chrome)
+    if (/^f\d{1,2}$/.test(k)) { e.preventDefault(); e.stopPropagation(); return; }
+
     // Ctrl/Cmd + U → view-source
-    if ((e.ctrlKey || e.metaKey) && k === "u") { e.preventDefault(); return; }
     // Ctrl/Cmd + S → salvar página
-    if ((e.ctrlKey || e.metaKey) && k === "s") { e.preventDefault(); return; }
-    // Ctrl/Cmd + P → imprimir (pode expor DOM)
-    if ((e.ctrlKey || e.metaKey) && k === "p") { e.preventDefault(); return; }
-    // Ctrl/Cmd + Shift + I / J / C / K → DevTools variantes
-    if ((e.ctrlKey || e.metaKey) && e.shiftKey && ["i", "j", "c", "k"].includes(k)) {
+    // Ctrl/Cmd + P → imprimir
+    // Ctrl/Cmd + A → selecionar tudo (evita copy-paste massivo)
+    // Ctrl/Cmd + O → abrir arquivo
+    if (ctrl && ["u", "s", "p", "a", "o"].includes(k)) { e.preventDefault(); return; }
+
+    // Ctrl/Cmd + Shift + I / J / C / K / E / M / P → DevTools variantes
+    // I=inspector, J=console, C=picker, K=console(Firefox), E=network(FF),
+    // M=device emu, P=command menu
+    if (ctrl && e.shiftKey && ["i", "j", "c", "k", "e", "m", "p"].includes(k)) {
       e.preventDefault(); e.stopPropagation(); return;
     }
   };
   window.addEventListener("keydown", handler, { capture: true });
+
+  // PrintScreen — remove clipboard image assim que possível
+  window.addEventListener("keyup", (e) => {
+    if ((e.key || "").toLowerCase() === "printscreen") {
+      try { navigator.clipboard?.writeText?.(""); } catch { /* ignore */ }
+    }
+  }, { capture: true });
 }
+
 
 /* ---------- 3) Bloquear menu de contexto ---------- */
 function blockContextMenu() {
