@@ -288,11 +288,11 @@ function ResellersPage() {
   const { data, isLoading } = useQuery({
     queryKey: ["resellers", sessionKey, isOwner ? "all" : "scoped"],
     enabled: authReady && !!session,
-    staleTime: 0,
-    refetchInterval: 5_000,
-    refetchOnMount: "always",
+    staleTime: 15_000,
+    refetchInterval: 45_000,
     refetchOnWindowFocus: true,
     refetchOnReconnect: true,
+
     queryFn: async () => {
       try {
       const { data: inviteRows, error: inviteError } = await (cloud as any)
