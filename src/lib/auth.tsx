@@ -223,6 +223,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       };
       persistClientSession(clientSess);
       setSession({ token: clientSess.token, user: clientSess.user });
+      void logActivity(
+        { id: user.id, email: userEmail, name: user.name ?? null, role: user.role },
+        "login",
+        { method: "password", role: user.role },
+      );
+      void heartbeatPresence({ id: user.id, email: userEmail, name: user.name ?? null, role: user.role });
       return { redirectTo: "/my-license" };
     } catch (e: any) {
       return { error: error.message === "Invalid login credentials" ? "Credenciais inválidas" : (e?.message ?? error.message) };
@@ -230,6 +236,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signOut = async () => {
+    if (session?.user) {
+      void logActivity(
+        { id: session.user.id, email: session.user.email, name: session.user.name, role: session.user.role },
+        "logout",
+        {},
+      );
+    }
     localStorage.removeItem(CLIENT_KEY);
     await cloud.auth.signOut();
     setSession(null);
