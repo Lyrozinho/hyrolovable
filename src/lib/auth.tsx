@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useMemo, useState, type ReactNode
 import { supabase as cloud } from "@/integrations/supabase/client";
 import { supabase as ext } from "@/lib/supabase";
 import { warmDashboardStatsSnapshot } from "@/lib/dashboard-stats";
+import { heartbeatPresence, logActivity } from "@/lib/reseller-activity";
 import type { AdminUser } from "./supabase";
 
 type Session = { token: string; user: AdminUser };
