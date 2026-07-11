@@ -762,6 +762,11 @@ function ResellersPage() {
       <AdjustBalanceDialog reseller={balanceTarget} onClose={() => setBalanceTarget(null)} />
       <EditResellerDialog reseller={editTarget} onClose={() => setEditTarget(null)} />
       <DeleteResellerDialog reseller={deleteTarget} onClose={() => setDeleteTarget(null)} />
+      <ResellerActivityDialog
+        open={!!activityTarget}
+        onClose={() => setActivityTarget(null)}
+        reseller={activityTarget ? { id: activityTarget.id, email: activityTarget.email, name: activityTarget.name } : null}
+      />
       {isOwner && (
         <PartnerPlansConfigDialog
           open={configOpen}
