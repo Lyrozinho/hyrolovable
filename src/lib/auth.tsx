@@ -172,6 +172,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // 1) Try admin (Lovable Auth) first
     const { error } = await cloud.auth.signInWithPassword({ email: emailNorm, password });
     if (!error) {
+      const { data: sd } = await cloud.auth.getSession();
+      const adm = toAdminSession(sd.session as any);
+      if (adm) {
+        void logActivity({ id: adm.user.id, email: adm.user.email, name: adm.user.name, role: "admin" }, "login", { method: "password" });
+        void heartbeatPresence({ id: adm.user.id, email: adm.user.email, name: adm.user.name, role: "admin" });
+      }
       await warmDashboardStatsSnapshot();
       return { redirectTo: "/dashboard" };
     }
