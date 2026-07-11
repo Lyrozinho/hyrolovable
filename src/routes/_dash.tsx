@@ -13,6 +13,7 @@ import { supabase as ext } from "@/lib/supabase";
 import { supabase as cloud } from "@/integrations/supabase/client";
 import { getResellerBalance } from "@/lib/reseller-balance";
 import { useRealtimeInvalidation } from "@/lib/realtime-invalidation";
+import { heartbeatPresence, logActivity } from "@/lib/reseller-activity";
 
 export const Route = createFileRoute("/_dash")({
   ssr: false,
