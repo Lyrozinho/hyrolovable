@@ -133,15 +133,57 @@ function LoginPage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col relative overflow-hidden">
+      {/* Base gradient wash */}
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-0 opacity-[0.35] dark:opacity-[0.25]"
+        className="pointer-events-none absolute inset-0"
+        style={{
+          background:
+            "radial-gradient(ellipse 90% 60% at 50% -10%, color-mix(in oklab, var(--color-foreground) 6%, transparent), transparent 60%), radial-gradient(ellipse 70% 50% at 50% 110%, color-mix(in oklab, var(--color-foreground) 4%, transparent), transparent 60%)",
+        }}
+      />
+      {/* Ambient color glows */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -top-40 -left-40 h-[520px] w-[520px] rounded-full opacity-[0.18] dark:opacity-[0.22] blur-3xl"
+        style={{ background: "radial-gradient(circle, oklch(0.7 0.18 250) 0%, transparent 65%)" }}
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -bottom-56 -right-40 h-[600px] w-[600px] rounded-full opacity-[0.14] dark:opacity-[0.18] blur-3xl"
+        style={{ background: "radial-gradient(circle, oklch(0.72 0.16 310) 0%, transparent 65%)" }}
+      />
+      {/* Fine grid */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 opacity-[0.5] dark:opacity-[0.35]"
         style={{
           backgroundImage:
-            "radial-gradient(1px 1px at 24px 24px, color-mix(in oklab, var(--color-foreground) 10%, transparent) 1px, transparent 0)",
+            "linear-gradient(to right, color-mix(in oklab, var(--color-foreground) 5%, transparent) 1px, transparent 1px), linear-gradient(to bottom, color-mix(in oklab, var(--color-foreground) 5%, transparent) 1px, transparent 1px)",
+          backgroundSize: "56px 56px",
+          maskImage: "radial-gradient(ellipse 75% 60% at 50% 40%, black 30%, transparent 80%)",
+          WebkitMaskImage: "radial-gradient(ellipse 75% 60% at 50% 40%, black 30%, transparent 80%)",
+        }}
+      />
+      {/* Dot overlay */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 opacity-[0.3] dark:opacity-[0.22]"
+        style={{
+          backgroundImage:
+            "radial-gradient(1px 1px at 24px 24px, color-mix(in oklab, var(--color-foreground) 14%, transparent) 1px, transparent 0)",
           backgroundSize: "28px 28px",
-          maskImage: "radial-gradient(ellipse 80% 60% at 50% 30%, black 40%, transparent 75%)",
-          WebkitMaskImage: "radial-gradient(ellipse 80% 60% at 50% 30%, black 40%, transparent 75%)",
+          maskImage: "radial-gradient(ellipse 80% 60% at 50% 30%, black 30%, transparent 78%)",
+          WebkitMaskImage: "radial-gradient(ellipse 80% 60% at 50% 30%, black 30%, transparent 78%)",
+        }}
+      />
+      {/* Subtle noise/grain */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 opacity-[0.06] dark:opacity-[0.08] mix-blend-overlay"
+        style={{
+          backgroundImage:
+            "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.55 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>\")",
         }}
       />
       <header className="relative h-14 flex items-center px-6 border-b border-border/60">
