@@ -726,6 +726,9 @@ function ResellersPage() {
                           }
                           return (
                             <div className="flex items-center justify-end gap-1">
+                              <Button size="sm" variant="ghost" className="h-8 px-2" title="Atividade" onClick={() => setActivityTarget(r)}>
+                                <BarChart3 className="h-3.5 w-3.5" />
+                              </Button>
                               <Button size="sm" variant="ghost" className="h-8 px-2" title="Saldo" onClick={() => setBalanceTarget(r)}>
                                 <Coins className="h-3.5 w-3.5" />
                               </Button>
