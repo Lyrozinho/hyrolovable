@@ -32,6 +32,7 @@ import { sha256Hex, useAuth } from "@/lib/auth";
 import { OWNER_EMAIL, fetchPrimaryLicenseForUser, fetchLicensePerms } from "@/lib/permissions";
 import { adjustResellerBalance, getResellerBalance, setResellerBalance } from "@/lib/reseller-balance";
 import { VexoPayCheckoutDialog } from "@/components/vexopay-checkout-dialog";
+import { ResellerActivityDialog } from "@/components/reseller-activity-dialog";
 
 export const Route = createFileRoute("/_dash/resellers")({
   component: ResellersPage,
