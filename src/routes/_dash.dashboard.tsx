@@ -64,12 +64,13 @@ function DashboardPage() {
     ...dashboardStatsQueryOptions(),
     initialData: () => (isAdmin ? readDashboardStatsSnapshot() : undefined),
     initialDataUpdatedAt: 0,
-    refetchInterval: 5_000,
-    refetchOnMount: "always",
+    // Realtime invalidation já mantém os dados frescos; polling só como fallback.
+    refetchInterval: 60_000,
     refetchOnWindowFocus: true,
     refetchOnReconnect: true,
     enabled: isAdmin,
   });
+
 
   if (!isAdmin) return null;
 
