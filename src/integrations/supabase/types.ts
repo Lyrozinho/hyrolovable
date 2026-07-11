@@ -218,6 +218,81 @@ export type Database = {
         }
         Relationships: []
       }
+      hyro_reseller_activity: {
+        Row: {
+          actor_email: string | null
+          actor_id: string | null
+          actor_role: string | null
+          created_at: string
+          event: string
+          id: string
+          ip: string | null
+          metadata: Json
+          path: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          actor_email?: string | null
+          actor_id?: string | null
+          actor_role?: string | null
+          created_at?: string
+          event: string
+          id?: string
+          ip?: string | null
+          metadata?: Json
+          path?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          actor_email?: string | null
+          actor_id?: string | null
+          actor_role?: string | null
+          created_at?: string
+          event?: string
+          id?: string
+          ip?: string | null
+          metadata?: Json
+          path?: string | null
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
+      hyro_reseller_presence: {
+        Row: {
+          actor_email: string
+          actor_id: string | null
+          actor_name: string | null
+          actor_role: string | null
+          ip: string | null
+          last_seen: string
+          path: string | null
+          updated_at: string
+          user_agent: string | null
+        }
+        Insert: {
+          actor_email: string
+          actor_id?: string | null
+          actor_name?: string | null
+          actor_role?: string | null
+          ip?: string | null
+          last_seen?: string
+          path?: string | null
+          updated_at?: string
+          user_agent?: string | null
+        }
+        Update: {
+          actor_email?: string
+          actor_id?: string | null
+          actor_name?: string | null
+          actor_role?: string | null
+          ip?: string | null
+          last_seen?: string
+          path?: string | null
+          updated_at?: string
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       hyro_reseller_pricing: {
         Row: {
           active: boolean
