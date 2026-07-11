@@ -273,3 +273,40 @@ iframe[src*="lovable"] {
 body > div[style*="position: fixed"][style*="z-index"] {
   display: none !important;
 }
+
+@keyframes hyro-float-a {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  50% { transform: translate3d(40px, 30px, 0) scale(1.08); }
+}
+@keyframes hyro-float-b {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  50% { transform: translate3d(-50px, 40px, 0) scale(1.1); }
+}
+@keyframes hyro-float-c {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  50% { transform: translate3d(30px, -40px, 0) scale(1.05); }
+}
+@keyframes hyro-grid-pan {
+  0% { background-position: 0 0; }
+  100% { background-position: 0 60px; }
+}
+@keyframes hyro-scan {
+  0% { transform: translateY(-60%); opacity: 0; }
+  15% { opacity: 1; }
+  85% { opacity: 1; }
+  100% { transform: translateY(220%); opacity: 0; }
+}
+
+@utility animate-hyro-float-a { animation: hyro-float-a 18s ease-in-out infinite; }
+@utility animate-hyro-float-b { animation: hyro-float-b 22s ease-in-out infinite; }
+@utility animate-hyro-float-c { animation: hyro-float-c 26s ease-in-out infinite; }
+@utility animate-hyro-grid-pan { animation: hyro-grid-pan 8s linear infinite; }
+@utility animate-hyro-scan { animation: hyro-scan 9s ease-in-out infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-hyro-float-a,
+  .animate-hyro-float-b,
+  .animate-hyro-float-c,
+  .animate-hyro-grid-pan,
+  .animate-hyro-scan { animation: none !important; }
+}
