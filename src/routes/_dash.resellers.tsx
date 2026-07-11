@@ -202,6 +202,7 @@ function ResellersPage() {
   const [balanceTarget, setBalanceTarget] = useState<Reseller | null>(null);
   const [editTarget, setEditTarget] = useState<Reseller | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Reseller | null>(null);
+  const [activityTarget, setActivityTarget] = useState<Reseller | null>(null);
   const [tab, setTab] = useState<"plans" | "list">("plans");
   const [configOpen, setConfigOpen] = useState(false);
   const [isReseller, setIsReseller] = useState(false);
