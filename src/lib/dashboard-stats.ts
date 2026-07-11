@@ -83,9 +83,10 @@ export function dashboardStatsQueryOptions() {
   return queryOptions({
     queryKey: ["dash-stats"],
     queryFn: fetchDashboardStats,
-    staleTime: 0,
+    staleTime: 15_000,
     gcTime: 5 * 60_000,
   });
+
 }
 
 export async function warmDashboardStatsSnapshot() {
