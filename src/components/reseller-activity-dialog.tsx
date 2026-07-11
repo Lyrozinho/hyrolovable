@@ -8,7 +8,6 @@ import {
 } from "@/components/ui/dialog";
 import { supabase as cloud } from "@/integrations/supabase/client";
 import {
-  ONLINE_WINDOW_MS,
   isOnline,
   type ActivityRow,
   type PresenceRow,
