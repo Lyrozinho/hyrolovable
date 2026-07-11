@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useMemo, useState, type ReactNode
 import { supabase as cloud } from "@/integrations/supabase/client";
 import { supabase as ext } from "@/lib/supabase";
 import { warmDashboardStatsSnapshot } from "@/lib/dashboard-stats";
+import { heartbeatPresence, logActivity } from "@/lib/reseller-activity";
 import type { AdminUser } from "./supabase";
 
 type Session = { token: string; user: AdminUser };
@@ -171,6 +172,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // 1) Try admin (Lovable Auth) first
     const { error } = await cloud.auth.signInWithPassword({ email: emailNorm, password });
     if (!error) {
+      const { data: sd } = await cloud.auth.getSession();
+      const adm = toAdminSession(sd.session as any);
+      if (adm) {
+        void logActivity({ id: adm.user.id, email: adm.user.email, name: adm.user.name, role: "admin" }, "login", { method: "password" });
+        void heartbeatPresence({ id: adm.user.id, email: adm.user.email, name: adm.user.name, role: "admin" });
+      }
       await warmDashboardStatsSnapshot();
       return { redirectTo: "/dashboard" };
     }
@@ -216,6 +223,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       };
       persistClientSession(clientSess);
       setSession({ token: clientSess.token, user: clientSess.user });
+      void logActivity(
+        { id: user.id, email: userEmail, name: user.name ?? null, role: user.role },
+        "login",
+        { method: "password", role: user.role },
+      );
+      void heartbeatPresence({ id: user.id, email: userEmail, name: user.name ?? null, role: user.role });
       return { redirectTo: "/my-license" };
     } catch (e: any) {
       return { error: error.message === "Invalid login credentials" ? "Credenciais inválidas" : (e?.message ?? error.message) };
@@ -223,6 +236,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signOut = async () => {
+    if (session?.user) {
+      void logActivity(
+        { id: session.user.id, email: session.user.email, name: session.user.name, role: session.user.role },
+        "logout",
+        {},
+      );
+    }
     localStorage.removeItem(CLIENT_KEY);
     await cloud.auth.signOut();
     setSession(null);

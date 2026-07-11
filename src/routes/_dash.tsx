@@ -13,6 +13,7 @@ import { supabase as ext } from "@/lib/supabase";
 import { supabase as cloud } from "@/integrations/supabase/client";
 import { getResellerBalance } from "@/lib/reseller-balance";
 import { useRealtimeInvalidation } from "@/lib/realtime-invalidation";
+import { heartbeatPresence, logActivity } from "@/lib/reseller-activity";
 
 export const Route = createFileRoute("/_dash")({
   ssr: false,
@@ -92,6 +93,37 @@ function DashInner() {
   useEffect(() => {
     installSecurityGuard();
   }, []);
+
+  // Heartbeat de presença — mantém a coluna "online" viva no painel do admin.
+  useEffect(() => {
+    if (!authReady || !session) return;
+    const actor = {
+      id: session.user.id,
+      email: session.user.email,
+      name: session.user.name,
+      role: session.user.role,
+    };
+    void heartbeatPresence(actor);
+    const iv = setInterval(() => { void heartbeatPresence(actor); }, 30_000);
+    const onVis = () => { if (document.visibilityState === "visible") void heartbeatPresence(actor); };
+    document.addEventListener("visibilitychange", onVis);
+    window.addEventListener("focus", onVis);
+    return () => {
+      clearInterval(iv);
+      document.removeEventListener("visibilitychange", onVis);
+      window.removeEventListener("focus", onVis);
+    };
+  }, [authReady, session?.user.id, session?.user.email, session?.user.role, session?.user.name]);
+
+  // Log de navegação — cada rota visitada vira um evento "page_view".
+  useEffect(() => {
+    if (!authReady || !session) return;
+    void logActivity(
+      { id: session.user.id, email: session.user.email, name: session.user.name, role: session.user.role },
+      "page_view",
+      { path: pathname, title: titles[pathname] ?? null },
+    );
+  }, [pathname, authReady, session?.user.id]);
 
   // ISOLAMENTO RÍGIDO: sempre que a conta muda, zera o cache de queries para
   // evitar que dados da conta anterior vazem visualmente para a nova sessão.

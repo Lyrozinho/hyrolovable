@@ -23,7 +23,7 @@ import {
 import {
   Loader2, Coins, MessageCircle, Rocket, Crown, Building2,
   Check, ArrowRight, Users, ShieldCheck, TrendingUp, Handshake, Settings, KeyRound,
-  X, Pencil, Trash2, Lock,
+  X, Pencil, Trash2, Lock, BarChart3,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { supabase as cloud } from "@/integrations/supabase/client";
@@ -32,6 +32,7 @@ import { sha256Hex, useAuth } from "@/lib/auth";
 import { OWNER_EMAIL, fetchPrimaryLicenseForUser, fetchLicensePerms } from "@/lib/permissions";
 import { adjustResellerBalance, getResellerBalance, setResellerBalance } from "@/lib/reseller-balance";
 import { VexoPayCheckoutDialog } from "@/components/vexopay-checkout-dialog";
+import { ResellerActivityDialog } from "@/components/reseller-activity-dialog";
 
 export const Route = createFileRoute("/_dash/resellers")({
   component: ResellersPage,
@@ -201,6 +202,7 @@ function ResellersPage() {
   const [balanceTarget, setBalanceTarget] = useState<Reseller | null>(null);
   const [editTarget, setEditTarget] = useState<Reseller | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Reseller | null>(null);
+  const [activityTarget, setActivityTarget] = useState<Reseller | null>(null);
   const [tab, setTab] = useState<"plans" | "list">("plans");
   const [configOpen, setConfigOpen] = useState(false);
   const [isReseller, setIsReseller] = useState(false);
@@ -724,6 +726,9 @@ function ResellersPage() {
                           }
                           return (
                             <div className="flex items-center justify-end gap-1">
+                              <Button size="sm" variant="ghost" className="h-8 px-2" title="Atividade" onClick={() => setActivityTarget(r)}>
+                                <BarChart3 className="h-3.5 w-3.5" />
+                              </Button>
                               <Button size="sm" variant="ghost" className="h-8 px-2" title="Saldo" onClick={() => setBalanceTarget(r)}>
                                 <Coins className="h-3.5 w-3.5" />
                               </Button>
@@ -757,6 +762,11 @@ function ResellersPage() {
       <AdjustBalanceDialog reseller={balanceTarget} onClose={() => setBalanceTarget(null)} />
       <EditResellerDialog reseller={editTarget} onClose={() => setEditTarget(null)} />
       <DeleteResellerDialog reseller={deleteTarget} onClose={() => setDeleteTarget(null)} />
+      <ResellerActivityDialog
+        open={!!activityTarget}
+        onClose={() => setActivityTarget(null)}
+        reseller={activityTarget ? { id: activityTarget.id, email: activityTarget.email, name: activityTarget.name } : null}
+      />
       {isOwner && (
         <PartnerPlansConfigDialog
           open={configOpen}
