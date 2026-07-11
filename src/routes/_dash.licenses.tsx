@@ -143,11 +143,12 @@ function LicensesPage() {
   const { data, isLoading, refetch, isFetching, error } = useQuery({
     queryKey: ["licenses", sessionKey, search, status, page],
     enabled: authReady && !!session,
-    staleTime: 0,
-    refetchInterval: 5_000,
-    refetchOnMount: "always",
+    staleTime: 15_000,
+    // Realtime já invalida; polling é apenas fallback.
+    refetchInterval: 45_000,
     refetchOnWindowFocus: true,
     refetchOnReconnect: true,
+
     queryFn: async () => {
       const term = search.trim();
       let matchedUserIds: string[] | null = null;
