@@ -249,11 +249,11 @@ function ResellersPage() {
   const { data: mySlots } = useQuery({
     queryKey: ["my-slots", sessionKey],
     enabled: authReady && !!session && !isCloudAdmin,
-    staleTime: 0,
-    refetchInterval: 5_000,
-    refetchOnMount: "always",
+    staleTime: 15_000,
+    refetchInterval: 45_000,
     refetchOnWindowFocus: true,
     refetchOnReconnect: true,
+
     queryFn: async () => {
       try {
         const licId = await fetchPrimaryLicenseForUser(session!.user.id);
