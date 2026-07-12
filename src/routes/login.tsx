@@ -15,8 +15,6 @@ export const Route = createFileRoute("/login")({
   component: LoginPage,
 });
 
-const WHATSAPP_NUMBER = "5527981359051";
-const APPROVAL_MSG = "Olá, acabei de criar meu cadastro, solicito aprovação.";
 const REMEMBER_KEY = "hyro_login_remember_email";
 
 function LoginPage() {
