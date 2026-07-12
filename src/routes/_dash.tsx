@@ -1,7 +1,7 @@
 import { createFileRoute, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useAuth } from "@/lib/auth";
+import { readClientRoleHint, useAuth } from "@/lib/auth";
 import { AppSidebar } from "@/components/app-sidebar";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { WelcomeModal } from "@/components/welcome-modal";
@@ -97,11 +97,15 @@ function DashInner() {
   // Heartbeat de presença — mantém a coluna "online" viva no painel do admin.
   useEffect(() => {
     if (!authReady || !session) return;
+    const hint = readClientRoleHint();
+    const trackedRole = session.user.role === "admin"
+      ? "admin"
+      : (hint && hint !== "user" ? hint : session.user.role);
     const actor = {
       id: session.user.id,
       email: session.user.email,
       name: session.user.name,
-      role: session.user.role,
+      role: trackedRole,
     };
     void heartbeatPresence(actor);
     const iv = setInterval(() => { void heartbeatPresence(actor); }, 30_000);
@@ -118,8 +122,12 @@ function DashInner() {
   // Log de navegação — cada rota visitada vira um evento "page_view".
   useEffect(() => {
     if (!authReady || !session) return;
+    const hint = readClientRoleHint();
+    const trackedRole = session.user.role === "admin"
+      ? "admin"
+      : (hint && hint !== "user" ? hint : session.user.role);
     void logActivity(
-      { id: session.user.id, email: session.user.email, name: session.user.name, role: session.user.role },
+      { id: session.user.id, email: session.user.email, name: session.user.name, role: trackedRole },
       "page_view",
       { path: pathname, title: titles[pathname] ?? null },
     );

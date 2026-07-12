@@ -19,6 +19,22 @@ type AuthCtx = {
 const Ctx = createContext<AuthCtx | null>(null);
 
 const CLIENT_KEY = "hyro_client_session";
+const CLIENT_ROLE_HINT_KEY = "hyro_client_role_hint";
+
+export function readClientRoleHint(): string | null {
+  if (typeof window === "undefined") return null;
+  try { return localStorage.getItem(CLIENT_ROLE_HINT_KEY); } catch { return null; }
+}
+
+function writeClientRoleHint(role: string | null) {
+  if (typeof window === "undefined") return;
+  try {
+    if (role) localStorage.setItem(CLIENT_ROLE_HINT_KEY, role);
+    else localStorage.removeItem(CLIENT_ROLE_HINT_KEY);
+  } catch {
+    // ignore
+  }
+}
 
 function normalizeEmail(value: unknown) {
   return typeof value === "string" ? value.trim().toLowerCase() : "";
@@ -222,6 +238,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         expiresAt: Date.now() + 7 * 24 * 3600 * 1000,
       };
       persistClientSession(clientSess);
+      writeClientRoleHint(user.role ?? "client");
       setSession({ token: clientSess.token, user: clientSess.user });
       void logActivity(
         { id: user.id, email: userEmail, name: user.name ?? null, role: user.role },
@@ -237,13 +254,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = async () => {
     if (session?.user) {
+      const hintedRole = readClientRoleHint();
       void logActivity(
-        { id: session.user.id, email: session.user.email, name: session.user.name, role: session.user.role },
+        { id: session.user.id, email: session.user.email, name: session.user.name, role: hintedRole ?? session.user.role },
         "logout",
         {},
       );
     }
     localStorage.removeItem(CLIENT_KEY);
+    writeClientRoleHint(null);
     await cloud.auth.signOut();
     setSession(null);
   };
