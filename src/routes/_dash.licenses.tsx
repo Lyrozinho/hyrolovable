@@ -1339,12 +1339,13 @@ function EditLicenseDialog({
           .eq("id", user_id);
         if (pErr) throw pErr;
       }
+      const updatePayload: Record<string, any> = { user_id };
+      if (!isReseller) {
+        updatePayload.expires_at = new Date(expires + "T23:59:59Z").toISOString();
+      }
       const { error } = await supabase
         .from("hyro_extension_licenses")
-        .update({
-          user_id,
-          expires_at: new Date(expires + "T23:59:59Z").toISOString(),
-        })
+        .update(updatePayload)
         .eq("id", license.id);
       if (error) throw error;
       toast.success(password ? "Licença atualizada e senha redefinida" : "Licença atualizada");
