@@ -659,56 +659,6 @@ function ResellersPage() {
                       </TableCell>
                       <TableCell className="text-right">
                         {(() => {
-                          const pendingSignup = !r.active && !r.pending && !r.inviteSlug && !String(r.id).startsWith("invite:");
-                          if (pendingSignup) {
-                            return (
-                              <div className="flex items-center justify-end gap-1">
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  className="h-8 px-2 text-success hover:text-success hover:bg-success/10"
-                                  title="Aprovar cadastro"
-                                  onClick={async () => {
-                                    try {
-                                      const { error } = await supabase
-                                        .from("hyro_extension_users")
-                                        .update({ active: true })
-                                        .eq("id", r.id);
-                                      if (error) throw error;
-                                      toast.success("Cadastro aprovado");
-                                      qc.invalidateQueries({ queryKey: ["resellers"] });
-                                    } catch (e: any) {
-                                      toast.error(e?.message ?? "Erro ao aprovar");
-                                    }
-                                  }}
-                                >
-                                  <Check className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  className="h-8 px-2 text-destructive hover:text-destructive hover:bg-destructive/10"
-                                  title="Recusar cadastro"
-                                  onClick={async () => {
-                                    if (!confirm(`Recusar cadastro de ${r.email}? Esta ação exclui o usuário.`)) return;
-                                    try {
-                                      const { error } = await supabase
-                                        .from("hyro_extension_users")
-                                        .delete()
-                                        .eq("id", r.id);
-                                      if (error) throw error;
-                                      toast.success("Cadastro recusado");
-                                      qc.invalidateQueries({ queryKey: ["resellers"] });
-                                    } catch (e: any) {
-                                      toast.error(e?.message ?? "Erro ao recusar");
-                                    }
-                                  }}
-                                >
-                                  <X className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            );
-                          }
                           if (r.pending && r.inviteUrl) {
                             return (
                               <Button
