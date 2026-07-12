@@ -275,7 +275,7 @@ function LoginPage() {
                     <div className="flex items-start justify-between mb-1">
                       <div>
                         <h1 className="text-[22px] font-semibold tracking-tight leading-tight">Criar conta</h1>
-                        <p className="text-[13px] text-muted-foreground mt-1.5">Seu acesso passa por aprovação.</p>
+                        <p className="text-[13px] text-muted-foreground mt-1.5">Cadastro instantâneo, acesso imediato.</p>
                       </div>
                       <div className="h-10 w-10 rounded-lg border border-border bg-secondary/40 flex items-center justify-center shrink-0">
                         <UserIcon className="h-4 w-4 text-foreground/70" />
