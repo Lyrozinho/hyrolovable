@@ -204,10 +204,9 @@ function LoginPage() {
       <div className="relative flex-1 flex items-center justify-center px-4 py-12">
         <div className="w-full max-w-[440px]">
           <div className="relative rounded-2xl bg-card border border-border shadow-elegant p-8 sm:p-9">
-            {signedUp ? (
-              <SignedUpSuccess whatsappUrl={whatsappUrl} onBack={() => { setSignedUp(false); setTab("login"); }} />
-            ) : (
+            <>
               <>
+
                 {/* Tabs */}
                 <div className="mb-6">
                   <div className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground mb-3">Acesso seguro</div>
