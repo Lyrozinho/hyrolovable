@@ -205,7 +205,7 @@ function LoginPage() {
         <div className="w-full max-w-[440px]">
           <div className="relative rounded-2xl bg-card border border-border shadow-elegant p-8 sm:p-9">
             <>
-              <>
+
 
                 {/* Tabs */}
                 <div className="mb-6">
