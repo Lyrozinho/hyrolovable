@@ -354,31 +354,3 @@ function FieldWithIcon({ icon, label, children }: { icon: React.ReactNode; label
   );
 }
 
-function SignedUpSuccess({ whatsappUrl, onBack }: { whatsappUrl: string; onBack: () => void }) {
-  return (
-    <div className="text-center py-2">
-      <div className="mx-auto mb-5 h-16 w-16 rounded-full bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center">
-        <CheckCircle2 className="h-9 w-9 text-emerald-500" strokeWidth={2} />
-      </div>
-      <h2 className="text-[20px] font-semibold tracking-tight">Cadastro criado com sucesso</h2>
-      <p className="text-[13px] text-muted-foreground mt-2 leading-relaxed max-w-sm mx-auto">
-        Seu cadastro foi criado e agora precisa ser aprovado. Clique no link abaixo para solicitar aprovação pelo WhatsApp.
-      </p>
-      <a
-        href={whatsappUrl}
-        target="_blank"
-        rel="noreferrer"
-        className="mt-6 inline-flex items-center justify-center gap-2 w-full h-11 rounded-md bg-emerald-500 hover:bg-emerald-500/90 text-white font-medium text-[13.5px] transition-colors"
-      >
-        <MessageCircle className="h-4 w-4" /> Solicitar aprovação no WhatsApp
-      </a>
-      <button
-        type="button"
-        onClick={onBack}
-        className="mt-4 text-[12.5px] text-muted-foreground hover:text-foreground transition-colors"
-      >
-        Voltar para login
-      </button>
-    </div>
-  );
-}
