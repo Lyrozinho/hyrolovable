@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Loader2, ArrowRight, Mail, Lock, Eye, EyeOff, ShieldCheck, User as UserIcon, CheckCircle2, MessageCircle } from "lucide-react";
+import { Loader2, ArrowRight, Mail, Lock, Eye, EyeOff, ShieldCheck, User as UserIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,8 +15,6 @@ export const Route = createFileRoute("/login")({
   component: LoginPage,
 });
 
-const WHATSAPP_NUMBER = "5527981359051";
-const APPROVAL_MSG = "Olá, acabei de criar meu cadastro, solicito aprovação.";
 const REMEMBER_KEY = "hyro_login_remember_email";
 
 function LoginPage() {
@@ -39,7 +37,7 @@ function LoginPage() {
   const [suRemember, setSuRemember] = useState(true);
   const [suShow, setSuShow] = useState(false);
   const [suSubmitting, setSuSubmitting] = useState(false);
-  const [signedUp, setSignedUp] = useState(false);
+  
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -100,7 +98,7 @@ function LoginPage() {
             email: em,
             password_hash: passwordHash,
             name: fullName,
-            active: false,
+            active: true,
             role: "reseller",
           })
           .eq("id", existing.id);
@@ -113,7 +111,7 @@ function LoginPage() {
             name: fullName,
             role: "reseller",
             password_hash: passwordHash,
-            active: false,
+            active: true,
           });
         if (cErr) throw cErr;
       }
@@ -121,7 +119,18 @@ function LoginPage() {
       try {
         if (suRemember) localStorage.setItem(REMEMBER_KEY, em);
       } catch { /* ignore */ }
-      setSignedUp(true);
+
+      // Cadastro livre: já loga o usuário direto no painel.
+      const { error: signErr, redirectTo } = await signIn(em, suPassword);
+      if (signErr) {
+        toast.success("Cadastro criado! Faça login para continuar.");
+        setTab("login");
+        setEmail(em);
+        setPassword("");
+      } else {
+        toast.success("Cadastro criado. Bem-vindo!");
+        navigate({ to: redirectTo ?? getSessionHome(session), replace: true });
+      }
     } catch (err: any) {
       toast.error(err?.message ?? "Falha ao cadastrar");
     } finally {
@@ -129,7 +138,7 @@ function LoginPage() {
     }
   };
 
-  const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(APPROVAL_MSG)}`;
+
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col relative overflow-hidden">
@@ -193,10 +202,9 @@ function LoginPage() {
       <div className="relative flex-1 flex items-center justify-center px-4 py-12">
         <div className="w-full max-w-[440px]">
           <div className="relative rounded-2xl bg-card border border-border shadow-elegant p-8 sm:p-9">
-            {signedUp ? (
-              <SignedUpSuccess whatsappUrl={whatsappUrl} onBack={() => { setSignedUp(false); setTab("login"); }} />
-            ) : (
-              <>
+            <>
+
+
                 {/* Tabs */}
                 <div className="mb-6">
                   <div className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground mb-3">Acesso seguro</div>
@@ -267,7 +275,7 @@ function LoginPage() {
                     <div className="flex items-start justify-between mb-1">
                       <div>
                         <h1 className="text-[22px] font-semibold tracking-tight leading-tight">Criar conta</h1>
-                        <p className="text-[13px] text-muted-foreground mt-1.5">Seu acesso passa por aprovação.</p>
+                        <p className="text-[13px] text-muted-foreground mt-1.5">Cadastro instantâneo, acesso imediato.</p>
                       </div>
                       <div className="h-10 w-10 rounded-lg border border-border bg-secondary/40 flex items-center justify-center shrink-0">
                         <UserIcon className="h-4 w-4 text-foreground/70" />
@@ -313,7 +321,7 @@ function LoginPage() {
                   </form>
                 )}
               </>
-            )}
+
           </div>
 
           <p className="mt-6 text-[11px] text-muted-foreground/80 leading-relaxed text-center px-4">
@@ -343,31 +351,3 @@ function FieldWithIcon({ icon, label, children }: { icon: React.ReactNode; label
   );
 }
 
-function SignedUpSuccess({ whatsappUrl, onBack }: { whatsappUrl: string; onBack: () => void }) {
-  return (
-    <div className="text-center py-2">
-      <div className="mx-auto mb-5 h-16 w-16 rounded-full bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center">
-        <CheckCircle2 className="h-9 w-9 text-emerald-500" strokeWidth={2} />
-      </div>
-      <h2 className="text-[20px] font-semibold tracking-tight">Cadastro criado com sucesso</h2>
-      <p className="text-[13px] text-muted-foreground mt-2 leading-relaxed max-w-sm mx-auto">
-        Seu cadastro foi criado e agora precisa ser aprovado. Clique no link abaixo para solicitar aprovação pelo WhatsApp.
-      </p>
-      <a
-        href={whatsappUrl}
-        target="_blank"
-        rel="noreferrer"
-        className="mt-6 inline-flex items-center justify-center gap-2 w-full h-11 rounded-md bg-emerald-500 hover:bg-emerald-500/90 text-white font-medium text-[13.5px] transition-colors"
-      >
-        <MessageCircle className="h-4 w-4" /> Solicitar aprovação no WhatsApp
-      </a>
-      <button
-        type="button"
-        onClick={onBack}
-        className="mt-4 text-[12.5px] text-muted-foreground hover:text-foreground transition-colors"
-      >
-        Voltar para login
-      </button>
-    </div>
-  );
-}
