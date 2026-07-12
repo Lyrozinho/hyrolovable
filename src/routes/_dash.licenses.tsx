@@ -1288,6 +1288,8 @@ function EditLicenseDialog({
   onClose: () => void;
 }) {
   const qc = useQueryClient();
+  const { session } = useAuth();
+  const isReseller = session?.user.role === "client";
   const [email, setEmail] = useState("");
   const [expires, setExpires] = useState("");
   const [password, setPassword] = useState("");
