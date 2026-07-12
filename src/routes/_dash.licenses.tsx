@@ -1403,12 +1403,20 @@ function EditLicenseDialog({
             <Label className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">
               Expira em
             </Label>
-            <Input
-              type="date"
-              value={expires}
-              onChange={(e) => setExpires(e.target.value)}
-              className="h-10 text-[13px]"
-            />
+            {isReseller ? (
+              <div className="rounded-md border border-border bg-muted/40 px-3 h-10 flex items-center gap-2 text-[13px] text-muted-foreground">
+                <CalendarClock className="h-3.5 w-3.5" />
+                {new Date(license.expires_at).toLocaleDateString("pt-BR")}
+                <span className="text-[11px] ml-auto">Data fixa · 30 dias</span>
+              </div>
+            ) : (
+              <Input
+                type="date"
+                value={expires}
+                onChange={(e) => setExpires(e.target.value)}
+                className="h-10 text-[13px]"
+              />
+            )}
           </div>
           <div className="space-y-1.5">
             <Label className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">
