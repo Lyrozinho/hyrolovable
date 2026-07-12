@@ -138,7 +138,7 @@ function LoginPage() {
     }
   };
 
-  const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(APPROVAL_MSG)}`;
+
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col relative overflow-hidden">
