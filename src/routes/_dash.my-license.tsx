@@ -271,6 +271,9 @@ function MyLicensePage() {
         </div>
       </section>
 
+      {/* Oferta destaque: Chave Vitalícia (apenas revendedores) */}
+      {isReseller && <LifetimeKeyBanner userId={userId} defaultEmail={session?.user.email ?? null} />}
+
       {/* Planos revenda (visíveis para reseller) */}
       {isReseller && (
         <section>
