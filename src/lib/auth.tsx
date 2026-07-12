@@ -19,6 +19,22 @@ type AuthCtx = {
 const Ctx = createContext<AuthCtx | null>(null);
 
 const CLIENT_KEY = "hyro_client_session";
+const CLIENT_ROLE_HINT_KEY = "hyro_client_role_hint";
+
+export function readClientRoleHint(): string | null {
+  if (typeof window === "undefined") return null;
+  try { return localStorage.getItem(CLIENT_ROLE_HINT_KEY); } catch { return null; }
+}
+
+function writeClientRoleHint(role: string | null) {
+  if (typeof window === "undefined") return;
+  try {
+    if (role) localStorage.setItem(CLIENT_ROLE_HINT_KEY, role);
+    else localStorage.removeItem(CLIENT_ROLE_HINT_KEY);
+  } catch {
+    // ignore
+  }
+}
 
 function normalizeEmail(value: unknown) {
   return typeof value === "string" ? value.trim().toLowerCase() : "";
