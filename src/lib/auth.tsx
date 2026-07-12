@@ -238,6 +238,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         expiresAt: Date.now() + 7 * 24 * 3600 * 1000,
       };
       persistClientSession(clientSess);
+      writeClientRoleHint(user.role ?? "client");
       setSession({ token: clientSess.token, user: clientSess.user });
       void logActivity(
         { id: user.id, email: userEmail, name: user.name ?? null, role: user.role },
