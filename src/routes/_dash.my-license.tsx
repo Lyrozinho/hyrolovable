@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import {
   KeyRound, CalendarClock, ShieldCheck, AlertTriangle,
   CheckCircle2, XCircle, Infinity as InfinityIcon, Clock, Copy, RefreshCw,
-  Check, ArrowRight, MessageCircle,
+  Check, ArrowRight, MessageCircle, Sparkles, Zap,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { supabase as cloud } from "@/integrations/supabase/client";
