@@ -37,7 +37,7 @@ function LoginPage() {
   const [suRemember, setSuRemember] = useState(true);
   const [suShow, setSuShow] = useState(false);
   const [suSubmitting, setSuSubmitting] = useState(false);
-  const [signedUp, setSignedUp] = useState(false);
+  
 
   useEffect(() => {
     if (typeof window === "undefined") return;
