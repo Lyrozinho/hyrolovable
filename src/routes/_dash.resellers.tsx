@@ -610,21 +610,18 @@ function ResellersPage() {
                       </TableCell>
                       <TableCell>
                         {(() => {
-                          const pendingSignup = !r.active && !r.pending && !r.inviteSlug && !String(r.id).startsWith("invite:");
-                          const isPending = r.pending || pendingSignup;
+                          const isPending = r.pending;
                           return (
                             <Badge
                               variant="outline"
                               className={`gap-1.5 h-6 px-2 text-[11px] font-medium ${
                                 r.active
                                   ? "border-success/30 text-success bg-success/10"
-                                  : pendingSignup
-                                  ? "border-warning/40 text-warning bg-warning/10"
                                   : "border-border text-muted-foreground bg-muted/40"
                               }`}
                             >
-                              <span className={`h-1.5 w-1.5 rounded-full ${r.active ? "bg-success" : pendingSignup ? "bg-warning" : "bg-muted-foreground"}`} />
-                              {pendingSignup ? "Aguardando aprovação" : isPending ? "Pendente" : r.active ? "Ativo" : "Inativo"}
+                              <span className={`h-1.5 w-1.5 rounded-full ${r.active ? "bg-success" : "bg-muted-foreground"}`} />
+                              {isPending ? "Pendente" : r.active ? "Ativo" : "Inativo"}
                             </Badge>
                           );
                         })()}
