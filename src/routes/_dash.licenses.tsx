@@ -707,9 +707,12 @@ function CreateLicenseDialog({
         }
       }
 
-      const expiresAt = lifetime
+      // Revenda é sempre 30 dias, sem vitalícia. Só o admin pode customizar.
+      const effectiveLifetime = isReseller ? false : lifetime;
+      const effectiveDays = isReseller ? 30 : parseInt(days || "30");
+      const expiresAt = effectiveLifetime
         ? new Date("2099-12-31T23:59:59Z")
-        : new Date(Date.now() + parseInt(days || "30") * 24 * 3600 * 1000);
+        : new Date(Date.now() + effectiveDays * 24 * 3600 * 1000);
       const key = previewKey;
 
       if (mode === "personalizado") {
