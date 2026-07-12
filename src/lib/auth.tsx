@@ -254,13 +254,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = async () => {
     if (session?.user) {
+      const hintedRole = readClientRoleHint();
       void logActivity(
-        { id: session.user.id, email: session.user.email, name: session.user.name, role: session.user.role },
+        { id: session.user.id, email: session.user.email, name: session.user.name, role: hintedRole ?? session.user.role },
         "logout",
         {},
       );
     }
     localStorage.removeItem(CLIENT_KEY);
+    writeClientRoleHint(null);
     await cloud.auth.signOut();
     setSession(null);
   };
