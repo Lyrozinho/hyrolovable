@@ -100,7 +100,7 @@ function LoginPage() {
             email: em,
             password_hash: passwordHash,
             name: fullName,
-            active: false,
+            active: true,
             role: "reseller",
           })
           .eq("id", existing.id);
@@ -113,7 +113,7 @@ function LoginPage() {
             name: fullName,
             role: "reseller",
             password_hash: passwordHash,
-            active: false,
+            active: true,
           });
         if (cErr) throw cErr;
       }
@@ -121,7 +121,18 @@ function LoginPage() {
       try {
         if (suRemember) localStorage.setItem(REMEMBER_KEY, em);
       } catch { /* ignore */ }
-      setSignedUp(true);
+
+      // Cadastro livre: já loga o usuário direto no painel.
+      const { error: signErr, redirectTo } = await signIn(em, suPassword);
+      if (signErr) {
+        toast.success("Cadastro criado! Faça login para continuar.");
+        setTab("login");
+        setEmail(em);
+        setPassword("");
+      } else {
+        toast.success("Cadastro criado. Bem-vindo!");
+        navigate({ to: redirectTo ?? getSessionHome(session), replace: true });
+      }
     } catch (err: any) {
       toast.error(err?.message ?? "Falha ao cadastrar");
     } finally {
