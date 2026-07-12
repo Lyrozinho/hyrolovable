@@ -988,29 +988,37 @@ function CreateLicenseDialog({
                 <Label className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">
                   Duração
                 </Label>
-                <div className="rounded-md border border-border overflow-hidden divide-y divide-border">
-                  <div className="flex items-center px-3 h-10 gap-2">
+                {isReseller ? (
+                  <div className="rounded-md border border-border bg-muted/40 px-3 h-10 flex items-center gap-2">
                     <CalendarClock className="h-3.5 w-3.5 text-muted-foreground" />
-                    <Input
-                      type="number" min={1}
-                      value={days}
-                      onChange={(e) => setDays(e.target.value)}
-                      disabled={lifetime}
-                      className="h-8 border-0 shadow-none focus-visible:ring-0 p-0 text-[13px] bg-transparent disabled:opacity-50"
-                    />
-                    <span className="text-[12px] text-muted-foreground">dias</span>
+                    <span className="text-[13px] font-medium">30 dias</span>
+                    <span className="text-[11px] text-muted-foreground ml-auto">Fixo para revenda</span>
                   </div>
-                  <label className="flex items-center gap-2.5 px-3 h-10 cursor-pointer hover:bg-muted/40">
-                    <input
-                      type="checkbox"
-                      checked={lifetime}
-                      onChange={(e) => setLifetime(e.target.checked)}
-                      className="h-3.5 w-3.5 rounded border-border accent-foreground"
-                    />
-                    <InfinityIcon className="h-3.5 w-3.5 text-muted-foreground" />
-                    <span className="text-[13px]">Vitalícia (expira em 2099)</span>
-                  </label>
-                </div>
+                ) : (
+                  <div className="rounded-md border border-border overflow-hidden divide-y divide-border">
+                    <div className="flex items-center px-3 h-10 gap-2">
+                      <CalendarClock className="h-3.5 w-3.5 text-muted-foreground" />
+                      <Input
+                        type="number" min={1}
+                        value={days}
+                        onChange={(e) => setDays(e.target.value)}
+                        disabled={lifetime}
+                        className="h-8 border-0 shadow-none focus-visible:ring-0 p-0 text-[13px] bg-transparent disabled:opacity-50"
+                      />
+                      <span className="text-[12px] text-muted-foreground">dias</span>
+                    </div>
+                    <label className="flex items-center gap-2.5 px-3 h-10 cursor-pointer hover:bg-muted/40">
+                      <input
+                        type="checkbox"
+                        checked={lifetime}
+                        onChange={(e) => setLifetime(e.target.checked)}
+                        className="h-3.5 w-3.5 rounded border-border accent-foreground"
+                      />
+                      <InfinityIcon className="h-3.5 w-3.5 text-muted-foreground" />
+                      <span className="text-[13px]">Vitalícia (expira em 2099)</span>
+                    </label>
+                  </div>
+                )}
               </div>
 
               {/* Painel access password — só no modo Normal */}
