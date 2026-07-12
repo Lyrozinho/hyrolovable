@@ -645,3 +645,90 @@ function PlanCard({ plan: base, override }: { plan: PartnerPlan; override?: Plan
     </div>
   );
 }
+
+function LifetimeKeyBanner({ userId, defaultEmail }: { userId: string | null; defaultEmail: string | null }) {
+  const [open, setOpen] = useState(false);
+  const price = 150;
+  return (
+    <section aria-label="Oferta: Chave Vitalícia">
+      <div
+        className={[
+          "relative overflow-hidden rounded-2xl border border-border/80",
+          "bg-gradient-to-br from-card via-card to-secondary/40",
+          "hover:border-foreground/25 transition-colors",
+        ].join(" ")}
+      >
+        {/* subtle backdrop pattern */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 opacity-[0.35]"
+          style={{
+            backgroundImage:
+              "radial-gradient(circle at 12% 20%, color-mix(in oklab, var(--color-foreground) 7%, transparent) 0, transparent 42%), radial-gradient(circle at 88% 80%, color-mix(in oklab, var(--color-foreground) 5%, transparent) 0, transparent 48%)",
+          }}
+        />
+        <div className="relative flex flex-wrap items-center gap-5 p-5 md:p-6">
+          {/* Ícone */}
+          <div className="flex items-center gap-3 min-w-0 flex-1">
+            <div className="relative shrink-0">
+              <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-amber-200 to-amber-400/70 dark:from-amber-500/25 dark:to-amber-700/15 border border-amber-300/60 dark:border-amber-400/30 flex items-center justify-center shadow-inner">
+                <KeyRound className="h-5 w-5 text-amber-700 dark:text-amber-300 -rotate-45" strokeWidth={2.2} />
+              </div>
+              <span className="absolute -top-1.5 -right-1.5 inline-flex items-center gap-0.5 rounded-full bg-foreground text-background text-[9px] font-bold uppercase tracking-[0.14em] px-1.5 py-0.5 shadow-sm">
+                <Sparkles className="h-2.5 w-2.5" /> Novo
+              </span>
+            </div>
+            <div className="min-w-0">
+              <div className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-[0.16em] font-semibold text-muted-foreground mb-1">
+                <InfinityIcon className="h-3 w-3" /> Oferta exclusiva
+              </div>
+              <div className="text-[15px] md:text-[16px] font-semibold tracking-tight leading-tight">
+                Chave Vitalícia Hyro
+              </div>
+              <p className="text-[12px] text-muted-foreground mt-0.5 leading-snug max-w-md">
+                Pagamento único, sem renovação mensal. Uma chave que nunca expira.
+              </p>
+            </div>
+          </div>
+
+          {/* Perks compactos */}
+          <div className="hidden md:flex items-center gap-4 text-[11.5px] text-muted-foreground pl-2 border-l border-border/70">
+            <span className="inline-flex items-center gap-1.5"><Check className="h-3 w-3 text-success" /> Sem mensalidade</span>
+            <span className="inline-flex items-center gap-1.5"><Check className="h-3 w-3 text-success" /> Ativação imediata</span>
+            <span className="inline-flex items-center gap-1.5"><Check className="h-3 w-3 text-success" /> Validade infinita</span>
+          </div>
+
+          {/* Preço + CTA */}
+          <div className="flex items-center gap-4 ml-auto">
+            <div className="text-right">
+              <div className="flex items-baseline gap-1 justify-end">
+                <span className="text-[12px] text-muted-foreground">R$</span>
+                <span className="text-[26px] font-semibold font-mono tabular-nums leading-none">{price}</span>
+              </div>
+              <div className="text-[10.5px] text-muted-foreground mt-0.5 uppercase tracking-wider font-mono">pagamento único</div>
+            </div>
+            <Button
+              onClick={() => setOpen(true)}
+              className="h-11 px-5 text-[13px] font-semibold gap-2 group/lt"
+            >
+              <Zap className="h-3.5 w-3.5" />
+              Comprar agora
+              <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover/lt:translate-x-0.5" />
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      <VexoPayCheckoutDialog
+        open={open}
+        onOpenChange={setOpen}
+        planId="lifetime-key"
+        planName="Chave Vitalícia Hyro"
+        amountCents={price * 100}
+        licensesCount={1}
+        resellerUserId={userId}
+        defaultEmail={defaultEmail}
+      />
+    </section>
+  );
+}
