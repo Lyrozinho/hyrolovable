@@ -660,6 +660,7 @@ function CreateLicenseDialog({
 }) {
   const qc = useQueryClient();
   const { session } = useAuth();
+  const isReseller = session?.user.role === "client";
   const [mode, setMode] = useState<"normal" | "personalizado">("normal");
   const [email, setEmail] = useState("");
   const [days, setDays] = useState("30");
@@ -706,9 +707,12 @@ function CreateLicenseDialog({
         }
       }
 
-      const expiresAt = lifetime
+      // Revenda é sempre 30 dias, sem vitalícia. Só o admin pode customizar.
+      const effectiveLifetime = isReseller ? false : lifetime;
+      const effectiveDays = isReseller ? 30 : parseInt(days || "30");
+      const expiresAt = effectiveLifetime
         ? new Date("2099-12-31T23:59:59Z")
-        : new Date(Date.now() + parseInt(days || "30") * 24 * 3600 * 1000);
+        : new Date(Date.now() + effectiveDays * 24 * 3600 * 1000);
       const key = previewKey;
 
       if (mode === "personalizado") {
@@ -984,29 +988,37 @@ function CreateLicenseDialog({
                 <Label className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">
                   Duração
                 </Label>
-                <div className="rounded-md border border-border overflow-hidden divide-y divide-border">
-                  <div className="flex items-center px-3 h-10 gap-2">
+                {isReseller ? (
+                  <div className="rounded-md border border-border bg-muted/40 px-3 h-10 flex items-center gap-2">
                     <CalendarClock className="h-3.5 w-3.5 text-muted-foreground" />
-                    <Input
-                      type="number" min={1}
-                      value={days}
-                      onChange={(e) => setDays(e.target.value)}
-                      disabled={lifetime}
-                      className="h-8 border-0 shadow-none focus-visible:ring-0 p-0 text-[13px] bg-transparent disabled:opacity-50"
-                    />
-                    <span className="text-[12px] text-muted-foreground">dias</span>
+                    <span className="text-[13px] font-medium">30 dias</span>
+                    <span className="text-[11px] text-muted-foreground ml-auto">Fixo para revenda</span>
                   </div>
-                  <label className="flex items-center gap-2.5 px-3 h-10 cursor-pointer hover:bg-muted/40">
-                    <input
-                      type="checkbox"
-                      checked={lifetime}
-                      onChange={(e) => setLifetime(e.target.checked)}
-                      className="h-3.5 w-3.5 rounded border-border accent-foreground"
-                    />
-                    <InfinityIcon className="h-3.5 w-3.5 text-muted-foreground" />
-                    <span className="text-[13px]">Vitalícia (expira em 2099)</span>
-                  </label>
-                </div>
+                ) : (
+                  <div className="rounded-md border border-border overflow-hidden divide-y divide-border">
+                    <div className="flex items-center px-3 h-10 gap-2">
+                      <CalendarClock className="h-3.5 w-3.5 text-muted-foreground" />
+                      <Input
+                        type="number" min={1}
+                        value={days}
+                        onChange={(e) => setDays(e.target.value)}
+                        disabled={lifetime}
+                        className="h-8 border-0 shadow-none focus-visible:ring-0 p-0 text-[13px] bg-transparent disabled:opacity-50"
+                      />
+                      <span className="text-[12px] text-muted-foreground">dias</span>
+                    </div>
+                    <label className="flex items-center gap-2.5 px-3 h-10 cursor-pointer hover:bg-muted/40">
+                      <input
+                        type="checkbox"
+                        checked={lifetime}
+                        onChange={(e) => setLifetime(e.target.checked)}
+                        className="h-3.5 w-3.5 rounded border-border accent-foreground"
+                      />
+                      <InfinityIcon className="h-3.5 w-3.5 text-muted-foreground" />
+                      <span className="text-[13px]">Vitalícia (expira em 2099)</span>
+                    </label>
+                  </div>
+                )}
               </div>
 
               {/* Painel access password — só no modo Normal */}
@@ -1276,6 +1288,8 @@ function EditLicenseDialog({
   onClose: () => void;
 }) {
   const qc = useQueryClient();
+  const { session } = useAuth();
+  const isReseller = session?.user.role === "client";
   const [email, setEmail] = useState("");
   const [expires, setExpires] = useState("");
   const [password, setPassword] = useState("");
@@ -1325,12 +1339,13 @@ function EditLicenseDialog({
           .eq("id", user_id);
         if (pErr) throw pErr;
       }
+      const updatePayload: Record<string, any> = { user_id };
+      if (!isReseller) {
+        updatePayload.expires_at = new Date(expires + "T23:59:59Z").toISOString();
+      }
       const { error } = await supabase
         .from("hyro_extension_licenses")
-        .update({
-          user_id,
-          expires_at: new Date(expires + "T23:59:59Z").toISOString(),
-        })
+        .update(updatePayload)
         .eq("id", license.id);
       if (error) throw error;
       toast.success(password ? "Licença atualizada e senha redefinida" : "Licença atualizada");
@@ -1388,12 +1403,20 @@ function EditLicenseDialog({
             <Label className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">
               Expira em
             </Label>
-            <Input
-              type="date"
-              value={expires}
-              onChange={(e) => setExpires(e.target.value)}
-              className="h-10 text-[13px]"
-            />
+            {isReseller ? (
+              <div className="rounded-md border border-border bg-muted/40 px-3 h-10 flex items-center gap-2 text-[13px] text-muted-foreground">
+                <CalendarClock className="h-3.5 w-3.5" />
+                {new Date(license.expires_at).toLocaleDateString("pt-BR")}
+                <span className="text-[11px] ml-auto">Data fixa · 30 dias</span>
+              </div>
+            ) : (
+              <Input
+                type="date"
+                value={expires}
+                onChange={(e) => setExpires(e.target.value)}
+                className="h-10 text-[13px]"
+              />
+            )}
           </div>
           <div className="space-y-1.5">
             <Label className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">
