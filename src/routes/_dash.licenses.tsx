@@ -573,7 +573,7 @@ function LicensesPage() {
             <AlertDialogTitle>Excluir licença?</AlertDialogTitle>
             <AlertDialogDescription>
               A chave <span className="font-mono text-foreground">{deleteTarget?.id}</span>
-              {deleteTarget?.user_email ? <> vinculada a <span className="text-foreground">{deleteTarget.user_email}</span></> : null}
+              {deleteTarget?.user_email ? <> vinculada a <span className="text-foreground">{maskEmail(deleteTarget.user_email)}</span></> : null}
               {" "}será removida permanentemente. Essa ação não pode ser desfeita.
             </AlertDialogDescription>
           </AlertDialogHeader>
