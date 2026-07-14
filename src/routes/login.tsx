@@ -93,74 +93,8 @@ function LoginPage() {
     navigate({ to: redirectTo ?? getSessionHome(session), replace: true });
   };
 
-  const onSignup = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const first = suFirst.trim();
-    const last = suLast.trim();
-    const em = suEmail.trim().toLowerCase();
-    if (!first) return toast.error("Informe seu nome.");
-    if (!last) return toast.error("Informe seu sobrenome.");
-    if (!em || !em.includes("@") || em.length < 5) return toast.error("E-mail inválido.");
-    if (suPassword.length < 6) return toast.error("Senha deve ter no mínimo 6 caracteres.");
 
-    setSuSubmitting(true);
-    try {
-      const passwordHash = await sha256Hex(suPassword);
-      const fullName = `${first} ${last}`;
 
-      const { data: existing } = await ext
-        .from("hyro_extension_users")
-        .select("id, password_hash, active")
-        .eq("email", em)
-        .maybeSingle();
-
-      if (existing) {
-        if (existing.password_hash) throw new Error("Este e-mail já possui cadastro.");
-        const { error: upErr } = await ext
-          .from("hyro_extension_users")
-          .update({
-            email: em,
-            password_hash: passwordHash,
-            name: fullName,
-            active: true,
-            role: "reseller",
-          })
-          .eq("id", existing.id);
-        if (upErr) throw upErr;
-      } else {
-        const { error: cErr } = await ext
-          .from("hyro_extension_users")
-          .insert({
-            email: em,
-            name: fullName,
-            role: "reseller",
-            password_hash: passwordHash,
-            active: true,
-          });
-        if (cErr) throw cErr;
-      }
-
-      try {
-        if (suRemember) localStorage.setItem(REMEMBER_KEY, em);
-      } catch { /* ignore */ }
-
-      // Cadastro livre: já loga o usuário direto no painel.
-      const { error: signErr, redirectTo } = await signIn(em, suPassword);
-      if (signErr) {
-        toast.success("Cadastro criado! Faça login para continuar.");
-        setTab("login");
-        setEmail(em);
-        setPassword("");
-      } else {
-        toast.success("Cadastro criado. Bem-vindo!");
-        navigate({ to: redirectTo ?? getSessionHome(session), replace: true });
-      }
-    } catch (err: any) {
-      toast.error(err?.message ?? "Falha ao cadastrar");
-    } finally {
-      setSuSubmitting(false);
-    }
-  };
 
 
 
