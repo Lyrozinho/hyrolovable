@@ -8,6 +8,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { getSessionHome, sha256Hex, useAuth } from "@/lib/auth";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { supabase as ext } from "@/lib/supabase";
+import { enforceIpLock } from "@/lib/ip-lock";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/login")({
@@ -56,11 +57,34 @@ function LoginPage() {
     e.preventDefault();
     setSubmitting(true);
     const { error, redirectTo } = await signIn(email, password);
-    setSubmitting(false);
     if (error) {
+      setSubmitting(false);
       toast.error(error);
       return;
     }
+    // Trava-IP (só front) para clientes com licença criada por admin/Lael.
+    if (redirectTo === "/my-license") {
+      try {
+        const { data: u } = await ext
+          .from("hyro_extension_users")
+          .select("id")
+          .eq("email", email.trim().toLowerCase())
+          .maybeSingle();
+        const uid = (u as any)?.id as string | undefined;
+        if (uid) {
+          const ipErr = await enforceIpLock(uid);
+          if (ipErr) {
+            const { supabase: cloud } = await import("@/integrations/supabase/client");
+            try { localStorage.removeItem("hyro_client_session"); } catch {}
+            await cloud.auth.signOut();
+            setSubmitting(false);
+            toast.error(ipErr);
+            return;
+          }
+        }
+      } catch { /* best-effort */ }
+    }
+    setSubmitting(false);
     try {
       if (remember) localStorage.setItem(REMEMBER_KEY, email.trim().toLowerCase());
       else localStorage.removeItem(REMEMBER_KEY);
