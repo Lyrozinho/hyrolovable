@@ -1,11 +1,11 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Loader2, ArrowRight, Mail, Lock, Eye, EyeOff, ShieldCheck, User as UserIcon } from "lucide-react";
+import { Loader2, ArrowRight, Mail, Lock, Eye, EyeOff, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { getSessionHome, sha256Hex, useAuth } from "@/lib/auth";
+import { getSessionHome, useAuth } from "@/lib/auth";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { supabase as ext } from "@/lib/supabase";
 import { enforceIpLock } from "@/lib/ip-lock";
@@ -21,7 +21,6 @@ const REMEMBER_KEY = "hyro_login_remember_email";
 function LoginPage() {
   const { signIn, session, loading } = useAuth();
   const navigate = useNavigate();
-  const [tab, setTab] = useState<"login" | "signup">("login");
 
   // login state
   const [email, setEmail] = useState("");
@@ -30,14 +29,7 @@ function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
-  // signup state
-  const [suFirst, setSuFirst] = useState("");
-  const [suLast, setSuLast] = useState("");
-  const [suEmail, setSuEmail] = useState("");
-  const [suPassword, setSuPassword] = useState("");
-  const [suRemember, setSuRemember] = useState(true);
-  const [suShow, setSuShow] = useState(false);
-  const [suSubmitting, setSuSubmitting] = useState(false);
+
   
 
   useEffect(() => {
