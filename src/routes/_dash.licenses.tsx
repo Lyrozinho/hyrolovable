@@ -461,7 +461,7 @@ function LicensesPage() {
                         );
                       })()}
                     </TableCell>
-                    <TableCell className="text-[13px]">{l.user_email ?? "—"}</TableCell>
+                    <TableCell className="text-[13px]" title={l.user_email ?? ""}>{l.user_email ? maskEmail(l.user_email) : "—"}</TableCell>
                     <TableCell>
                       <StatusBadge status={statusLabel} />
                     </TableCell>
