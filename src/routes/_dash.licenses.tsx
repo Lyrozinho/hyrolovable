@@ -1180,7 +1180,8 @@ function LicenseCreatedSuccess({
         "",
         "_Obrigado por escolher a Hyro Lovable! 🚀_",
       ].join("\n")
-    : [
+    : data.email
+    ? [
         "🎉 *Sua licença Hyro Lovable está pronta!*",
         "",
         "Olá! Sua licença foi ativada com sucesso. Guarde estes dados em local seguro:",
@@ -1209,6 +1210,24 @@ function LicenseCreatedSuccess({
           : ["2️⃣ Solicite sua senha de acesso pelo suporte"]),
         "3️⃣ Baixe e instale a extensão pelo link de download",
         "4️⃣ Ative com sua chave de licença",
+        "",
+        ...warning,
+        "",
+        "_Obrigado por escolher a Hyro Lovable! 🚀_",
+      ].join("\n")
+    : [
+        "🎉 *Sua licença Hyro Lovable está pronta!*",
+        "",
+        "Guarde a chave abaixo em local seguro:",
+        "",
+        "🔑 *Chave de licença*",
+        `\`${data.key}\``,
+        "",
+        "📅 *Validade*",
+        validity,
+        "",
+        "📥 *Baixar a extensão*",
+        extensionUrl,
         "",
         ...warning,
         "",
