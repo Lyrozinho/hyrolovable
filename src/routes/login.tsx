@@ -1,11 +1,11 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Loader2, ArrowRight, Mail, Lock, Eye, EyeOff, ShieldCheck, User as UserIcon } from "lucide-react";
+import { Loader2, ArrowRight, Mail, Lock, Eye, EyeOff, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { getSessionHome, sha256Hex, useAuth } from "@/lib/auth";
+import { getSessionHome, useAuth } from "@/lib/auth";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { supabase as ext } from "@/lib/supabase";
 import { enforceIpLock } from "@/lib/ip-lock";
@@ -21,7 +21,6 @@ const REMEMBER_KEY = "hyro_login_remember_email";
 function LoginPage() {
   const { signIn, session, loading } = useAuth();
   const navigate = useNavigate();
-  const [tab, setTab] = useState<"login" | "signup">("login");
 
   // login state
   const [email, setEmail] = useState("");
@@ -30,14 +29,7 @@ function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
-  // signup state
-  const [suFirst, setSuFirst] = useState("");
-  const [suLast, setSuLast] = useState("");
-  const [suEmail, setSuEmail] = useState("");
-  const [suPassword, setSuPassword] = useState("");
-  const [suRemember, setSuRemember] = useState(true);
-  const [suShow, setSuShow] = useState(false);
-  const [suSubmitting, setSuSubmitting] = useState(false);
+
   
 
   useEffect(() => {
@@ -93,74 +85,8 @@ function LoginPage() {
     navigate({ to: redirectTo ?? getSessionHome(session), replace: true });
   };
 
-  const onSignup = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const first = suFirst.trim();
-    const last = suLast.trim();
-    const em = suEmail.trim().toLowerCase();
-    if (!first) return toast.error("Informe seu nome.");
-    if (!last) return toast.error("Informe seu sobrenome.");
-    if (!em || !em.includes("@") || em.length < 5) return toast.error("E-mail inválido.");
-    if (suPassword.length < 6) return toast.error("Senha deve ter no mínimo 6 caracteres.");
 
-    setSuSubmitting(true);
-    try {
-      const passwordHash = await sha256Hex(suPassword);
-      const fullName = `${first} ${last}`;
 
-      const { data: existing } = await ext
-        .from("hyro_extension_users")
-        .select("id, password_hash, active")
-        .eq("email", em)
-        .maybeSingle();
-
-      if (existing) {
-        if (existing.password_hash) throw new Error("Este e-mail já possui cadastro.");
-        const { error: upErr } = await ext
-          .from("hyro_extension_users")
-          .update({
-            email: em,
-            password_hash: passwordHash,
-            name: fullName,
-            active: true,
-            role: "reseller",
-          })
-          .eq("id", existing.id);
-        if (upErr) throw upErr;
-      } else {
-        const { error: cErr } = await ext
-          .from("hyro_extension_users")
-          .insert({
-            email: em,
-            name: fullName,
-            role: "reseller",
-            password_hash: passwordHash,
-            active: true,
-          });
-        if (cErr) throw cErr;
-      }
-
-      try {
-        if (suRemember) localStorage.setItem(REMEMBER_KEY, em);
-      } catch { /* ignore */ }
-
-      // Cadastro livre: já loga o usuário direto no painel.
-      const { error: signErr, redirectTo } = await signIn(em, suPassword);
-      if (signErr) {
-        toast.success("Cadastro criado! Faça login para continuar.");
-        setTab("login");
-        setEmail(em);
-        setPassword("");
-      } else {
-        toast.success("Cadastro criado. Bem-vindo!");
-        navigate({ to: redirectTo ?? getSessionHome(session), replace: true });
-      }
-    } catch (err: any) {
-      toast.error(err?.message ?? "Falha ao cadastrar");
-    } finally {
-      setSuSubmitting(false);
-    }
-  };
 
 
 
@@ -227,119 +153,53 @@ function LoginPage() {
         <div className="w-full max-w-[440px]">
           <div className="relative rounded-2xl bg-card border border-border shadow-elegant p-8 sm:p-9">
             <>
-
-
                 <div className="mb-6">
                   <div className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground mb-3">Acesso seguro</div>
-                  <div className="inline-flex items-center gap-1 rounded-lg border border-border bg-secondary/40 p-1">
-                    <button
-                      type="button"
-                      onClick={() => setTab("login")}
-                      className={`h-8 px-3 rounded-md text-[12px] font-medium transition ${tab === "login" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
-                    >
-                      Entrar
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setTab("signup")}
-                      className={`h-8 px-3 rounded-md text-[12px] font-medium transition ${tab === "signup" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
-                    >
-                      Criar conta
-                    </button>
-                  </div>
                 </div>
 
-
-
-                {tab === "login" ? (
-                  <form onSubmit={onLogin} className="space-y-4">
-                    <div className="flex items-start justify-between mb-1">
-                      <div>
-                        <h1 className="text-[22px] font-semibold tracking-tight leading-tight">Entrar no painel</h1>
-                        <p className="text-[13px] text-muted-foreground mt-1.5">Acesse com suas credenciais.</p>
-                      </div>
-                      <div className="h-10 w-10 rounded-lg border border-border bg-secondary/40 flex items-center justify-center shrink-0">
-                        <ShieldCheck className="h-4 w-4 text-foreground/70" />
-                      </div>
+                <form onSubmit={onLogin} className="space-y-4">
+                  <div className="flex items-start justify-between mb-1">
+                    <div>
+                      <h1 className="text-[22px] font-semibold tracking-tight leading-tight">Entrar no painel</h1>
+                      <p className="text-[13px] text-muted-foreground mt-1.5">Acesse com suas credenciais.</p>
                     </div>
-
-                    <FieldWithIcon icon={<Mail className="h-4 w-4" />} label="E-mail">
-                      <Input id="email" type="email" autoComplete="email" required value={email}
-                        onChange={(e) => setEmail(e.target.value)} placeholder="voce@empresa.com"
-                        className="h-11 pl-10 pr-3 text-sm bg-secondary/30 border-border/80" />
-                    </FieldWithIcon>
-
-                    <FieldWithIcon icon={<Lock className="h-4 w-4" />} label="Senha">
-                      <Input id="password" type={showPassword ? "text" : "password"} autoComplete="current-password"
-                        required value={password} onChange={(e) => setPassword(e.target.value)}
-                        placeholder="••••••••••" className="h-11 pl-10 pr-10 text-sm bg-secondary/30 border-border/80" />
-                      <button type="button" onClick={() => setShowPassword((v) => !v)}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 h-7 w-7 flex items-center justify-center rounded-md text-muted-foreground/70 hover:text-foreground hover:bg-accent"
-                        aria-label={showPassword ? "Ocultar" : "Mostrar"}>
-                        {showPassword ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
-                      </button>
-                    </FieldWithIcon>
-
-                    <label className="flex items-center gap-2 text-[12.5px] text-muted-foreground select-none cursor-pointer">
-                      <Checkbox checked={remember} onCheckedChange={(v) => setRemember(!!v)} className="border-0 bg-secondary/60 data-[state=checked]:bg-primary" />
-                      Salvar senha neste dispositivo
-                    </label>
-
-                    <Button type="submit" className="w-full h-11 text-sm font-medium gap-2" disabled={submitting}>
-                      {submitting ? <><Loader2 className="h-4 w-4 animate-spin" /> Autenticando…</> : <>Entrar no painel <ArrowRight className="h-3.5 w-3.5" /></>}
-                    </Button>
-                  </form>
-                ) : (
-                  <form onSubmit={onSignup} className="space-y-4">
-                    <div className="flex items-start justify-between mb-1">
-                      <div>
-                        <h1 className="text-[22px] font-semibold tracking-tight leading-tight">Criar conta</h1>
-                        <p className="text-[13px] text-muted-foreground mt-1.5">Cadastro instantâneo, acesso imediato.</p>
-                      </div>
-                      <div className="h-10 w-10 rounded-lg border border-border bg-secondary/40 flex items-center justify-center shrink-0">
-                        <UserIcon className="h-4 w-4 text-foreground/70" />
-                      </div>
+                    <div className="h-10 w-10 rounded-lg border border-border bg-secondary/40 flex items-center justify-center shrink-0">
+                      <ShieldCheck className="h-4 w-4 text-foreground/70" />
                     </div>
+                  </div>
 
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="space-y-1.5">
-                        <Label className="text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">Nome</Label>
-                        <Input required value={suFirst} onChange={(e) => setSuFirst(e.target.value)}
-                          className="h-11 text-sm bg-secondary/30 border-border/80" />
-                      </div>
-                      <div className="space-y-1.5">
-                        <Label className="text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">Sobrenome</Label>
-                        <Input required value={suLast} onChange={(e) => setSuLast(e.target.value)}
-                          className="h-11 text-sm bg-secondary/30 border-border/80" />
-                      </div>
-                    </div>
+                  <FieldWithIcon icon={<Mail className="h-4 w-4" />} label="E-mail">
+                    <Input id="email" type="email" autoComplete="email" required value={email}
+                      onChange={(e) => setEmail(e.target.value)} placeholder="voce@empresa.com"
+                      className="h-11 pl-10 pr-3 text-sm bg-secondary/30 border-border/80" />
+                  </FieldWithIcon>
 
-                    <FieldWithIcon icon={<Mail className="h-4 w-4" />} label="E-mail">
-                      <Input type="email" required value={suEmail} onChange={(e) => setSuEmail(e.target.value)}
-                        placeholder="voce@exemplo.com" className="h-11 pl-10 pr-3 text-sm bg-secondary/30 border-border/80" />
-                    </FieldWithIcon>
+                  <FieldWithIcon icon={<Lock className="h-4 w-4" />} label="Senha">
+                    <Input id="password" type={showPassword ? "text" : "password"} autoComplete="current-password"
+                      required value={password} onChange={(e) => setPassword(e.target.value)}
+                      placeholder="••••••••••" className="h-11 pl-10 pr-10 text-sm bg-secondary/30 border-border/80" />
+                    <button type="button" onClick={() => setShowPassword((v) => !v)}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 h-7 w-7 flex items-center justify-center rounded-md text-muted-foreground/70 hover:text-foreground hover:bg-accent"
+                      aria-label={showPassword ? "Ocultar" : "Mostrar"}>
+                      {showPassword ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                    </button>
+                  </FieldWithIcon>
 
-                    <FieldWithIcon icon={<Lock className="h-4 w-4" />} label="Senha">
-                      <Input type={suShow ? "text" : "password"} required minLength={6}
-                        value={suPassword} onChange={(e) => setSuPassword(e.target.value)}
-                        placeholder="Mínimo 6 caracteres" className="h-11 pl-10 pr-10 text-sm bg-secondary/30 border-border/80" />
-                      <button type="button" onClick={() => setSuShow((v) => !v)}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 h-7 w-7 flex items-center justify-center rounded-md text-muted-foreground/70 hover:text-foreground hover:bg-accent">
-                        {suShow ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
-                      </button>
-                    </FieldWithIcon>
+                  <label className="flex items-center gap-2 text-[12.5px] text-muted-foreground select-none cursor-pointer">
+                    <Checkbox checked={remember} onCheckedChange={(v) => setRemember(!!v)} className="border-0 bg-secondary/60 data-[state=checked]:bg-primary" />
+                    Salvar senha neste dispositivo
+                  </label>
 
-                    <label className="flex items-center gap-2 text-[12.5px] text-muted-foreground select-none cursor-pointer">
-                      <Checkbox checked={suRemember} onCheckedChange={(v) => setSuRemember(!!v)} className="border-0 bg-secondary/60 data-[state=checked]:bg-primary" />
-                      Salvar senha neste dispositivo
-                    </label>
+                  <Button type="submit" className="w-full h-11 text-sm font-medium gap-2" disabled={submitting}>
+                    {submitting ? <><Loader2 className="h-4 w-4 animate-spin" /> Autenticando…</> : <>Entrar no painel <ArrowRight className="h-3.5 w-3.5" /></>}
+                  </Button>
 
-                    <Button type="submit" className="w-full h-11 text-sm font-medium gap-2" disabled={suSubmitting}>
-                      {suSubmitting ? <><Loader2 className="h-4 w-4 animate-spin" /> Criando…</> : <>Criar conta <ArrowRight className="h-3.5 w-3.5" /></>}
-                    </Button>
-                  </form>
-                )}
+                  <div className="text-center text-[12px] text-muted-foreground pt-2">
+                    Não tem conta? <a href="/signup" className="text-primary hover:underline">Criar conta</a>
+                  </div>
+                </form>
               </>
+
 
           </div>
 
