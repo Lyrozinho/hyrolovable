@@ -227,119 +227,53 @@ function LoginPage() {
         <div className="w-full max-w-[440px]">
           <div className="relative rounded-2xl bg-card border border-border shadow-elegant p-8 sm:p-9">
             <>
-
-
                 <div className="mb-6">
                   <div className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground mb-3">Acesso seguro</div>
-                  <div className="inline-flex items-center gap-1 rounded-lg border border-border bg-secondary/40 p-1">
-                    <button
-                      type="button"
-                      onClick={() => setTab("login")}
-                      className={`h-8 px-3 rounded-md text-[12px] font-medium transition ${tab === "login" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
-                    >
-                      Entrar
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setTab("signup")}
-                      className={`h-8 px-3 rounded-md text-[12px] font-medium transition ${tab === "signup" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
-                    >
-                      Criar conta
-                    </button>
-                  </div>
                 </div>
 
-
-
-                {tab === "login" ? (
-                  <form onSubmit={onLogin} className="space-y-4">
-                    <div className="flex items-start justify-between mb-1">
-                      <div>
-                        <h1 className="text-[22px] font-semibold tracking-tight leading-tight">Entrar no painel</h1>
-                        <p className="text-[13px] text-muted-foreground mt-1.5">Acesse com suas credenciais.</p>
-                      </div>
-                      <div className="h-10 w-10 rounded-lg border border-border bg-secondary/40 flex items-center justify-center shrink-0">
-                        <ShieldCheck className="h-4 w-4 text-foreground/70" />
-                      </div>
+                <form onSubmit={onLogin} className="space-y-4">
+                  <div className="flex items-start justify-between mb-1">
+                    <div>
+                      <h1 className="text-[22px] font-semibold tracking-tight leading-tight">Entrar no painel</h1>
+                      <p className="text-[13px] text-muted-foreground mt-1.5">Acesse com suas credenciais.</p>
                     </div>
-
-                    <FieldWithIcon icon={<Mail className="h-4 w-4" />} label="E-mail">
-                      <Input id="email" type="email" autoComplete="email" required value={email}
-                        onChange={(e) => setEmail(e.target.value)} placeholder="voce@empresa.com"
-                        className="h-11 pl-10 pr-3 text-sm bg-secondary/30 border-border/80" />
-                    </FieldWithIcon>
-
-                    <FieldWithIcon icon={<Lock className="h-4 w-4" />} label="Senha">
-                      <Input id="password" type={showPassword ? "text" : "password"} autoComplete="current-password"
-                        required value={password} onChange={(e) => setPassword(e.target.value)}
-                        placeholder="••••••••••" className="h-11 pl-10 pr-10 text-sm bg-secondary/30 border-border/80" />
-                      <button type="button" onClick={() => setShowPassword((v) => !v)}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 h-7 w-7 flex items-center justify-center rounded-md text-muted-foreground/70 hover:text-foreground hover:bg-accent"
-                        aria-label={showPassword ? "Ocultar" : "Mostrar"}>
-                        {showPassword ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
-                      </button>
-                    </FieldWithIcon>
-
-                    <label className="flex items-center gap-2 text-[12.5px] text-muted-foreground select-none cursor-pointer">
-                      <Checkbox checked={remember} onCheckedChange={(v) => setRemember(!!v)} className="border-0 bg-secondary/60 data-[state=checked]:bg-primary" />
-                      Salvar senha neste dispositivo
-                    </label>
-
-                    <Button type="submit" className="w-full h-11 text-sm font-medium gap-2" disabled={submitting}>
-                      {submitting ? <><Loader2 className="h-4 w-4 animate-spin" /> Autenticando…</> : <>Entrar no painel <ArrowRight className="h-3.5 w-3.5" /></>}
-                    </Button>
-                  </form>
-                ) : (
-                  <form onSubmit={onSignup} className="space-y-4">
-                    <div className="flex items-start justify-between mb-1">
-                      <div>
-                        <h1 className="text-[22px] font-semibold tracking-tight leading-tight">Criar conta</h1>
-                        <p className="text-[13px] text-muted-foreground mt-1.5">Cadastro instantâneo, acesso imediato.</p>
-                      </div>
-                      <div className="h-10 w-10 rounded-lg border border-border bg-secondary/40 flex items-center justify-center shrink-0">
-                        <UserIcon className="h-4 w-4 text-foreground/70" />
-                      </div>
+                    <div className="h-10 w-10 rounded-lg border border-border bg-secondary/40 flex items-center justify-center shrink-0">
+                      <ShieldCheck className="h-4 w-4 text-foreground/70" />
                     </div>
+                  </div>
 
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="space-y-1.5">
-                        <Label className="text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">Nome</Label>
-                        <Input required value={suFirst} onChange={(e) => setSuFirst(e.target.value)}
-                          className="h-11 text-sm bg-secondary/30 border-border/80" />
-                      </div>
-                      <div className="space-y-1.5">
-                        <Label className="text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">Sobrenome</Label>
-                        <Input required value={suLast} onChange={(e) => setSuLast(e.target.value)}
-                          className="h-11 text-sm bg-secondary/30 border-border/80" />
-                      </div>
-                    </div>
+                  <FieldWithIcon icon={<Mail className="h-4 w-4" />} label="E-mail">
+                    <Input id="email" type="email" autoComplete="email" required value={email}
+                      onChange={(e) => setEmail(e.target.value)} placeholder="voce@empresa.com"
+                      className="h-11 pl-10 pr-3 text-sm bg-secondary/30 border-border/80" />
+                  </FieldWithIcon>
 
-                    <FieldWithIcon icon={<Mail className="h-4 w-4" />} label="E-mail">
-                      <Input type="email" required value={suEmail} onChange={(e) => setSuEmail(e.target.value)}
-                        placeholder="voce@exemplo.com" className="h-11 pl-10 pr-3 text-sm bg-secondary/30 border-border/80" />
-                    </FieldWithIcon>
+                  <FieldWithIcon icon={<Lock className="h-4 w-4" />} label="Senha">
+                    <Input id="password" type={showPassword ? "text" : "password"} autoComplete="current-password"
+                      required value={password} onChange={(e) => setPassword(e.target.value)}
+                      placeholder="••••••••••" className="h-11 pl-10 pr-10 text-sm bg-secondary/30 border-border/80" />
+                    <button type="button" onClick={() => setShowPassword((v) => !v)}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 h-7 w-7 flex items-center justify-center rounded-md text-muted-foreground/70 hover:text-foreground hover:bg-accent"
+                      aria-label={showPassword ? "Ocultar" : "Mostrar"}>
+                      {showPassword ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                    </button>
+                  </FieldWithIcon>
 
-                    <FieldWithIcon icon={<Lock className="h-4 w-4" />} label="Senha">
-                      <Input type={suShow ? "text" : "password"} required minLength={6}
-                        value={suPassword} onChange={(e) => setSuPassword(e.target.value)}
-                        placeholder="Mínimo 6 caracteres" className="h-11 pl-10 pr-10 text-sm bg-secondary/30 border-border/80" />
-                      <button type="button" onClick={() => setSuShow((v) => !v)}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 h-7 w-7 flex items-center justify-center rounded-md text-muted-foreground/70 hover:text-foreground hover:bg-accent">
-                        {suShow ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
-                      </button>
-                    </FieldWithIcon>
+                  <label className="flex items-center gap-2 text-[12.5px] text-muted-foreground select-none cursor-pointer">
+                    <Checkbox checked={remember} onCheckedChange={(v) => setRemember(!!v)} className="border-0 bg-secondary/60 data-[state=checked]:bg-primary" />
+                    Salvar senha neste dispositivo
+                  </label>
 
-                    <label className="flex items-center gap-2 text-[12.5px] text-muted-foreground select-none cursor-pointer">
-                      <Checkbox checked={suRemember} onCheckedChange={(v) => setSuRemember(!!v)} className="border-0 bg-secondary/60 data-[state=checked]:bg-primary" />
-                      Salvar senha neste dispositivo
-                    </label>
+                  <Button type="submit" className="w-full h-11 text-sm font-medium gap-2" disabled={submitting}>
+                    {submitting ? <><Loader2 className="h-4 w-4 animate-spin" /> Autenticando…</> : <>Entrar no painel <ArrowRight className="h-3.5 w-3.5" /></>}
+                  </Button>
 
-                    <Button type="submit" className="w-full h-11 text-sm font-medium gap-2" disabled={suSubmitting}>
-                      {suSubmitting ? <><Loader2 className="h-4 w-4 animate-spin" /> Criando…</> : <>Criar conta <ArrowRight className="h-3.5 w-3.5" /></>}
-                    </Button>
-                  </form>
-                )}
+                  <div className="text-center text-[12px] text-muted-foreground pt-2">
+                    Não tem conta? <a href="/signup" className="text-primary hover:underline">Criar conta</a>
+                  </div>
+                </form>
               </>
+
 
           </div>
 
