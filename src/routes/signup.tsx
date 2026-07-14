@@ -29,6 +29,12 @@ function SignupPage() {
   const navigate = useNavigate();
   const { ref } = useSearch({ from: "/signup" });
 
+  // Cadastro público desabilitado: sem link de resgate, redireciona pro login.
+  useEffect(() => {
+    if (!ref) navigate({ to: "/login", replace: true });
+  }, [ref, navigate]);
+
+
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
