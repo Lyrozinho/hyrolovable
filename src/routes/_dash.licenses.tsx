@@ -1013,27 +1013,35 @@ function CreateLicenseDialog({
                 </p>
               </div>
 
-              {/* Email */}
-              <div className="space-y-1.5">
-                <Label className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">
-                  {mode === "personalizado" ? "E-mail destino do link" : "E-mail do usuário"}
-                </Label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-                  <Input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="usuario@exemplo.com"
-                    className="h-10 pl-9 text-[13px]"
-                  />
+              {/* Email — não usado no modo Avulsa */}
+              {mode !== "avulsa" && (
+                <div className="space-y-1.5">
+                  <Label className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">
+                    {mode === "personalizado" ? "E-mail destino do link" : "E-mail do usuário"}
+                  </Label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                    <Input
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="usuario@exemplo.com"
+                      className="h-10 pl-9 text-[13px]"
+                    />
+                  </div>
+                  {mode === "personalizado" && (
+                    <p className="text-[11px] text-muted-foreground">
+                      A pessoa só precisará digitar nome, sobrenome e senha. O e-mail já vem preenchido e travado.
+                    </p>
+                  )}
                 </div>
-                {mode === "personalizado" && (
-                  <p className="text-[11px] text-muted-foreground">
-                    A pessoa só precisará digitar nome, sobrenome e senha. O e-mail já vem preenchido e travado.
-                  </p>
-                )}
-              </div>
+              )}
+
+              {mode === "avulsa" && (
+                <div className="rounded-md border border-dashed border-border bg-muted/30 px-3 py-2.5 text-[12px] text-muted-foreground">
+                  Nenhum dado do cliente é necessário. A chave é criada isolada — você entrega a chave e depois vincula a um usuário se quiser.
+                </div>
+              )}
 
               {/* Duration */}
               <div className="space-y-1.5">
