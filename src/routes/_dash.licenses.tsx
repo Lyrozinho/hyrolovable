@@ -1105,7 +1105,7 @@ function CreateLicenseDialog({
               <Button variant="ghost" size="sm" onClick={() => onOpenChange(false)}>
                 Cancelar
               </Button>
-              <Button size="sm" onClick={submit} disabled={submitting || !email}>
+              <Button size="sm" onClick={submit} disabled={submitting || (mode !== "avulsa" && !email)}>
                 {submitting && <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />}
                 Criar licença
               </Button>
