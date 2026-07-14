@@ -688,7 +688,7 @@ function CreateLicenseDialog({
 
   const submit = async () => {
     const emailNorm = email.trim().toLowerCase();
-    if (!emailNorm) {
+    if (mode !== "avulsa" && !emailNorm) {
       toast.error("Informe um e-mail.");
       return;
     }
