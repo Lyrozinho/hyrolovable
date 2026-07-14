@@ -661,7 +661,7 @@ function CreateLicenseDialog({
   const qc = useQueryClient();
   const { session } = useAuth();
   const isReseller = session?.user.role === "client";
-  const [mode, setMode] = useState<"normal" | "personalizado">("normal");
+  const [mode, setMode] = useState<"normal" | "personalizado" | "avulsa">("normal");
   const [email, setEmail] = useState("");
   const [days, setDays] = useState("30");
   const [lifetime, setLifetime] = useState(false);
@@ -688,7 +688,7 @@ function CreateLicenseDialog({
 
   const submit = async () => {
     const emailNorm = email.trim().toLowerCase();
-    if (!emailNorm) {
+    if (mode !== "avulsa" && !emailNorm) {
       toast.error("Informe um e-mail.");
       return;
     }
@@ -715,7 +715,58 @@ function CreateLicenseDialog({
         : new Date(Date.now() + effectiveDays * 24 * 3600 * 1000);
       const key = previewKey;
 
-      if (mode === "personalizado") {
+      if (mode === "avulsa") {
+        // Licença sem email/senha: cria placeholder user sintético e vincula.
+        const syntheticEmail = `avulsa-${key.toLowerCase()}@hyro.local`;
+        const { data: newUser, error: nuErr } = await supabase
+          .from("hyro_extension_users")
+          .insert({
+            email: syntheticEmail,
+            name: `Avulsa ${key}`,
+            role: "user",
+            password_hash: "",
+            active: false,
+          })
+          .select("id")
+          .single();
+        if (nuErr) throw nuErr;
+        const placeholderUserId = newUser.id;
+
+        const { error } = await supabase.from("hyro_extension_licenses").insert({
+          id: key,
+          user_id: placeholderUserId,
+          status: "ativa",
+          expires_at: expiresAt.toISOString(),
+          created_by: session?.user.role === "client" ? session.user.id : null,
+          reseller_id: session?.user.role === "client" ? session.user.id : null,
+        });
+        if (error) {
+          await supabase.from("hyro_extension_users").delete().eq("id", placeholderUserId);
+          throw error;
+        }
+
+        try {
+          if (session?.user.role === "client") {
+            await consumeResellerLicenseCredit(session.user.id);
+          }
+        } catch (creditError) {
+          await supabase.from("hyro_extension_licenses").delete().eq("id", key);
+          await supabase.from("hyro_extension_users").delete().eq("id", placeholderUserId);
+          throw creditError;
+        }
+
+        toast.success("Licença avulsa criada", { description: key });
+        qc.invalidateQueries({ queryKey: ["licenses"] });
+        qc.invalidateQueries({ queryKey: ["dash-stats"] });
+        qc.invalidateQueries({ queryKey: ["reseller-balance"] });
+        setCreated({
+          key,
+          email: "",
+          password: "",
+          expiresAt,
+          lifetime: effectiveLifetime,
+        });
+      } else if (mode === "personalizado") {
         // Cria (ou reusa) um usuário placeholder com o e-mail alvo (sem senha).
         // O signup via /r/:slug preencherá a senha e ativará a conta.
         let placeholderUserId: string;
@@ -909,10 +960,11 @@ function CreateLicenseDialog({
                 <Label className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">
                   Tipo de licença
                 </Label>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-3 gap-2">
                   {([
                     { id: "normal", title: "Normal", desc: "Vincula direto a um usuário existente." },
                     { id: "personalizado", title: "Personalizado", desc: "Gera link de resgate travado por IP." },
+                    { id: "avulsa", title: "Avulsa", desc: "Só a chave, sem e-mail nem senha." },
                   ] as const).map((opt) => {
                     const active = mode === opt.id;
                     return (
@@ -961,27 +1013,35 @@ function CreateLicenseDialog({
                 </p>
               </div>
 
-              {/* Email */}
-              <div className="space-y-1.5">
-                <Label className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">
-                  {mode === "personalizado" ? "E-mail destino do link" : "E-mail do usuário"}
-                </Label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-                  <Input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="usuario@exemplo.com"
-                    className="h-10 pl-9 text-[13px]"
-                  />
+              {/* Email — não usado no modo Avulsa */}
+              {mode !== "avulsa" && (
+                <div className="space-y-1.5">
+                  <Label className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">
+                    {mode === "personalizado" ? "E-mail destino do link" : "E-mail do usuário"}
+                  </Label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                    <Input
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="usuario@exemplo.com"
+                      className="h-10 pl-9 text-[13px]"
+                    />
+                  </div>
+                  {mode === "personalizado" && (
+                    <p className="text-[11px] text-muted-foreground">
+                      A pessoa só precisará digitar nome, sobrenome e senha. O e-mail já vem preenchido e travado.
+                    </p>
+                  )}
                 </div>
-                {mode === "personalizado" && (
-                  <p className="text-[11px] text-muted-foreground">
-                    A pessoa só precisará digitar nome, sobrenome e senha. O e-mail já vem preenchido e travado.
-                  </p>
-                )}
-              </div>
+              )}
+
+              {mode === "avulsa" && (
+                <div className="rounded-md border border-dashed border-border bg-muted/30 px-3 py-2.5 text-[12px] text-muted-foreground">
+                  Nenhum dado do cliente é necessário. A chave é criada isolada — você entrega a chave e depois vincula a um usuário se quiser.
+                </div>
+              )}
 
               {/* Duration */}
               <div className="space-y-1.5">
@@ -1045,7 +1105,7 @@ function CreateLicenseDialog({
               <Button variant="ghost" size="sm" onClick={() => onOpenChange(false)}>
                 Cancelar
               </Button>
-              <Button size="sm" onClick={submit} disabled={submitting || !email}>
+              <Button size="sm" onClick={submit} disabled={submitting || (mode !== "avulsa" && !email)}>
                 {submitting && <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />}
                 Criar licença
               </Button>
@@ -1120,7 +1180,8 @@ function LicenseCreatedSuccess({
         "",
         "_Obrigado por escolher a Hyro Lovable! 🚀_",
       ].join("\n")
-    : [
+    : data.email
+    ? [
         "🎉 *Sua licença Hyro Lovable está pronta!*",
         "",
         "Olá! Sua licença foi ativada com sucesso. Guarde estes dados em local seguro:",
@@ -1149,6 +1210,24 @@ function LicenseCreatedSuccess({
           : ["2️⃣ Solicite sua senha de acesso pelo suporte"]),
         "3️⃣ Baixe e instale a extensão pelo link de download",
         "4️⃣ Ative com sua chave de licença",
+        "",
+        ...warning,
+        "",
+        "_Obrigado por escolher a Hyro Lovable! 🚀_",
+      ].join("\n")
+    : [
+        "🎉 *Sua licença Hyro Lovable está pronta!*",
+        "",
+        "Guarde a chave abaixo em local seguro:",
+        "",
+        "🔑 *Chave de licença*",
+        `\`${data.key}\``,
+        "",
+        "📅 *Validade*",
+        validity,
+        "",
+        "📥 *Baixar a extensão*",
+        extensionUrl,
         "",
         ...warning,
         "",
@@ -1210,8 +1289,8 @@ function LicenseCreatedSuccess({
         {/* Quick facts */}
         <div className="grid grid-cols-2 gap-2">
           <FactCard label="Chave" value={data.key} mono />
-          <FactCard label="E-mail" value={data.email} />
-          {!isPerso && (
+          {data.email && <FactCard label="E-mail" value={data.email} />}
+          {!isPerso && data.email && (
             <FactCard label="Senha" value={data.password || "— não definida —"} mono={!!data.password} />
           )}
           <FactCard label="Validade" value={validity} />
