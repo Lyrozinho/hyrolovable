@@ -661,7 +661,7 @@ function CreateLicenseDialog({
   const qc = useQueryClient();
   const { session } = useAuth();
   const isReseller = session?.user.role === "client";
-  const [mode, setMode] = useState<"normal" | "personalizado">("normal");
+  const [mode, setMode] = useState<"normal" | "personalizado" | "avulsa">("normal");
   const [email, setEmail] = useState("");
   const [days, setDays] = useState("30");
   const [lifetime, setLifetime] = useState(false);
