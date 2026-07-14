@@ -960,10 +960,11 @@ function CreateLicenseDialog({
                 <Label className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">
                   Tipo de licença
                 </Label>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-3 gap-2">
                   {([
                     { id: "normal", title: "Normal", desc: "Vincula direto a um usuário existente." },
                     { id: "personalizado", title: "Personalizado", desc: "Gera link de resgate travado por IP." },
+                    { id: "avulsa", title: "Avulsa", desc: "Só a chave, sem e-mail nem senha." },
                   ] as const).map((opt) => {
                     const active = mode === opt.id;
                     return (
