@@ -8,6 +8,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { getSessionHome, sha256Hex, useAuth } from "@/lib/auth";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { supabase as ext } from "@/lib/supabase";
+import { enforceIpLock } from "@/lib/ip-lock";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/login")({
