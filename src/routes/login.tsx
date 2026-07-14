@@ -205,32 +205,11 @@ function LoginPage() {
             <>
 
 
-                {/* Tabs */}
+                {/* Cadastro público desabilitado — acesso apenas por link de resgate */}
                 <div className="mb-6">
                   <div className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground mb-3">Acesso seguro</div>
-                  <div className="grid grid-cols-2 items-center rounded-lg border border-border bg-secondary/40 p-0.5 w-full">
-                    <button
-                      type="button"
-                      onClick={() => setTab("login")}
-                      className={[
-                        "h-9 text-[12.5px] font-medium rounded-md transition-colors w-full",
-                        tab === "login" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground",
-                      ].join(" ")}
-                    >
-                      Login
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setTab("signup")}
-                      className={[
-                        "h-9 text-[12.5px] font-medium rounded-md transition-colors w-full",
-                        tab === "signup" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground",
-                      ].join(" ")}
-                    >
-                      Cadastro
-                    </button>
-                  </div>
                 </div>
+
 
                 {tab === "login" ? (
                   <form onSubmit={onLogin} className="space-y-4">
