@@ -1289,8 +1289,8 @@ function LicenseCreatedSuccess({
         {/* Quick facts */}
         <div className="grid grid-cols-2 gap-2">
           <FactCard label="Chave" value={data.key} mono />
-          <FactCard label="E-mail" value={data.email} />
-          {!isPerso && (
+          {data.email && <FactCard label="E-mail" value={data.email} />}
+          {!isPerso && data.email && (
             <FactCard label="Senha" value={data.password || "— não definida —"} mono={!!data.password} />
           )}
           <FactCard label="Validade" value={validity} />
