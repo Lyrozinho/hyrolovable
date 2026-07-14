@@ -229,10 +229,26 @@ function LoginPage() {
             <>
 
 
-                {/* Cadastro público desabilitado — acesso apenas por link de resgate */}
                 <div className="mb-6">
                   <div className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground mb-3">Acesso seguro</div>
+                  <div className="inline-flex items-center gap-1 rounded-lg border border-border bg-secondary/40 p-1">
+                    <button
+                      type="button"
+                      onClick={() => setTab("login")}
+                      className={`h-8 px-3 rounded-md text-[12px] font-medium transition ${tab === "login" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+                    >
+                      Entrar
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setTab("signup")}
+                      className={`h-8 px-3 rounded-md text-[12px] font-medium transition ${tab === "signup" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+                    >
+                      Criar conta
+                    </button>
+                  </div>
                 </div>
+
 
 
                 {tab === "login" ? (
