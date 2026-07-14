@@ -715,7 +715,58 @@ function CreateLicenseDialog({
         : new Date(Date.now() + effectiveDays * 24 * 3600 * 1000);
       const key = previewKey;
 
-      if (mode === "personalizado") {
+      if (mode === "avulsa") {
+        // Licença sem email/senha: cria placeholder user sintético e vincula.
+        const syntheticEmail = `avulsa-${key.toLowerCase()}@hyro.local`;
+        const { data: newUser, error: nuErr } = await supabase
+          .from("hyro_extension_users")
+          .insert({
+            email: syntheticEmail,
+            name: `Avulsa ${key}`,
+            role: "user",
+            password_hash: "",
+            active: false,
+          })
+          .select("id")
+          .single();
+        if (nuErr) throw nuErr;
+        const placeholderUserId = newUser.id;
+
+        const { error } = await supabase.from("hyro_extension_licenses").insert({
+          id: key,
+          user_id: placeholderUserId,
+          status: "ativa",
+          expires_at: expiresAt.toISOString(),
+          created_by: session?.user.role === "client" ? session.user.id : null,
+          reseller_id: session?.user.role === "client" ? session.user.id : null,
+        });
+        if (error) {
+          await supabase.from("hyro_extension_users").delete().eq("id", placeholderUserId);
+          throw error;
+        }
+
+        try {
+          if (session?.user.role === "client") {
+            await consumeResellerLicenseCredit(session.user.id);
+          }
+        } catch (creditError) {
+          await supabase.from("hyro_extension_licenses").delete().eq("id", key);
+          await supabase.from("hyro_extension_users").delete().eq("id", placeholderUserId);
+          throw creditError;
+        }
+
+        toast.success("Licença avulsa criada", { description: key });
+        qc.invalidateQueries({ queryKey: ["licenses"] });
+        qc.invalidateQueries({ queryKey: ["dash-stats"] });
+        qc.invalidateQueries({ queryKey: ["reseller-balance"] });
+        setCreated({
+          key,
+          email: "",
+          password: "",
+          expiresAt,
+          lifetime: effectiveLifetime,
+        });
+      } else if (mode === "personalizado") {
         // Cria (ou reusa) um usuário placeholder com o e-mail alvo (sem senha).
         // O signup via /r/:slug preencherá a senha e ativará a conta.
         let placeholderUserId: string;
