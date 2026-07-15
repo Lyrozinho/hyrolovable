@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import {
   KeyRound, CalendarClock, ShieldCheck, AlertTriangle,
   CheckCircle2, XCircle, Infinity as InfinityIcon, Clock, Copy, RefreshCw,
-  Check, ArrowRight, MessageCircle, Sparkles, Zap,
+  Check, ArrowRight, MessageCircle, Sparkles, Zap, Minus, Plus, Settings2,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { supabase as cloud } from "@/integrations/supabase/client";
@@ -292,14 +292,18 @@ function MyLicensePage() {
               ))}
             </div>
           ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-              {PARTNER_PLANS.map((p) => (
-                <PlanCard key={p.id} plan={p} override={plansConfig?.[p.id] ?? null} />
-              ))}
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                {PARTNER_PLANS.map((p) => (
+                  <PlanCard key={p.id} plan={p} override={plansConfig?.[p.id] ?? null} />
+                ))}
+              </div>
+              <CustomPlanCard userId={userId} defaultEmail={session?.user.email ?? null} />
             </div>
           )}
         </section>
       )}
+
 
       {/* List de licenças — clientes vêem sempre; reseller vê depois dos planos */}
       <section>
@@ -730,5 +734,148 @@ function LifetimeKeyBanner({ userId, defaultEmail }: { userId: string | null; de
         defaultEmail={defaultEmail}
       />
     </section>
+  );
+}
+
+// Pacote personalizado — preço por chave escalonado por volume.
+// 1..5 chaves: R$ 40,90 · 6..15 chaves: R$ 40,00 · 16+ chaves: R$ 35,00.
+function unitPriceForQty(qty: number): number {
+  if (qty <= 0) return 0;
+  if (qty <= 5) return 40.9;
+  if (qty <= 15) return 40;
+  return 35;
+}
+
+function CustomPlanCard({ userId, defaultEmail }: { userId: string | null; defaultEmail: string | null }) {
+  const [qty, setQty] = useState(1);
+  const [checkoutOpen, setCheckoutOpen] = useState(false);
+  const clamp = (n: number) => Math.max(1, Math.min(999, Math.trunc(Number.isFinite(n) ? n : 1)));
+  const unit = useMemo(() => unitPriceForQty(qty), [qty]);
+  const total = useMemo(() => Math.round(qty * unit * 100) / 100, [qty, unit]);
+
+  // Faixa ativa para destacar visualmente.
+  const tier = qty <= 5 ? 0 : qty <= 15 ? 1 : 2;
+  const tiers = [
+    { label: "1 – 5 chaves", price: "R$ 40,90", key: "por chave" },
+    { label: "6 – 15 chaves", price: "R$ 40,00", key: "por chave" },
+    { label: "16+ chaves", price: "R$ 35,00", key: "por chave" },
+  ];
+
+  return (
+    <div className="relative rounded-2xl border border-border bg-card p-5 md:p-6 hover:border-foreground/25 transition-colors">
+      <div className="flex flex-wrap items-start gap-4">
+        <div className="flex items-center gap-3 min-w-0 flex-1">
+          <div className="h-11 w-11 rounded-xl border border-border bg-gradient-to-br from-amber-100 to-amber-300/60 dark:from-amber-500/20 dark:to-amber-700/10 dark:border-amber-400/30 flex items-center justify-center shadow-inner shrink-0">
+            <Settings2 className="h-5 w-5 text-amber-700 dark:text-amber-300" strokeWidth={2.2} />
+          </div>
+          <div className="min-w-0">
+            <div className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-[0.16em] font-semibold text-muted-foreground mb-1">
+              <Sparkles className="h-3 w-3" /> Personalizado
+            </div>
+            <div className="text-[15px] md:text-[16px] font-semibold tracking-tight leading-tight">
+              Monte seu pacote
+            </div>
+            <p className="text-[12px] text-muted-foreground mt-0.5 leading-snug max-w-md">
+              Escolha a quantidade de chaves. O valor por chave reduz conforme o volume aumenta.
+            </p>
+          </div>
+        </div>
+
+        {/* Preço + CTA */}
+        <div className="flex items-center gap-4 ml-auto">
+          <div className="text-right">
+            <div className="flex items-baseline gap-1 justify-end">
+              <span className="text-[12px] text-muted-foreground">R$</span>
+              <span className="text-[26px] font-semibold font-mono tabular-nums leading-none">
+                {total.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </span>
+            </div>
+            <div className="text-[10.5px] text-muted-foreground mt-0.5 uppercase tracking-wider font-mono">
+              {qty} {qty === 1 ? "chave" : "chaves"} · {fmtBRL(unit)} un.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Controles */}
+      <div className="mt-5 grid grid-cols-1 md:grid-cols-[auto_1fr_auto] items-center gap-3">
+        <div className="inline-flex items-center rounded-lg border border-border overflow-hidden self-start">
+          <button
+            type="button"
+            onClick={() => setQty((q) => clamp(q - 1))}
+            className="h-11 w-11 flex items-center justify-center hover:bg-muted transition-colors disabled:opacity-40"
+            disabled={qty <= 1}
+            aria-label="Diminuir"
+          >
+            <Minus className="h-3.5 w-3.5" />
+          </button>
+          <input
+            type="number"
+            inputMode="numeric"
+            min={1}
+            max={999}
+            value={qty}
+            onChange={(e) => setQty(clamp(parseInt(e.target.value || "1", 10)))}
+            className="h-11 w-20 text-center font-mono tabular-nums text-[15px] font-semibold bg-background border-x border-border focus:outline-none focus:ring-2 focus:ring-foreground/20"
+          />
+          <button
+            type="button"
+            onClick={() => setQty((q) => clamp(q + 1))}
+            className="h-11 w-11 flex items-center justify-center hover:bg-muted transition-colors"
+            aria-label="Aumentar"
+          >
+            <Plus className="h-3.5 w-3.5" />
+          </button>
+        </div>
+
+        {/* Faixas de preço */}
+        <div className="grid grid-cols-3 gap-2">
+          {tiers.map((t, i) => (
+            <div
+              key={t.label}
+              className={[
+                "rounded-lg border p-2 text-center transition-colors",
+                tier === i
+                  ? "border-foreground bg-foreground text-background"
+                  : "border-border bg-muted/40 text-muted-foreground",
+              ].join(" ")}
+            >
+              <div className={["text-[10px] uppercase tracking-wider font-semibold", tier === i ? "text-background/70" : "text-muted-foreground"].join(" ")}>
+                {t.label}
+              </div>
+              <div className="text-[13px] font-semibold font-mono tabular-nums mt-0.5">{t.price}</div>
+              <div className={["text-[10px] font-mono uppercase tracking-wider", tier === i ? "text-background/60" : "text-muted-foreground"].join(" ")}>
+                {t.key}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <Button
+          onClick={() => setCheckoutOpen(true)}
+          className="h-11 px-5 text-[13px] font-semibold gap-2 group/cp md:justify-self-end w-full md:w-auto"
+          disabled={qty < 1 || total <= 0}
+        >
+          <KeyRound className="h-3.5 w-3.5" />
+          Comprar agora
+          <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover/cp:translate-x-0.5" />
+        </Button>
+      </div>
+
+      <p className="text-[10.5px] mt-3 text-muted-foreground">
+        Pagamento seguro via PIX · o valor é calculado automaticamente pela faixa de volume.
+      </p>
+
+      <VexoPayCheckoutDialog
+        open={checkoutOpen}
+        onOpenChange={setCheckoutOpen}
+        planId={`custom-${qty}`}
+        planName={`Pacote Personalizado · ${qty} ${qty === 1 ? "chave" : "chaves"}`}
+        amountCents={Math.round(total * 100)}
+        licensesCount={qty}
+        resellerUserId={userId}
+        defaultEmail={defaultEmail}
+      />
+    </div>
   );
 }
