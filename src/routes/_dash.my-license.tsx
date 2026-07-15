@@ -292,14 +292,18 @@ function MyLicensePage() {
               ))}
             </div>
           ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-              {PARTNER_PLANS.map((p) => (
-                <PlanCard key={p.id} plan={p} override={plansConfig?.[p.id] ?? null} />
-              ))}
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                {PARTNER_PLANS.map((p) => (
+                  <PlanCard key={p.id} plan={p} override={plansConfig?.[p.id] ?? null} />
+                ))}
+              </div>
+              <CustomPlanCard userId={userId} defaultEmail={session?.user.email ?? null} />
             </div>
           )}
         </section>
       )}
+
 
       {/* List de licenças — clientes vêem sempre; reseller vê depois dos planos */}
       <section>
