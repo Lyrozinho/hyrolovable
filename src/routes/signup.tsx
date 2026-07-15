@@ -108,7 +108,8 @@ function SignupPage() {
         .maybeSingle();
 
       let userId: string;
-      const isResellerInvite = (boundLink as any)?.kind === "reseller";
+      // Cadastro público (sem link) => revendedor. Com link, respeita o tipo do link.
+      const isResellerInvite = boundLink ? (boundLink as any)?.kind === "reseller" : true;
 
       if (existing) {
         if (existing.password_hash) {
