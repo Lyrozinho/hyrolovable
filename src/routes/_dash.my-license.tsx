@@ -763,39 +763,38 @@ function CustomPlanCard({ userId, defaultEmail }: { userId: string | null; defau
 
   return (
     <div className="relative rounded-2xl border border-border bg-card p-5 md:p-6 hover:border-foreground/25 transition-colors">
-      <div className="flex flex-wrap items-start gap-4">
-        <div className="flex items-center gap-3 min-w-0 flex-1">
+      <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-start">
+        <div className="flex items-start gap-3 min-w-0 flex-1">
           <div className="h-11 w-11 rounded-xl border border-border bg-gradient-to-br from-amber-100 to-amber-300/60 dark:from-amber-500/20 dark:to-amber-700/10 dark:border-amber-400/30 flex items-center justify-center shadow-inner shrink-0">
             <Settings2 className="h-5 w-5 text-amber-700 dark:text-amber-300" strokeWidth={2.2} />
           </div>
-          <div className="min-w-0">
+          <div className="min-w-0 flex-1">
             <div className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-[0.16em] font-semibold text-muted-foreground mb-1">
               <Sparkles className="h-3 w-3" /> Personalizado
             </div>
             <div className="text-[15px] md:text-[16px] font-semibold tracking-tight leading-tight">
               Monte seu pacote
             </div>
-            <p className="text-[12px] text-muted-foreground mt-0.5 leading-snug max-w-md">
+            <p className="text-[12px] text-muted-foreground mt-1 leading-snug max-w-md">
               Escolha a quantidade de chaves. O valor por chave reduz conforme o volume aumenta.
             </p>
           </div>
         </div>
 
-        {/* Preço + CTA */}
-        <div className="flex items-center gap-4 ml-auto">
-          <div className="text-right">
-            <div className="flex items-baseline gap-1 justify-end">
-              <span className="text-[12px] text-muted-foreground">R$</span>
-              <span className="text-[26px] font-semibold font-mono tabular-nums leading-none">
-                {total.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-              </span>
-            </div>
-            <div className="text-[10.5px] text-muted-foreground mt-0.5 uppercase tracking-wider font-mono">
-              {qty} {qty === 1 ? "chave" : "chaves"} · {fmtBRL(unit)} un.
-            </div>
+        {/* Preço */}
+        <div className="text-left sm:text-right sm:ml-auto shrink-0">
+          <div className="flex items-baseline gap-1 sm:justify-end">
+            <span className="text-[12px] text-muted-foreground">R$</span>
+            <span className="text-[26px] font-semibold font-mono tabular-nums leading-none">
+              {total.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </span>
+          </div>
+          <div className="text-[10.5px] text-muted-foreground mt-0.5 uppercase tracking-wider font-mono">
+            {qty} {qty === 1 ? "chave" : "chaves"} · {fmtBRL(unit)} un.
           </div>
         </div>
       </div>
+
 
       {/* Controles */}
       <div className="mt-5 flex flex-col gap-3 md:grid md:grid-cols-[auto_1fr_auto] md:items-center">
@@ -829,27 +828,28 @@ function CustomPlanCard({ userId, defaultEmail }: { userId: string | null; defau
         </div>
 
         {/* Faixas de preço */}
-        <div className="grid grid-cols-3 gap-2 w-full md:mx-3">
+        <div className="grid grid-cols-3 gap-1.5 sm:gap-2 w-full md:mx-3">
           {tiers.map((t, i) => (
             <div
               key={t.label}
               className={[
-                "rounded-lg border p-2 text-center transition-colors min-w-0",
+                "rounded-lg border px-1.5 py-2 sm:p-2 text-center transition-colors min-w-0",
                 tier === i
                   ? "border-foreground bg-foreground text-background"
                   : "border-border bg-muted/40 text-muted-foreground",
               ].join(" ")}
             >
-              <div className={["text-[9px] sm:text-[10px] uppercase tracking-wider font-semibold truncate", tier === i ? "text-background/70" : "text-muted-foreground"].join(" ")}>
+              <div className={["text-[8.5px] sm:text-[10px] uppercase tracking-wider font-semibold truncate", tier === i ? "text-background/70" : "text-muted-foreground"].join(" ")}>
                 {t.label}
               </div>
-              <div className="text-[12px] sm:text-[13px] font-semibold font-mono tabular-nums mt-0.5">{t.price}</div>
-              <div className={["text-[9px] sm:text-[10px] font-mono uppercase tracking-wider truncate", tier === i ? "text-background/60" : "text-muted-foreground"].join(" ")}>
+              <div className="text-[11px] sm:text-[13px] font-semibold font-mono tabular-nums mt-0.5 truncate">{t.price}</div>
+              <div className={["text-[8.5px] sm:text-[10px] font-mono uppercase tracking-wider truncate", tier === i ? "text-background/60" : "text-muted-foreground"].join(" ")}>
                 {t.key}
               </div>
             </div>
           ))}
         </div>
+
 
         <Button
           onClick={() => setCheckoutOpen(true)}
