@@ -828,27 +828,28 @@ function CustomPlanCard({ userId, defaultEmail }: { userId: string | null; defau
         </div>
 
         {/* Faixas de preço */}
-        <div className="grid grid-cols-3 gap-2 w-full md:mx-3">
+        <div className="grid grid-cols-3 gap-1.5 sm:gap-2 w-full md:mx-3">
           {tiers.map((t, i) => (
             <div
               key={t.label}
               className={[
-                "rounded-lg border p-2 text-center transition-colors min-w-0",
+                "rounded-lg border px-1.5 py-2 sm:p-2 text-center transition-colors min-w-0",
                 tier === i
                   ? "border-foreground bg-foreground text-background"
                   : "border-border bg-muted/40 text-muted-foreground",
               ].join(" ")}
             >
-              <div className={["text-[9px] sm:text-[10px] uppercase tracking-wider font-semibold truncate", tier === i ? "text-background/70" : "text-muted-foreground"].join(" ")}>
+              <div className={["text-[8.5px] sm:text-[10px] uppercase tracking-wider font-semibold truncate", tier === i ? "text-background/70" : "text-muted-foreground"].join(" ")}>
                 {t.label}
               </div>
-              <div className="text-[12px] sm:text-[13px] font-semibold font-mono tabular-nums mt-0.5">{t.price}</div>
-              <div className={["text-[9px] sm:text-[10px] font-mono uppercase tracking-wider truncate", tier === i ? "text-background/60" : "text-muted-foreground"].join(" ")}>
+              <div className="text-[11px] sm:text-[13px] font-semibold font-mono tabular-nums mt-0.5 truncate">{t.price}</div>
+              <div className={["text-[8.5px] sm:text-[10px] font-mono uppercase tracking-wider truncate", tier === i ? "text-background/60" : "text-muted-foreground"].join(" ")}>
                 {t.key}
               </div>
             </div>
           ))}
         </div>
+
 
         <Button
           onClick={() => setCheckoutOpen(true)}
