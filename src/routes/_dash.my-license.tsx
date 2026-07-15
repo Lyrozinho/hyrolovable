@@ -798,8 +798,8 @@ function CustomPlanCard({ userId, defaultEmail }: { userId: string | null; defau
       </div>
 
       {/* Controles */}
-      <div className="mt-5 grid grid-cols-1 md:grid-cols-[auto_1fr_auto] items-center gap-3">
-        <div className="inline-flex items-center rounded-lg border border-border overflow-hidden self-start">
+      <div className="mt-5 flex flex-col gap-3 md:grid md:grid-cols-[auto_1fr_auto] md:items-center">
+        <div className="inline-flex items-center rounded-lg border border-border overflow-hidden self-start md:self-center">
           <button
             type="button"
             onClick={() => setQty((q) => clamp(q - 1))}
@@ -816,7 +816,7 @@ function CustomPlanCard({ userId, defaultEmail }: { userId: string | null; defau
             max={999}
             value={qty}
             onChange={(e) => setQty(clamp(parseInt(e.target.value || "1", 10)))}
-            className="h-11 w-20 text-center font-mono tabular-nums text-[15px] font-semibold bg-background border-x border-border focus:outline-none focus:ring-2 focus:ring-foreground/20"
+            className="h-11 w-16 sm:w-20 text-center font-mono tabular-nums text-[15px] font-semibold bg-background border-x border-border focus:outline-none focus:ring-2 focus:ring-foreground/20"
           />
           <button
             type="button"
@@ -829,22 +829,22 @@ function CustomPlanCard({ userId, defaultEmail }: { userId: string | null; defau
         </div>
 
         {/* Faixas de preço */}
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-3 gap-2 w-full md:mx-3">
           {tiers.map((t, i) => (
             <div
               key={t.label}
               className={[
-                "rounded-lg border p-2 text-center transition-colors",
+                "rounded-lg border p-2 text-center transition-colors min-w-0",
                 tier === i
                   ? "border-foreground bg-foreground text-background"
                   : "border-border bg-muted/40 text-muted-foreground",
               ].join(" ")}
             >
-              <div className={["text-[10px] uppercase tracking-wider font-semibold", tier === i ? "text-background/70" : "text-muted-foreground"].join(" ")}>
+              <div className={["text-[9px] sm:text-[10px] uppercase tracking-wider font-semibold truncate", tier === i ? "text-background/70" : "text-muted-foreground"].join(" ")}>
                 {t.label}
               </div>
-              <div className="text-[13px] font-semibold font-mono tabular-nums mt-0.5">{t.price}</div>
-              <div className={["text-[10px] font-mono uppercase tracking-wider", tier === i ? "text-background/60" : "text-muted-foreground"].join(" ")}>
+              <div className="text-[12px] sm:text-[13px] font-semibold font-mono tabular-nums mt-0.5">{t.price}</div>
+              <div className={["text-[9px] sm:text-[10px] font-mono uppercase tracking-wider truncate", tier === i ? "text-background/60" : "text-muted-foreground"].join(" ")}>
                 {t.key}
               </div>
             </div>
@@ -853,7 +853,7 @@ function CustomPlanCard({ userId, defaultEmail }: { userId: string | null; defau
 
         <Button
           onClick={() => setCheckoutOpen(true)}
-          className="h-11 px-5 text-[13px] font-semibold gap-2 group/cp md:justify-self-end w-full md:w-auto"
+          className="h-11 px-5 text-[13px] font-semibold gap-2 group/cp w-full md:w-auto md:justify-self-end"
           disabled={qty < 1 || total <= 0}
         >
           <KeyRound className="h-3.5 w-3.5" />
@@ -861,6 +861,7 @@ function CustomPlanCard({ userId, defaultEmail }: { userId: string | null; defau
           <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover/cp:translate-x-0.5" />
         </Button>
       </div>
+
 
       <p className="text-[10.5px] mt-3 text-muted-foreground">
         Pagamento seguro via PIX · o valor é calculado automaticamente pela faixa de volume.
