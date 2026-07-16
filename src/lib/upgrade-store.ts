@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { supabase as cloud } from "@/integrations/supabase/client";
+import { clearUpgradeFiles } from "@/lib/upgrade.functions";
 
 export type UpgradeMeta = {
   fileName: string;
@@ -37,8 +39,9 @@ async function uploadMetadata(meta: WritableUpgradeMeta) {
   if (error) throw error;
 }
 
-export async function fetchUpgradeMeta(): Promise<UpgradeMeta> {
-  const res = await fetch("/api/public/upgrade-meta", { cache: "no-store" });
+export async function fetchUpgradeMeta(): Promise<UpgradeMeta | null> {
+  const res = await fetch(`/api/public/upgrade-meta?t=${Date.now()}`, { cache: "no-store" });
+  if (res.status === 404) return null;
   if (!res.ok) throw new Error(`Falha ao buscar atualização: ${res.status}`);
   return (await res.json()) as UpgradeMeta;
 }
@@ -63,6 +66,7 @@ export function useUpgrade() {
   const [meta, setMeta] = useState<UpgradeMeta | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const clearFn = useServerFn(clearUpgradeFiles);
 
   const refresh = useCallback(async () => {
     try {
@@ -125,11 +129,11 @@ export function useUpgrade() {
   }, [meta]);
 
   const clearUpgrade = useCallback(async () => {
-    const { error } = await cloud.storage.from(BUCKET).remove([ZIP_PATH, META_PATH]);
-    if (error) throw error;
+    await clearFn();
+    setMeta(null);
+    setError(null);
     emitChange();
-    await refresh();
-  }, [refresh]);
+  }, [clearFn]);
 
   return { meta, loading, error, refresh, setUpgrade, updateInfo, clearUpgrade };
 }
