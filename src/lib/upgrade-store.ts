@@ -39,8 +39,9 @@ async function uploadMetadata(meta: WritableUpgradeMeta) {
   if (error) throw error;
 }
 
-export async function fetchUpgradeMeta(): Promise<UpgradeMeta> {
-  const res = await fetch("/api/public/upgrade-meta", { cache: "no-store" });
+export async function fetchUpgradeMeta(): Promise<UpgradeMeta | null> {
+  const res = await fetch(`/api/public/upgrade-meta?t=${Date.now()}`, { cache: "no-store" });
+  if (res.status === 404) return null;
   if (!res.ok) throw new Error(`Falha ao buscar atualização: ${res.status}`);
   return (await res.json()) as UpgradeMeta;
 }
