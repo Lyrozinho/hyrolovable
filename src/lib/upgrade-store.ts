@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { supabase as cloud } from "@/integrations/supabase/client";
+import { clearUpgradeFiles } from "@/lib/upgrade.functions";
 
 export type UpgradeMeta = {
   fileName: string;
