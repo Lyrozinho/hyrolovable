@@ -37,8 +37,10 @@ export function RenewLicenseSimpleDialog({
   onRenewed: () => void;
 }) {
   const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<{ days: number; newExpires: Date } | null>(null);
+  const [bonus, setBonus] = useState(false);
+  const [result, setResult] = useState<{ days: number; bonusDays: number; newExpires: Date } | null>(null);
   const [copied, setCopied] = useState(false);
+  const BONUS_DAYS = 5;
 
   const open = !!license;
   const lifetime = license ? isLifetime(license.expires_at) : false;
@@ -52,23 +54,28 @@ export function RenewLicenseSimpleDialog({
   const now = new Date();
   const isExpired = currentExpires ? currentExpires < now : false;
 
+  const totalAddDays = planDays + (bonus ? BONUS_DAYS : 0);
+
   const previewNewExpires = useMemo(() => {
     if (!license) return null;
     const base = isExpired ? now : currentExpires!;
-    return new Date(base.getTime() + planDays * 86400000);
-  }, [license, planDays, isExpired]);
+    return new Date(base.getTime() + totalAddDays * 86400000);
+  }, [license, totalAddDays, isExpired]);
 
   const message = useMemo(() => {
     if (!license || !result) return "";
-    return [
+    const lines = [
       "✅ Sua licença foi renovada com sucesso!",
       "",
       `🔑 Chave: ${license.id}`,
       `📅 Nova validade: ${fmtDate(result.newExpires)}`,
       `⏳ Renovação: +${result.days} dias`,
-      "",
-      "Qualquer dúvida, estamos à disposição.",
-    ].join("\n");
+    ];
+    if (result.bonusDays > 0) {
+      lines.push(`🎁 Bônus: +${result.bonusDays} dias`);
+    }
+    lines.push("", "Qualquer dúvida, estamos à disposição.");
+    return lines.join("\n");
   }, [license, result]);
 
   const doRenew = async () => {
@@ -81,7 +88,7 @@ export function RenewLicenseSimpleDialog({
         .update({ expires_at: newExpires.toISOString(), status: "ativa" })
         .eq("id", license.id);
       if (error) throw error;
-      setResult({ days: planDays, newExpires });
+      setResult({ days: planDays, bonusDays: bonus ? BONUS_DAYS : 0, newExpires });
       onRenewed();
     } catch (e: any) {
       toast.error(e?.message ?? "Falha ao renovar");
@@ -104,6 +111,7 @@ export function RenewLicenseSimpleDialog({
     if (!o) {
       setResult(null);
       setCopied(false);
+      setBonus(false);
       onClose();
     }
   };
@@ -160,6 +168,29 @@ export function RenewLicenseSimpleDialog({
                 </div>
               </div>
 
+              <label
+                className={[
+                  "flex items-start gap-3 rounded-md border p-3 cursor-pointer transition-colors",
+                  bonus ? "border-foreground bg-foreground/5" : "border-border hover:border-foreground/40 hover:bg-muted/40",
+                  lifetime ? "opacity-50 pointer-events-none" : "",
+                ].join(" ")}
+              >
+                <input
+                  type="checkbox"
+                  checked={bonus}
+                  onChange={(e) => setBonus(e.target.checked)}
+                  className="mt-0.5 h-3.5 w-3.5 rounded border-border accent-foreground"
+                />
+                <div className="flex-1">
+                  <div className="text-[12.5px] font-medium flex items-center gap-1.5">
+                    🎁 Bonificar +{BONUS_DAYS} dias
+                  </div>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">
+                    Adiciona {BONUS_DAYS} dias extras como cortesia ao cliente.
+                  </p>
+                </div>
+              </label>
+
               {lifetime && (
                 <p className="text-[12px] text-muted-foreground">
                   Licença vitalícia não precisa ser renovada.
@@ -171,7 +202,7 @@ export function RenewLicenseSimpleDialog({
               <Button variant="outline" onClick={onClose} disabled={loading}>Cancelar</Button>
               <Button onClick={doRenew} disabled={loading || lifetime}>
                 {loading && <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />}
-                Renovar +{planDays} dias
+                Renovar +{totalAddDays} dias
               </Button>
             </DialogFooter>
           </>
