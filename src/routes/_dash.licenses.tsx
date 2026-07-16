@@ -511,6 +511,11 @@ function LicensesPage() {
                             <CheckCircle2 className="h-3.5 w-3.5" />
                           )}
                         </IconAction>
+                        {!isLifetime(l.expires_at) && (
+                          <IconAction label="Renovar" onClick={() => setRenewFor(l)}>
+                            <RefreshCw className="h-3.5 w-3.5" />
+                          </IconAction>
+                        )}
                         {canDelete && (
                           <IconAction label="Excluir" onClick={() => setDeleteTarget(l)} danger>
                             <Trash2 className="h-3.5 w-3.5" />
