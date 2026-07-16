@@ -588,6 +588,14 @@ function LicensesPage() {
           qc.invalidateQueries({ queryKey: ["dash-stats"] });
         }}
       />
+      <BonusLicenseDialog
+        license={bonusFor}
+        onClose={() => setBonusFor(null)}
+        onBonused={() => {
+          qc.invalidateQueries({ queryKey: ["licenses"] });
+          qc.invalidateQueries({ queryKey: ["dash-stats"] });
+        }}
+      />
 
       <AlertDialog open={!!deleteTarget} onOpenChange={(o) => !o && !deleting && setDeleteTarget(null)}>
         <AlertDialogContent>
