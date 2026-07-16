@@ -518,6 +518,11 @@ function LicensesPage() {
                             <RefreshCw className="h-3.5 w-3.5" />
                           </IconAction>
                         )}
+                        {!isLifetime(l.expires_at) && (
+                          <IconAction label="Bonificar dias" onClick={() => setBonusFor(l)}>
+                            <Gift className="h-3.5 w-3.5" />
+                          </IconAction>
+                        )}
                         {canDelete && (
                           <IconAction label="Excluir" onClick={() => setDeleteTarget(l)} danger>
                             <Trash2 className="h-3.5 w-3.5" />
