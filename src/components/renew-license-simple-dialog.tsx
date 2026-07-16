@@ -111,6 +111,7 @@ export function RenewLicenseSimpleDialog({
     if (!o) {
       setResult(null);
       setCopied(false);
+      setBonus(false);
       onClose();
     }
   };
