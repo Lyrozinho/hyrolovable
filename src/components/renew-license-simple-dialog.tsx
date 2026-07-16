@@ -168,6 +168,29 @@ export function RenewLicenseSimpleDialog({
                 </div>
               </div>
 
+              <label
+                className={[
+                  "flex items-start gap-3 rounded-md border p-3 cursor-pointer transition-colors",
+                  bonus ? "border-foreground bg-foreground/5" : "border-border hover:border-foreground/40 hover:bg-muted/40",
+                  lifetime ? "opacity-50 pointer-events-none" : "",
+                ].join(" ")}
+              >
+                <input
+                  type="checkbox"
+                  checked={bonus}
+                  onChange={(e) => setBonus(e.target.checked)}
+                  className="mt-0.5 h-3.5 w-3.5 rounded border-border accent-foreground"
+                />
+                <div className="flex-1">
+                  <div className="text-[12.5px] font-medium flex items-center gap-1.5">
+                    🎁 Bonificar +{BONUS_DAYS} dias
+                  </div>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">
+                    Adiciona {BONUS_DAYS} dias extras como cortesia ao cliente.
+                  </p>
+                </div>
+              </label>
+
               {lifetime && (
                 <p className="text-[12px] text-muted-foreground">
                   Licença vitalícia não precisa ser renovada.
@@ -179,6 +202,9 @@ export function RenewLicenseSimpleDialog({
               <Button variant="outline" onClick={onClose} disabled={loading}>Cancelar</Button>
               <Button onClick={doRenew} disabled={loading || lifetime}>
                 {loading && <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />}
+                Renovar +{totalAddDays} dias
+              </Button>
+            </DialogFooter>
                 Renovar +{planDays} dias
               </Button>
             </DialogFooter>
