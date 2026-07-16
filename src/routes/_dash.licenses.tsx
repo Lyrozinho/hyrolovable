@@ -573,6 +573,14 @@ function LicensesPage() {
         open={!!linkFor}
         onOpenChange={(o) => !o && setLinkFor(null)}
       />
+      <RenewLicenseSimpleDialog
+        license={renewFor}
+        onClose={() => setRenewFor(null)}
+        onRenewed={() => {
+          qc.invalidateQueries({ queryKey: ["licenses"] });
+          qc.invalidateQueries({ queryKey: ["dash-stats"] });
+        }}
+      />
 
       <AlertDialog open={!!deleteTarget} onOpenChange={(o) => !o && !deleting && setDeleteTarget(null)}>
         <AlertDialogContent>
