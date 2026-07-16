@@ -66,6 +66,7 @@ export function useUpgrade() {
   const [meta, setMeta] = useState<UpgradeMeta | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const clearFn = useServerFn(clearUpgradeFiles);
 
   const refresh = useCallback(async () => {
     try {
@@ -128,11 +129,11 @@ export function useUpgrade() {
   }, [meta]);
 
   const clearUpgrade = useCallback(async () => {
-    const { error } = await cloud.storage.from(BUCKET).remove([ZIP_PATH, META_PATH]);
-    if (error) throw error;
+    await clearFn();
+    setMeta(null);
+    setError(null);
     emitChange();
-    await refresh();
-  }, [refresh]);
+  }, [clearFn]);
 
   return { meta, loading, error, refresh, setUpgrade, updateInfo, clearUpgrade };
 }
