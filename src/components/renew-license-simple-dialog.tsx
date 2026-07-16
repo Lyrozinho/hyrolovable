@@ -54,23 +54,28 @@ export function RenewLicenseSimpleDialog({
   const now = new Date();
   const isExpired = currentExpires ? currentExpires < now : false;
 
+  const totalAddDays = planDays + (bonus ? BONUS_DAYS : 0);
+
   const previewNewExpires = useMemo(() => {
     if (!license) return null;
     const base = isExpired ? now : currentExpires!;
-    return new Date(base.getTime() + planDays * 86400000);
-  }, [license, planDays, isExpired]);
+    return new Date(base.getTime() + totalAddDays * 86400000);
+  }, [license, totalAddDays, isExpired]);
 
   const message = useMemo(() => {
     if (!license || !result) return "";
-    return [
+    const lines = [
       "✅ Sua licença foi renovada com sucesso!",
       "",
       `🔑 Chave: ${license.id}`,
       `📅 Nova validade: ${fmtDate(result.newExpires)}`,
       `⏳ Renovação: +${result.days} dias`,
-      "",
-      "Qualquer dúvida, estamos à disposição.",
-    ].join("\n");
+    ];
+    if (result.bonusDays > 0) {
+      lines.push(`🎁 Bônus: +${result.bonusDays} dias`);
+    }
+    lines.push("", "Qualquer dúvida, estamos à disposição.");
+    return lines.join("\n");
   }, [license, result]);
 
   const doRenew = async () => {
@@ -83,7 +88,7 @@ export function RenewLicenseSimpleDialog({
         .update({ expires_at: newExpires.toISOString(), status: "ativa" })
         .eq("id", license.id);
       if (error) throw error;
-      setResult({ days: planDays, newExpires });
+      setResult({ days: planDays, bonusDays: bonus ? BONUS_DAYS : 0, newExpires });
       onRenewed();
     } catch (e: any) {
       toast.error(e?.message ?? "Falha ao renovar");
