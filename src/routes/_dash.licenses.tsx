@@ -37,6 +37,7 @@ import {
 import { supabase } from "@/lib/supabase";
 import { PermissionsDialog } from "@/components/permissions-dialog";
 import { RedemptionLinkDialog } from "@/components/redemption-link-dialog";
+import { RenewLicenseSimpleDialog } from "@/components/renew-license-simple-dialog";
 import { createLink as createRedemptionLink } from "@/lib/redemption";
 import { generateLicenseKey } from "@/lib/license-key";
 import { sha256Hex, useAuth } from "@/lib/auth";
@@ -108,6 +109,7 @@ function LicensesPage() {
   const [editing, setEditing] = useState<License | null>(null);
   const [permsFor, setPermsFor] = useState<License | null>(null);
   const [linkFor, setLinkFor] = useState<License | null>(null);
+  const [renewFor, setRenewFor] = useState<License | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [revealed, setRevealed] = useState<Record<string, boolean>>({});
   const [revealAll, setRevealAll] = useState(false);
@@ -509,6 +511,11 @@ function LicensesPage() {
                             <CheckCircle2 className="h-3.5 w-3.5" />
                           )}
                         </IconAction>
+                        {!isLifetime(l.expires_at) && (
+                          <IconAction label="Renovar" onClick={() => setRenewFor(l)}>
+                            <RefreshCw className="h-3.5 w-3.5" />
+                          </IconAction>
+                        )}
                         {canDelete && (
                           <IconAction label="Excluir" onClick={() => setDeleteTarget(l)} danger>
                             <Trash2 className="h-3.5 w-3.5" />
@@ -565,6 +572,14 @@ function LicensesPage() {
         createdBy={session?.user.email ?? ""}
         open={!!linkFor}
         onOpenChange={(o) => !o && setLinkFor(null)}
+      />
+      <RenewLicenseSimpleDialog
+        license={renewFor}
+        onClose={() => setRenewFor(null)}
+        onRenewed={() => {
+          qc.invalidateQueries({ queryKey: ["licenses"] });
+          qc.invalidateQueries({ queryKey: ["dash-stats"] });
+        }}
       />
 
       <AlertDialog open={!!deleteTarget} onOpenChange={(o) => !o && !deleting && setDeleteTarget(null)}>
