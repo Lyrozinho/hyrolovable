@@ -205,9 +205,6 @@ export function RenewLicenseSimpleDialog({
                 Renovar +{totalAddDays} dias
               </Button>
             </DialogFooter>
-                Renovar +{planDays} dias
-              </Button>
-            </DialogFooter>
           </>
         ) : (
           <>
