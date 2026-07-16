@@ -49,7 +49,7 @@ function DashInner() {
   const extRealtimeBindings = useMemo(() => [
     {
       table: "hyro_extension_licenses",
-      queryKeys: [["dash-stats"], ["licenses"], ["subscription-license-stats"], ["resellers"], ["my-slots"], ["reseller-balance"]],
+      queryKeys: [["dash-stats"], ["licenses"], ["subscription-license-stats"], ["resellers"], ["my-slots"], ["my-licenses"], ["reseller-balance"]],
     },
     {
       table: "hyro_extension_sessions",
@@ -57,7 +57,7 @@ function DashInner() {
     },
     {
       table: "hyro_extension_users",
-      queryKeys: [["dash-stats"], ["licenses"], ["resellers"], ["my-slots"], ["reseller-balance"], ["subscription-license-stats"]],
+      queryKeys: [["dash-stats"], ["licenses"], ["resellers"], ["my-slots"], ["my-licenses"], ["my-role"], ["reseller-balance"], ["subscription-license-stats"]],
     },
     {
       table: "hyro_reseller_balances",
