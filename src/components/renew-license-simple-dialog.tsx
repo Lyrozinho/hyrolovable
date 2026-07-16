@@ -37,8 +37,10 @@ export function RenewLicenseSimpleDialog({
   onRenewed: () => void;
 }) {
   const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<{ days: number; newExpires: Date } | null>(null);
+  const [bonus, setBonus] = useState(false);
+  const [result, setResult] = useState<{ days: number; bonusDays: number; newExpires: Date } | null>(null);
   const [copied, setCopied] = useState(false);
+  const BONUS_DAYS = 5;
 
   const open = !!license;
   const lifetime = license ? isLifetime(license.expires_at) : false;
