@@ -38,6 +38,7 @@ import { supabase } from "@/lib/supabase";
 import { PermissionsDialog } from "@/components/permissions-dialog";
 import { RedemptionLinkDialog } from "@/components/redemption-link-dialog";
 import { RenewLicenseSimpleDialog } from "@/components/renew-license-simple-dialog";
+import { BonusLicenseDialog } from "@/components/bonus-license-dialog";
 import { createLink as createRedemptionLink } from "@/lib/redemption";
 import { generateLicenseKey } from "@/lib/license-key";
 import { sha256Hex, useAuth } from "@/lib/auth";
