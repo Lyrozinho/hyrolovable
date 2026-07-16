@@ -111,6 +111,7 @@ function LicensesPage() {
   const [permsFor, setPermsFor] = useState<License | null>(null);
   const [linkFor, setLinkFor] = useState<License | null>(null);
   const [renewFor, setRenewFor] = useState<License | null>(null);
+  const [bonusFor, setBonusFor] = useState<License | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [revealed, setRevealed] = useState<Record<string, boolean>>({});
   const [revealAll, setRevealAll] = useState(false);
