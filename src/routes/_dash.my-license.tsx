@@ -189,9 +189,7 @@ function MyLicensePage() {
       if (error) throw error;
       return (data ?? []) as LicenseRow[];
     },
-    staleTime: 10_000,
-    refetchInterval: 20_000,
-    refetchOnWindowFocus: true,
+    staleTime: 30_000,
   });
 
   const stats = useMemo(() => {
