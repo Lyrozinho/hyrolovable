@@ -371,7 +371,13 @@ function MyLicensePage() {
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+          <div className={
+            data.length === 1
+              ? "grid grid-cols-1 gap-3"
+              : data.length === 2
+              ? "grid grid-cols-1 md:grid-cols-2 gap-3"
+              : "grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3"
+          }>
             {data.map((l) => {
               const now = new Date();
               const exp = new Date(l.expires_at);
@@ -393,12 +399,17 @@ function MyLicensePage() {
                 warn: "border-warning/30 bg-warning/[0.04]",
                 danger: "border-destructive/30 bg-destructive/[0.04]",
               }[tone];
+              const wide = data.length === 1;
               return (
                 <div
                   key={l.id}
-                  className={`rounded-xl border ${toneClasses} p-4 flex flex-col hover:border-foreground/30 transition-colors`}
+                  className={`rounded-xl border ${toneClasses} p-4 hover:border-foreground/30 transition-colors ${
+                    wide
+                      ? "flex flex-col md:flex-row md:items-center md:gap-6"
+                      : "flex flex-col"
+                  }`}
                 >
-                  <div className="flex items-start justify-between gap-2 mb-3 min-w-0">
+                  <div className={`flex items-start justify-between gap-2 min-w-0 ${wide ? "md:flex-1 md:mb-0 mb-3" : "mb-3"}`}>
                     <div className="min-w-0 flex-1">
                       <button
                         onClick={() => copy(l.id)}
@@ -416,7 +427,7 @@ function MyLicensePage() {
                     <div className="shrink-0"><StatusBadge active={isActive} expired={expired} /></div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-3 pt-3 border-t border-border">
+                  <div className={`grid grid-cols-2 gap-3 ${wide ? "md:flex md:gap-8 md:border-l md:border-t-0 md:pt-0 md:pl-6 pt-3 border-t border-border" : "pt-3 border-t border-border"}`}>
                     <div className="min-w-0">
                       <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-1">
                         Validade
@@ -449,7 +460,7 @@ function MyLicensePage() {
                   </div>
 
                   {!life && (
-                    <div className="pt-3 mt-3 border-t border-border">
+                    <div className={wide ? "pt-3 mt-3 border-t border-border md:border-0 md:pt-0 md:mt-0 md:pl-6 md:ml-6 md:border-l md:min-w-[220px]" : "pt-3 mt-3 border-t border-border"}>
                       <Button
                         size="sm"
                         variant="secondary"
@@ -466,6 +477,7 @@ function MyLicensePage() {
               );
             })}
           </div>
+
         )}
       </section>
 
