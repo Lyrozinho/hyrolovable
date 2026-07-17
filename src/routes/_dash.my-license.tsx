@@ -511,6 +511,174 @@ function MyLicensePage() {
           onRenewed={() => qc.invalidateQueries({ queryKey: ["my-licenses"] })}
         />
       )}
+
+      {monthlyOpen && userId && (
+        <MonthlyCheckoutDialog
+          open={monthlyOpen}
+          onOpenChange={setMonthlyOpen}
+          userId={userId}
+          userEmail={session?.user.email ?? ""}
+          userName={session?.user.name ?? null}
+          onCompleted={() => {
+            qc.invalidateQueries({ queryKey: ["my-licenses"] });
+            qc.invalidateQueries({ queryKey: ["my-referrals"] });
+            qc.invalidateQueries({ queryKey: ["my-lifetime-flag"] });
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+function ClientAffiliateCard({
+  userId, userEmail, userName, hasActiveLicense, affiliateCode, referrals, lifetimeGranted, onOpenCheckout, affCopied, setAffCopied,
+}: {
+  userId: string;
+  userEmail: string;
+  userName: string | null;
+  hasActiveLicense: boolean;
+  affiliateCode: string | null;
+  referrals: Array<{ id: string; referred_email: string | null; status: string; created_at: string; paid_at: string | null }>;
+  lifetimeGranted: boolean;
+  onOpenCheckout: () => void;
+  affCopied: boolean;
+  setAffCopied: (v: boolean) => void;
+}) {
+  const paidCount = referrals.filter((r) => (r.status || "").toLowerCase() === "paid").length;
+  const pendingCount = referrals.filter((r) => (r.status || "").toLowerCase() === "pending").length;
+  const goal = 3;
+  const progress = Math.min(100, (paidCount / goal) * 100);
+  const remaining = Math.max(0, goal - paidCount);
+
+  const origin = typeof window !== "undefined" ? window.location.origin : "";
+  const link = affiliateCode ? `${origin}/a/${affiliateCode}` : "";
+  const copyLink = async () => {
+    if (!link) return;
+    try {
+      await navigator.clipboard.writeText(link);
+      setAffCopied(true);
+      toast.success("Link copiado!");
+      setTimeout(() => setAffCopied(false), 1800);
+    } catch { toast.error("Falha ao copiar"); }
+  };
+
+  const maskEmail = (e: string | null) => {
+    if (!e) return "—";
+    const [u, d] = e.split("@");
+    if (!d) return e;
+    const uMasked = u.length <= 2 ? u[0] + "•" : u.slice(0, 2) + "•".repeat(Math.min(4, u.length - 2));
+    return `${uMasked}@${d}`;
+  };
+
+  return (
+    <div className="space-y-4">
+      {/* CTA compra mensal quando sem licença ativa */}
+      {!hasActiveLicense && (
+        <div className="relative overflow-hidden rounded-xl border border-primary/30 bg-gradient-to-br from-primary/10 via-card to-card p-5">
+          <div className="flex items-start justify-between gap-4 flex-wrap">
+            <div className="min-w-0 flex-1">
+              <div className="inline-flex items-center gap-2 px-2 py-0.5 rounded-full border border-primary/30 bg-background/60 text-[10px] uppercase tracking-[0.16em] text-primary font-semibold mb-2">
+                <Sparkles className="h-3 w-3" /> Ativação instantânea
+              </div>
+              <h3 className="text-[17px] font-semibold tracking-tight">Adquira sua licença mensal</h3>
+              <p className="text-[12.5px] text-muted-foreground mt-1 max-w-lg">
+                Pagamento único de <span className="font-semibold text-foreground">R$ 69,90</span> via PIX. Liberação automática, 30 dias de acesso completo.
+              </p>
+            </div>
+            <Button size="lg" onClick={onOpenCheckout} className="shrink-0">
+              <Zap className="h-4 w-4 mr-1.5" /> Comprar por R$ 69,90
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Progresso de indicações */}
+      <div className="rounded-xl border border-border bg-card p-5">
+        <div className="flex items-start justify-between gap-4 flex-wrap mb-4">
+          <div className="min-w-0 flex-1">
+            <div className="inline-flex items-center gap-2 px-2 py-0.5 rounded-full border border-border bg-background/60 text-[10px] uppercase tracking-[0.16em] text-muted-foreground font-semibold mb-2">
+              <Trophy className="h-3 w-3" /> Programa de indicações
+            </div>
+            <h3 className="text-[17px] font-semibold tracking-tight">
+              {lifetimeGranted ? "Vitalícia conquistada!" : `Indique 3 e ganhe uma licença vitalícia`}
+            </h3>
+            <p className="text-[12.5px] text-muted-foreground mt-1">
+              {lifetimeGranted
+                ? "Você já desbloqueou seu bônus vitalício. Continue indicando para ajudar amigos."
+                : remaining === 0
+                  ? "Você atingiu a meta! Seu bônus será liberado no próximo pagamento identificado."
+                  : `Faltam ${remaining} ${remaining === 1 ? "indicação paga" : "indicações pagas"} para você ganhar uma licença vitalícia.`}
+            </p>
+          </div>
+          <div className="text-right shrink-0">
+            <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Progresso</div>
+            <div className="text-[22px] font-semibold tracking-tight tabular-nums">
+              {paidCount}<span className="text-muted-foreground text-[14px]">/{goal}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Barra de progresso */}
+        <div className="h-2 rounded-full bg-muted overflow-hidden mb-4">
+          <div
+            className={`h-full transition-all duration-500 ${lifetimeGranted ? "bg-success" : paidCount >= goal ? "bg-success" : "bg-primary"}`}
+            style={{ width: `${lifetimeGranted ? 100 : progress}%` }}
+          />
+        </div>
+
+        {/* Link de afiliado */}
+        <div className="rounded-lg border border-border bg-muted/30 p-3 mb-4">
+          <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-1.5">Seu link de indicação</div>
+          <div className="flex items-stretch gap-2">
+            <div className="flex-1 rounded-md border border-border bg-background px-2.5 py-2 font-mono text-[11.5px] truncate flex items-center gap-2">
+              <Link2 className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+              <span className="truncate">{link || (affiliateCode === null ? "Gerando seu código…" : "—")}</span>
+            </div>
+            <Button variant="outline" size="sm" onClick={copyLink} disabled={!link}>
+              {affCopied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+            </Button>
+          </div>
+          {affiliateCode && (
+            <div className="mt-1.5 text-[10.5px] text-muted-foreground">
+              Código: <span className="font-mono font-semibold text-foreground">{affiliateCode}</span>
+            </div>
+          )}
+        </div>
+
+        {/* Lista de indicados */}
+        <div>
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">Suas indicações</span>
+            <span className="text-[10.5px] text-muted-foreground font-mono">
+              {paidCount} pagas · {pendingCount} pendentes
+            </span>
+          </div>
+          {referrals.length === 0 ? (
+            <div className="rounded-md border border-dashed border-border p-4 text-center text-[12px] text-muted-foreground">
+              Nenhuma indicação ainda. Compartilhe seu link para começar.
+            </div>
+          ) : (
+            <ul className="space-y-1.5 max-h-[220px] overflow-y-auto pr-1">
+              {referrals.slice(0, 10).map((r) => {
+                const s = (r.status || "").toLowerCase();
+                const tone = s === "paid" ? "success" : s === "canceled" || s === "cancelled" ? "danger" : "warn";
+                const cls = tone === "success" ? "border-success/30 bg-success/10 text-success"
+                  : tone === "danger" ? "border-destructive/30 bg-destructive/10 text-destructive"
+                  : "border-warning/30 bg-warning/10 text-warning";
+                const label = s === "paid" ? "Pago" : s === "canceled" || s === "cancelled" ? "Cancelado" : "Aguardando";
+                return (
+                  <li key={r.id} className="flex items-center justify-between gap-3 px-3 py-2 rounded-md border border-border bg-muted/20">
+                    <span className="text-[12.5px] truncate flex-1">{maskEmail(r.referred_email)}</span>
+                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full border text-[10px] font-medium uppercase tracking-wider shrink-0 ${cls}`}>
+                      {label}
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
