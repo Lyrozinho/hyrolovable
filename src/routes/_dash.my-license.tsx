@@ -163,6 +163,53 @@ function MyLicensePage() {
     },
   });
   const isReseller = roleData === "reseller";
+  const isRegularUser = authReady && !!userId && roleData !== undefined && roleData !== "reseller";
+
+  // Cliente comum: código próprio de afiliado
+  const { data: myAff } = useQuery({
+    queryKey: ["my-affiliate-code", sessionKey, userId],
+    enabled: isRegularUser,
+    staleTime: 60_000,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("hyro_extension_users")
+        .select("affiliate_code")
+        .eq("id", userId!)
+        .maybeSingle();
+      return ((data as any)?.affiliate_code as string | null) ?? null;
+    },
+  });
+
+  // Indicações do cliente
+  const { data: referrals } = useQuery({
+    queryKey: ["my-referrals", sessionKey, userId],
+    enabled: isRegularUser,
+    staleTime: 20_000,
+    queryFn: async () => {
+      const { data } = await (supabase as any)
+        .from("hyro_affiliate_referrals")
+        .select("id, referred_email, status, created_at, paid_at")
+        .eq("affiliate_user_id", userId!)
+        .order("created_at", { ascending: false })
+        .limit(50);
+      return (data ?? []) as Array<{ id: string; referred_email: string | null; status: string; created_at: string; paid_at: string | null }>;
+    },
+  });
+
+  // Flag vitalícia
+  const { data: lifetimeFlag } = useQuery({
+    queryKey: ["my-lifetime-flag", sessionKey, userId],
+    enabled: isRegularUser,
+    staleTime: 60_000,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("hyro_extension_users")
+        .select("lifetime_bonus_granted")
+        .eq("id", userId!)
+        .maybeSingle();
+      return !!(data as any)?.lifetime_bonus_granted;
+    },
+  });
 
   const { data: plansConfig } = useQuery({
     queryKey: ["partner-plans-config"],
