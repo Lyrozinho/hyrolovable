@@ -231,14 +231,12 @@ function MyLicensePage() {
     queryKey: ["my-licenses", sessionKey, userId, roleData],
     enabled: authReady && !!userId && roleData !== undefined,
     queryFn: async () => {
-      let q = supabase
+      // Sempre mostra apenas licenças CRIADAS pelo usuário atual (revendedor/admin)
+      const { data, error } = await supabase
         .from("hyro_extension_licenses")
         .select("id, status, expires_at, created_at, user_id, created_by, reseller_id")
+        .eq("created_by", userId!)
         .order("created_at", { ascending: false });
-      q = roleData === "reseller"
-        ? q.or(`created_by.eq.${userId},reseller_id.eq.${userId}`)
-        : q.eq("user_id", userId!);
-      const { data, error } = await q;
       if (error) throw error;
       return (data ?? []) as LicenseRow[];
     },
