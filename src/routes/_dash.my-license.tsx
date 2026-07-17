@@ -274,34 +274,180 @@ function MyLicensePage() {
     <div className="space-y-6">
       {/* Header */}
       <div className="relative overflow-hidden rounded-xl border border-border bg-gradient-to-br from-card via-card to-secondary/40 px-6 py-5">
-        <div className="inline-flex items-center gap-2 px-2 py-0.5 rounded-full border border-border bg-background/80 backdrop-blur text-[10px] uppercase tracking-[0.16em] text-muted-foreground font-medium mb-2">
-          <span className="h-1.5 w-1.5 rounded-full bg-success animate-pulse" />
-          {isReseller ? "Dashboard" : "Minhas licenças"}
+        <div className="flex items-start justify-between gap-4 flex-wrap">
+          <div className="min-w-0 flex-1">
+            <div className="inline-flex items-center gap-2 px-2 py-0.5 rounded-full border border-border bg-background/80 backdrop-blur text-[10px] uppercase tracking-[0.16em] text-muted-foreground font-medium mb-2">
+              <span className="h-1.5 w-1.5 rounded-full bg-success animate-pulse" />
+              {isReseller ? "Dashboard" : "Minhas licenças"}
+            </div>
+            <h1 className="text-[22px] leading-[1.15] font-semibold tracking-tight">
+              {isReseller ? "Bem-vindo, revendedor" : "Suas licenças e validades"}
+            </h1>
+            <p className="text-[12.5px] text-muted-foreground mt-1.5 leading-relaxed">
+              Gerencie as licenças que você criou. Renove com 1 clique.
+            </p>
+          </div>
+          {!isReseller && authReady && userId && (
+            <button
+              onClick={() => setAffOpen(true)}
+              className="shrink-0 inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-primary/30 bg-primary/10 hover:bg-primary/15 hover:border-primary/50 transition-colors text-[12px] font-medium"
+              title="Como funciona o afiliado"
+            >
+              <Trophy className="h-3.5 w-3.5 text-primary" />
+              <span>Afiliado</span>
+              <span className="text-[10px] text-muted-foreground font-mono">
+                {(referrals ?? []).filter((r) => (r.status || "").toLowerCase() === "paid").length}/3
+              </span>
+            </button>
+          )}
         </div>
-        <h1 className="text-[22px] leading-[1.15] font-semibold tracking-tight">
-          {isReseller ? "Bem-vindo, revendedor" : "Acompanhe suas licenças e validades"}
-        </h1>
-        <p className="text-[12.5px] text-muted-foreground mt-1.5 leading-relaxed">
-          {isReseller
-            ? "Confira os pacotes disponíveis e acompanhe suas licenças ativas."
-            : "Visualização somente-leitura das licenças vinculadas à sua conta."}
-        </p>
       </div>
+
+      {/* CTA compra mensal (cliente sem licença) */}
+      {!isReseller && authReady && userId && stats.active === 0 && (
+        <div className="relative overflow-hidden rounded-xl border border-primary/30 bg-gradient-to-br from-primary/10 via-card to-card p-5">
+          <div className="flex items-start justify-between gap-4 flex-wrap">
+            <div className="min-w-0 flex-1">
+              <div className="inline-flex items-center gap-2 px-2 py-0.5 rounded-full border border-primary/30 bg-background/60 text-[10px] uppercase tracking-[0.16em] text-primary font-semibold mb-2">
+                <Sparkles className="h-3 w-3" /> Ativação instantânea
+              </div>
+              <h3 className="text-[17px] font-semibold tracking-tight">Adquira sua licença mensal</h3>
+              <p className="text-[12.5px] text-muted-foreground mt-1 max-w-lg">
+                PIX de <span className="font-semibold text-foreground">R$ 69,90</span>. Liberação automática, 30 dias.
+              </p>
+            </div>
+            <Button size="lg" onClick={() => setMonthlyOpen(true)} className="shrink-0">
+              <Zap className="h-4 w-4 mr-1.5" /> Comprar R$ 69,90
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* SUAS LICENÇAS — prioridade no topo */}
+      <section>
+        <div className="flex items-baseline justify-between mb-4">
+          <h2 className="text-[15px] font-semibold tracking-tight">
+            Suas licenças
+            {data ? <span className="text-muted-foreground font-mono text-[12px] ml-1.5">({data.length})</span> : null}
+          </h2>
+          <span className="text-[11px] text-muted-foreground font-mono">
+            Próx. expiração ·{" "}
+            <span className="text-foreground">{stats.nearest ? fmtDate(stats.nearest) : "—"}</span>
+          </span>
+        </div>
+
+        {isLoading ? (
+          <div className="rounded-xl border border-border bg-card p-8 text-center text-[13px] text-muted-foreground">
+            Carregando…
+          </div>
+        ) : !data || data.length === 0 ? (
+          <div className="rounded-xl border border-dashed border-border bg-card p-10 text-center">
+            <KeyRound className="h-6 w-6 text-muted-foreground mx-auto mb-2" />
+            <p className="text-[13.5px] font-medium">Nenhuma licença encontrada</p>
+            <p className="text-[12px] text-muted-foreground mt-1">
+              As licenças criadas por você aparecerão aqui.
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+            {data.map((l) => {
+              const now = new Date();
+              const exp = new Date(l.expires_at);
+              const life = isLifetime(l.expires_at);
+              const expired = exp <= now;
+              const isActive = l.status === "ativa" && !expired;
+              const dLeft = life ? Infinity : daysBetween(exp, now);
+              const tone = !isActive
+                ? "danger"
+                : life
+                ? "success"
+                : dLeft <= 7
+                ? "danger"
+                : dLeft <= 30
+                ? "warn"
+                : "success";
+              const toneClasses = {
+                success: "border-success/25 bg-success/[0.04]",
+                warn: "border-warning/30 bg-warning/[0.04]",
+                danger: "border-destructive/30 bg-destructive/[0.04]",
+              }[tone];
+              return (
+                <div
+                  key={l.id}
+                  className={`rounded-xl border ${toneClasses} p-4 flex flex-col hover:border-foreground/30 transition-colors`}
+                >
+                  <div className="flex items-start justify-between gap-2 mb-3 min-w-0">
+                    <div className="min-w-0 flex-1">
+                      <button
+                        onClick={() => copy(l.id)}
+                        className="font-mono text-[12.5px] font-semibold tracking-tight truncate hover:underline inline-flex items-center gap-1.5 group max-w-full"
+                        title="Copiar chave"
+                      >
+                        <KeyRound className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                        <span className="truncate">{l.id}</span>
+                        <Copy className="h-3 w-3 opacity-0 group-hover:opacity-60 shrink-0" />
+                      </button>
+                      <div className="text-[10.5px] text-muted-foreground mt-1 font-mono uppercase tracking-wider truncate">
+                        Criada em {fmtDate(l.created_at)}
+                      </div>
+                    </div>
+                    <div className="shrink-0"><StatusBadge active={isActive} expired={expired} /></div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3 pt-3 border-t border-border">
+                    <div className="min-w-0">
+                      <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-1">
+                        Validade
+                      </div>
+                      <div className="text-[13px] font-medium flex items-center gap-1.5 truncate">
+                        {life ? (
+                          <><InfinityIcon className="h-3.5 w-3.5 shrink-0" /><span className="truncate">Vitalícia</span></>
+                        ) : (
+                          <span className="truncate">{fmtDate(l.expires_at)}</span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="min-w-0">
+                      <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-1">
+                        {expired ? "Expirada há" : "Restam"}
+                      </div>
+                      <div
+                        className={`text-[13px] font-medium flex items-center gap-1.5 truncate ${
+                          tone === "danger" ? "text-destructive" : tone === "warn" ? "text-warning" : "text-foreground"
+                        }`}
+                      >
+                        <Clock className="h-3.5 w-3.5 shrink-0" />
+                        <span className="truncate">
+                          {life ? "—" : expired
+                            ? `${Math.abs(dLeft)} dia${Math.abs(dLeft) === 1 ? "" : "s"}`
+                            : `${dLeft} dia${dLeft === 1 ? "" : "s"}`}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {!life && (
+                    <div className="pt-3 mt-auto border-t border-border mt-3">
+                      <Button
+                        size="sm"
+                        variant={tone === "danger" || tone === "warn" ? "default" : "secondary"}
+                        className="w-full"
+                        onClick={() => setRenewTarget({ id: l.id, expires_at: l.expires_at })}
+                      >
+                        <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
+                        Renovar licença
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </section>
 
       {/* Stats */}
       <section>
-        <div className="flex items-baseline justify-between mb-4">
-          <div>
-            <h2 className="text-[15px] font-semibold tracking-tight">Situação geral</h2>
-            <p className="text-[12.5px] text-muted-foreground mt-0.5">Atualizado em tempo real</p>
-          </div>
-          <span className="text-[11px] text-muted-foreground font-mono">
-            Próx. expiração ·{" "}
-            <span className="text-foreground">
-              {stats.nearest ? fmtDate(stats.nearest) : "—"}
-            </span>
-          </span>
-        </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <StatCard icon={KeyRound} label="Ativas" value={stats.active} />
           <StatCard
@@ -319,22 +465,6 @@ function MyLicensePage() {
           <StatCard icon={ShieldCheck} label="Lifetime" value={stats.lifetime} />
         </div>
       </section>
-
-      {/* Cliente comum: compra mensal + indicações */}
-      {!isReseller && authReady && userId && (
-        <ClientAffiliateCard
-          userId={userId}
-          userEmail={session?.user.email ?? ""}
-          userName={session?.user.name ?? null}
-          hasActiveLicense={stats.active > 0}
-          affiliateCode={myAff ?? null}
-          referrals={referrals ?? []}
-          lifetimeGranted={!!lifetimeFlag}
-          onOpenCheckout={() => setMonthlyOpen(true)}
-          affCopied={affCopied}
-          setAffCopied={setAffCopied}
-        />
-      )}
 
       {/* Oferta destaque: Chave Vitalícia (apenas revendedores) */}
       {isReseller && <LifetimeKeyBanner userId={userId} defaultEmail={session?.user.email ?? null} />}
@@ -369,146 +499,19 @@ function MyLicensePage() {
         </section>
       )}
 
+      <SimpleRenewDialog
+        license={renewTarget}
+        onClose={() => setRenewTarget(null)}
+        onRenewed={() => qc.invalidateQueries({ queryKey: ["my-licenses"] })}
+      />
 
-      {/* List de licenças — clientes vêem sempre; reseller vê depois dos planos */}
-      <section>
-        <div className="flex items-baseline justify-between mb-4">
-          <h2 className="text-[15px] font-semibold tracking-tight">
-            {isReseller ? "Licenças da sua carteira" : "Suas licenças"}
-            {data ? <span className="text-muted-foreground font-mono text-[12px] ml-1">({data.length})</span> : null}
-          </h2>
-        </div>
-
-        {isLoading ? (
-          <div className="rounded-xl border border-border bg-card p-8 text-center text-[13px] text-muted-foreground">
-            Carregando…
-          </div>
-        ) : !data || data.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-border bg-card p-10 text-center">
-            <KeyRound className="h-6 w-6 text-muted-foreground mx-auto mb-2" />
-            <p className="text-[13.5px] font-medium">Nenhuma licença encontrada</p>
-            <p className="text-[12px] text-muted-foreground mt-1">
-              {isReseller
-                ? "Ao ativar um plano, suas licenças aparecerão aqui."
-                : "Quando uma licença for atribuída à sua conta, ela aparecerá aqui."}
-            </p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {data.map((l) => {
-              const now = new Date();
-              const exp = new Date(l.expires_at);
-              const life = isLifetime(l.expires_at);
-              const expired = exp <= now;
-              const isActive = l.status === "ativa" && !expired;
-              const dLeft = life ? Infinity : daysBetween(exp, now);
-              const tone = !isActive
-                ? "danger"
-                : life
-                ? "success"
-                : dLeft <= 7
-                ? "danger"
-                : dLeft <= 30
-                ? "warn"
-                : "success";
-              const toneClasses = {
-                success: "border-success/30 bg-success/5",
-                warn: "border-warning/30 bg-warning/5",
-                danger: "border-destructive/30 bg-destructive/5",
-              }[tone];
-              return (
-                <div
-                  key={l.id}
-                  className={`rounded-xl border ${toneClasses} p-4 hover:border-foreground/25 transition-colors`}
-                >
-                  <div className="flex items-start justify-between gap-3 mb-3">
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
-                        <KeyRound className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                        <button
-                          onClick={() => copy(l.id)}
-                          className="font-mono text-[12.5px] font-medium tracking-tight truncate hover:underline inline-flex items-center gap-1.5 group"
-                          title="Copiar chave"
-                        >
-                          <span className="truncate">{l.id}</span>
-                          <Copy className="h-3 w-3 opacity-0 group-hover:opacity-60 shrink-0" />
-                        </button>
-                      </div>
-                      <div className="text-[10.5px] text-muted-foreground mt-1 font-mono uppercase tracking-wider">
-                        Criada em {fmtDate(l.created_at)}
-                      </div>
-                    </div>
-                    <StatusBadge active={isActive} expired={expired} />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3 pt-3 border-t border-border">
-                    <div>
-                      <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-1">
-                        Validade
-                      </div>
-                      <div className="text-[13px] font-medium flex items-center gap-1.5">
-                        {life ? (
-                          <>
-                            <InfinityIcon className="h-3.5 w-3.5" />
-                            <span>Vitalícia</span>
-                          </>
-                        ) : (
-                          fmtDate(l.expires_at)
-                        )}
-                      </div>
-                    </div>
-                    <div>
-                      <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-1">
-                        {expired ? "Expirada há" : "Restam"}
-                      </div>
-                      <div
-                        className={`text-[13px] font-medium flex items-center gap-1.5 ${
-                          tone === "danger"
-                            ? "text-destructive"
-                            : tone === "warn"
-                            ? "text-warning"
-                            : "text-foreground"
-                        }`}
-                      >
-                        <Clock className="h-3.5 w-3.5" />
-                        {life
-                          ? "—"
-                          : expired
-                          ? `${Math.abs(dLeft)} dia${Math.abs(dLeft) === 1 ? "" : "s"}`
-                          : `${dLeft} dia${dLeft === 1 ? "" : "s"}`}
-                      </div>
-                    </div>
-                  </div>
-
-                  {!life && !isReseller && (
-                    <div className="pt-3 mt-3 border-t border-border">
-                      <Button
-                        size="sm"
-                        variant={tone === "danger" || tone === "warn" ? "default" : "secondary"}
-                        className="w-full"
-                        onClick={() => setRenewTarget(l.id)}
-                      >
-                        <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
-                        Renovar licença
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </section>
-
-      {renewTarget && userId && (
-        <RenewLicenseDialog
-          open={!!renewTarget}
-          onOpenChange={(v) => !v && setRenewTarget(null)}
-          licenseId={renewTarget}
-          clientUserId={userId}
-          clientName={session?.user.name ?? null}
-          clientEmail={session?.user.email ?? null}
-          onRenewed={() => qc.invalidateQueries({ queryKey: ["my-licenses"] })}
+      {!isReseller && (
+        <AffiliateInfoDialog
+          open={affOpen}
+          onOpenChange={setAffOpen}
+          affiliateCode={myAff ?? null}
+          referrals={referrals ?? []}
+          lifetimeGranted={!!lifetimeFlag}
         />
       )}
 
