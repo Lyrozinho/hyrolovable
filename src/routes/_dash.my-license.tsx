@@ -231,12 +231,17 @@ function MyLicensePage() {
     queryKey: ["my-licenses", sessionKey, userId, roleData],
     enabled: authReady && !!userId && roleData !== undefined,
     queryFn: async () => {
-      // Mostra licenças criadas/associadas ao usuário atual (created_by OU reseller_id)
-      const { data, error } = await supabase
+      const baseQuery = supabase
         .from("hyro_extension_licenses")
         .select("id, status, expires_at, created_at, user_id, created_by, reseller_id")
-        .or(`created_by.eq.${userId},reseller_id.eq.${userId}`)
         .order("created_at", { ascending: false });
+
+      // Revendedor vê as licenças que criou. Cliente vê a licença vinculada à própria conta.
+      const query = isReseller
+        ? baseQuery.or(`created_by.eq.${userId},reseller_id.eq.${userId}`)
+        : baseQuery.eq("user_id", userId!);
+
+      const { data, error } = await query;
       if (error) throw error;
       return (data ?? []) as LicenseRow[];
     },
@@ -346,7 +351,7 @@ function MyLicensePage() {
             <KeyRound className="h-6 w-6 text-muted-foreground mx-auto mb-2" />
             <p className="text-[13.5px] font-medium">Nenhuma licença encontrada</p>
             <p className="text-[12px] text-muted-foreground mt-1">
-              As licenças criadas por você aparecerão aqui.
+              {isReseller ? "As licenças criadas por você aparecerão aqui." : "As licenças vinculadas à sua conta aparecerão aqui."}
             </p>
           </div>
         ) : (
