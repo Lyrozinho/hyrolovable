@@ -14,7 +14,7 @@ import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/_dash/finance")({
+export const Route = createFileRoute("/_dash/affiliate")({
   ssr: false,
   component: FinancePage,
 });
@@ -44,7 +44,7 @@ function fmtDateTime(d: string) {
   return new Date(d).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", year: "2-digit", hour: "2-digit", minute: "2-digit" });
 }
 
-function FinancePage() {
+function AffiliatePage() {
   const { session, sessionKey, authReady } = useAuth();
   const userId = session?.user.id ?? null;
 
@@ -136,7 +136,7 @@ function FinancePage() {
   }, [sales]);
 
   const [copied, setCopied] = useState(false);
-  const origin = typeof window !== "undefined" ? window.location.origin : "";
+  const origin = getPublicOrigin();
   const affLink = affiliateCode ? `${origin}/a/${affiliateCode}` : "";
   const copyLink = async () => {
     if (!affLink) return;
@@ -159,7 +159,7 @@ function FinancePage() {
         <div className="inline-flex h-12 w-12 rounded-full bg-muted items-center justify-center mb-3">
           <BarChart3 className="h-5 w-5 text-muted-foreground" />
         </div>
-        <h1 className="text-lg font-semibold">Financeiro indisponível</h1>
+        <h1 className="text-lg font-semibold">Painel de afiliado indisponível</h1>
         <p className="text-[13px] text-muted-foreground mt-1">Esta área é exclusiva para revendedores.</p>
         <Link to="/my-license" className="text-primary text-[13px] hover:underline mt-3 inline-block">Voltar</Link>
       </div>
@@ -171,10 +171,10 @@ function FinancePage() {
       {/* Header */}
       <div className="relative overflow-hidden rounded-xl border border-border bg-gradient-to-br from-card via-card to-secondary/40 px-6 py-5">
         <div className="inline-flex items-center gap-2 px-2 py-0.5 rounded-full border border-border bg-background/80 text-[10px] uppercase tracking-[0.16em] text-muted-foreground font-medium mb-2">
-          <TrendingUp className="h-3 w-3" /> Financeiro
+          <Users className="h-3 w-3" /> Afiliado
         </div>
-        <h1 className="text-[22px] leading-[1.15] font-semibold tracking-tight">Painel de revenda</h1>
-        <p className="text-[12.5px] text-muted-foreground mt-1.5">Acompanhe suas vendas, comissões e clientes indicados em tempo real.</p>
+        <h1 className="text-[22px] leading-[1.15] font-semibold tracking-tight">Painel de afiliado</h1>
+        <p className="text-[12.5px] text-muted-foreground mt-1.5">Seu link único, indicações, comissões e vendas atribuídas — tudo em um só lugar.</p>
       </div>
 
       {/* Affiliate link card */}
