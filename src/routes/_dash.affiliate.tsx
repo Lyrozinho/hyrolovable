@@ -173,12 +173,21 @@ function AffiliatePage() {
     <div className="space-y-6">
       {/* Header */}
       <div className="relative overflow-hidden rounded-xl border border-border bg-gradient-to-br from-card via-card to-secondary/40 px-6 py-5">
-        <div className="inline-flex items-center gap-2 px-2 py-0.5 rounded-full border border-border bg-background/80 text-[10px] uppercase tracking-[0.16em] text-muted-foreground font-medium mb-2">
-          <Users className="h-3 w-3" /> Afiliado
+        <div className="flex items-start justify-between gap-4 flex-wrap">
+          <div className="min-w-0">
+            <div className="inline-flex items-center gap-2 px-2 py-0.5 rounded-full border border-border bg-background/80 text-[10px] uppercase tracking-[0.16em] text-muted-foreground font-medium mb-2">
+              <Users className="h-3 w-3" /> Afiliado
+            </div>
+            <h1 className="text-[22px] leading-[1.15] font-semibold tracking-tight">Painel de afiliado</h1>
+            <p className="text-[12.5px] text-muted-foreground mt-1.5">Seu link único, indicações, comissões e vendas atribuídas — tudo em um só lugar.</p>
+          </div>
+          <Button variant="outline" size="sm" onClick={() => setHowOpen(true)} className="shrink-0">
+            <HelpCircle className="h-3.5 w-3.5 mr-1.5" /> Como funciona
+          </Button>
         </div>
-        <h1 className="text-[22px] leading-[1.15] font-semibold tracking-tight">Painel de afiliado</h1>
-        <p className="text-[12.5px] text-muted-foreground mt-1.5">Seu link único, indicações, comissões e vendas atribuídas — tudo em um só lugar.</p>
       </div>
+
+      <AffiliateHowToDialog open={howOpen} onOpenChange={setHowOpen} />
 
       {/* Affiliate link card */}
       <div className="rounded-xl border border-border bg-card p-5">
