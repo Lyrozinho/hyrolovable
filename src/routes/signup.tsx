@@ -1,9 +1,10 @@
 import { createFileRoute, useNavigate, useSearch, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import { Loader2, Mail, Lock, User as UserIcon, ShieldCheck, ArrowRight, Eye, EyeOff, Info } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Loader2, Mail, Lock, User as UserIcon, ShieldCheck, ArrowRight, Eye, EyeOff, Info, Phone, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { supabase as ext } from "@/lib/supabase";
 import { getSessionHome, sha256Hex, useAuth } from "@/lib/auth";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -14,35 +15,134 @@ import {
 } from "@/lib/redemption";
 import hyroLogo from "@/assets/hyro-logo.png";
 
-type SignupSearch = { ref?: string };
+type SignupSearch = { ref?: string; aff?: string };
 
 export const Route = createFileRoute("/signup")({
   ssr: false,
   validateSearch: (s: Record<string, unknown>): SignupSearch => ({
     ref: typeof s.ref === "string" ? s.ref : undefined,
+    aff: typeof s.aff === "string" ? s.aff.toUpperCase().slice(0, 12) : undefined,
   }),
   component: SignupPage,
 });
 
+const REMEMBER_KEY = "hyro_login_remember_email";
+
+// ---------- WhatsApp helpers (BR) ----------
+function onlyDigits(v: string) { return (v || "").replace(/\D+/g, ""); }
+
+/** Máscara BR: (XX) XXXXX-XXXX ou (XX) XXXX-XXXX */
+function maskWhatsBR(v: string) {
+  const d = onlyDigits(v).slice(0, 11);
+  if (d.length === 0) return "";
+  if (d.length <= 2) return `(${d}`;
+  if (d.length <= 6) return `(${d.slice(0, 2)}) ${d.slice(2)}`;
+  if (d.length <= 10) return `(${d.slice(0, 2)}) ${d.slice(2, 6)}-${d.slice(6)}`;
+  return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7, 11)}`;
+}
+
+/** DDDs válidos no Brasil */
+const VALID_DDDS = new Set([
+  11,12,13,14,15,16,17,18,19,
+  21,22,24,27,28,
+  31,32,33,34,35,37,38,
+  41,42,43,44,45,46,47,48,49,
+  51,53,54,55,
+  61,62,63,64,65,66,67,68,69,
+  71,73,74,75,77,79,
+  81,82,83,84,85,86,87,88,89,
+  91,92,93,94,95,96,97,98,99,
+]);
+
+/** Retorna E.164 (+55...) se válido, senão null */
+function normalizeBRWhatsapp(v: string): string | null {
+  const d = onlyDigits(v);
+  if (d.length !== 11) return null; // BR celular tem 11 dígitos com DDD
+  const ddd = Number(d.slice(0, 2));
+  if (!VALID_DDDS.has(ddd)) return null;
+  if (d[2] !== "9") return null; // celular BR começa com 9 após DDD
+  // rejeita todos iguais
+  if (/^(\d)\1{10}$/.test(d)) return null;
+  return `+55${d}`;
+}
+
 function SignupPage() {
   const { session, loading } = useAuth();
   const navigate = useNavigate();
-  const { ref } = useSearch({ from: "/signup" });
+  const { ref, aff: affFromUrl } = useSearch({ from: "/signup" });
 
-
-
-
+  // Recupera aff do sessionStorage (fluxo /a/$code)
+  const aff = useMemo(() => {
+    if (affFromUrl) return affFromUrl;
+    if (typeof window !== "undefined") {
+      try {
+        const s = sessionStorage.getItem("hyro_aff_code");
+        return s ? s.toUpperCase().slice(0, 12) : undefined;
+      } catch { return undefined; }
+    }
+    return undefined;
+  }, [affFromUrl]);
 
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
+  const [whatsapp, setWhatsapp] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
+  const [remember, setRemember] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [link, setLink] = useState<RedemptionLink | null>(null);
   const [linkError, setLinkError] = useState<string | null>(null);
   const [initializing, setInitializing] = useState(!!ref);
+
+  // Afiliado — resolve o dono do código silenciosamente
+  const [affOwner, setAffOwner] = useState<{ id: string; name: string | null } | null>(null);
+  const [affChecked, setAffChecked] = useState(false);
+  useEffect(() => {
+    let cancelled = false;
+    if (!aff) { setAffChecked(true); return; }
+    (async () => {
+      try {
+        const { data } = await ext
+          .from("hyro_extension_users")
+          .select("id, name, affiliate_code")
+          .eq("affiliate_code", aff)
+          .maybeSingle();
+        if (cancelled) return;
+        if (data?.id) setAffOwner({ id: (data as any).id, name: (data as any).name ?? null });
+      } catch { /* silent */ }
+      finally { if (!cancelled) setAffChecked(true); }
+    })();
+    return () => { cancelled = true; };
+  }, [aff]);
+
+  // WhatsApp — verificação silenciosa de unicidade (debounced)
+  const [waStatus, setWaStatus] = useState<"idle" | "checking" | "ok" | "invalid" | "taken">("idle");
+  const waCheckRef = useRef<number | null>(null);
+  useEffect(() => {
+    if (waCheckRef.current) window.clearTimeout(waCheckRef.current);
+    const digits = onlyDigits(whatsapp);
+    if (digits.length === 0) { setWaStatus("idle"); return; }
+    if (digits.length < 11) { setWaStatus("idle"); return; }
+    const norm = normalizeBRWhatsapp(whatsapp);
+    if (!norm) { setWaStatus("invalid"); return; }
+    setWaStatus("checking");
+    waCheckRef.current = window.setTimeout(async () => {
+      try {
+        const { data } = await ext
+          .from("hyro_extension_users")
+          .select("id")
+          .eq("whatsapp", norm)
+          .maybeSingle();
+        setWaStatus(data?.id ? "taken" : "ok");
+      } catch {
+        // se falhar a checagem, deixa passar (validação real no submit)
+        setWaStatus("ok");
+      }
+    }, 450);
+    return () => { if (waCheckRef.current) window.clearTimeout(waCheckRef.current); };
+  }, [whatsapp]);
 
   useEffect(() => {
     if (!loading && session) navigate({ to: getSessionHome(session), replace: true });
@@ -84,11 +184,23 @@ function SignupPage() {
     if (!lastName.trim()) return toast.error("Informe seu sobrenome.");
     const em = (link?.target_email ?? email ?? "").trim().toLowerCase();
     if (!em || !em.includes("@") || em.length < 5) return toast.error("E-mail inválido.");
+    const waNorm = normalizeBRWhatsapp(whatsapp);
+    if (!waNorm) return toast.error("WhatsApp inválido. Use DDD + número (11 dígitos).");
     if (password.length < 6) return toast.error("Senha deve ter no mínimo 6 caracteres.");
     if (password !== confirm) return toast.error("As senhas não coincidem.");
 
     setSubmitting(true);
     try {
+      // Rechecagem de WhatsApp única — silenciosa e final
+      {
+        const { data: waTaken } = await ext
+          .from("hyro_extension_users")
+          .select("id")
+          .eq("whatsapp", waNorm)
+          .maybeSingle();
+        if (waTaken?.id) throw new Error("Este WhatsApp já está em uso.");
+      }
+
       // Bloqueia se link já resgatado ou IP não confere
       let boundLink = link;
       if (ref) {
@@ -107,10 +219,17 @@ function SignupPage() {
         .eq("email", em)
         .maybeSingle();
 
-      let userId: string;
-      // Cadastro público (sem link) => revendedor. Com link, respeita o tipo do link.
-      const isResellerInvite = boundLink ? (boundLink as any)?.kind === "reseller" : true;
+      // Regra de role no cadastro:
+      //  - Com link kind='reseller' -> reseller
+      //  - Com link kind='license'  -> user (dono da licença)
+      //  - Sem link (cadastro público) -> user (cliente comum, indicador)
+      let intendedRole: "user" | "reseller" = "user";
+      if (boundLink) {
+        const kind = (boundLink as any)?.kind ?? "license";
+        intendedRole = kind === "reseller" ? "reseller" : "user";
+      }
 
+      let userId: string;
       if (existing) {
         if (existing.password_hash) {
           throw new Error("Este e-mail já possui cadastro. Faça login.");
@@ -121,37 +240,52 @@ function SignupPage() {
             email: em,
             password_hash: passwordHash,
             name: fullName,
+            whatsapp: waNorm,
             active: true,
-            role: isResellerInvite ? "reseller" : "user",
+            role: intendedRole,
+            referrer_code: affOwner ? aff : null,
+            referrer_user_id: affOwner ? affOwner.id : null,
           })
           .eq("id", existing.id);
         if (upErr) throw upErr;
         userId = existing.id;
       } else {
-        if (!em) throw new Error("E-mail obrigatório para criar conta.");
         const { data: created, error: cErr } = await ext
           .from("hyro_extension_users")
           .insert({
             email: em,
             name: fullName,
-            role: isResellerInvite ? "reseller" : "user",
+            whatsapp: waNorm,
+            role: intendedRole,
             password_hash: passwordHash,
             active: true,
+            referrer_code: affOwner ? aff : null,
+            referrer_user_id: affOwner ? affOwner.id : null,
           })
           .select("id, email")
           .single();
         if (cErr) throw cErr;
         if (!created?.email) {
-          // rollback defensivo caso o backend tenha rejeitado o email silenciosamente
-          await ext.from("hyro_extension_users").delete().eq("id", created.id);
+          await ext.from("hyro_extension_users").delete().eq("id", (created as any)?.id);
           throw new Error("Falha ao registrar e-mail. Tente novamente.");
         }
-        userId = created.id;
+        userId = (created as any).id;
       }
 
-      // Se veio de link:
-      //   - Licença (kind='license'): vincula a licença existente
-      //   - Revenda (kind='reseller'): aplica saldo inicial via RPC (se disponível)
+      // Registra a indicação (silencioso — não bloqueia signup)
+      if (affOwner && aff && affOwner.id !== userId) {
+        try {
+          await ext.from("hyro_affiliate_referrals").insert({
+            affiliate_user_id: affOwner.id,
+            referred_user_id: userId,
+            referred_email: em,
+            code_used: aff,
+            status: "pending",
+          });
+        } catch { /* trigger de unique cuida de duplicatas */ }
+      }
+
+      // Se veio de link, aplica bônus/licença como antes
       if (boundLink) {
         const kind = (boundLink as any).kind ?? "license";
         if (kind === "reseller") {
@@ -163,7 +297,7 @@ function SignupPage() {
                 p_delta: slots,
                 p_note: `Pacote inicial via link ${boundLink.slug}`,
               });
-            } catch { /* fail-open — o admin pode ajustar depois */ }
+            } catch { /* fail-open */ }
           }
         } else if (boundLink.license_id) {
           await ext
@@ -174,6 +308,12 @@ function SignupPage() {
         await markLinkClaimed(boundLink.slug, userId);
       }
 
+      // Lembrar e-mail
+      try {
+        if (remember) localStorage.setItem(REMEMBER_KEY, em);
+        else localStorage.removeItem(REMEMBER_KEY);
+      } catch { /* ignore */ }
+      try { sessionStorage.removeItem("hyro_aff_code"); } catch { /* ignore */ }
 
       toast.success("Conta criada! Faça login para continuar.");
       navigate({ to: "/login", replace: true });
@@ -198,12 +338,12 @@ function SignupPage() {
       </header>
 
       <div className="flex-1 flex items-center justify-center px-4 py-12">
-        <div className="w-full max-w-[440px]">
-          <div className="rounded-2xl bg-card border border-border shadow-elegant p-8">
+        <div className="w-full max-w-[460px]">
+          <div className="rounded-2xl bg-card border border-border shadow-elegant p-6 sm:p-8">
             <div className="flex items-start justify-between mb-6">
               <div>
                 <div className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground mb-2">
-                  {ref ? "Link personalizado" : "Cadastro público"}
+                  {ref ? "Link personalizado" : aff ? "Convite de afiliado" : "Cadastro público"}
                 </div>
                 <h1 className="text-[22px] font-semibold tracking-tight">Criar sua conta</h1>
                 <p className="text-[13px] text-muted-foreground mt-1.5">
@@ -244,6 +384,19 @@ function SignupPage() {
                   </div>
                 )}
 
+                {!ref && aff && affChecked && (
+                  <div className={`rounded-md border p-3 text-[12px] flex gap-2 ${affOwner ? "border-primary/30 bg-primary/5" : "border-border bg-muted/40"}`}>
+                    <Info className={`h-3.5 w-3.5 shrink-0 mt-0.5 ${affOwner ? "text-primary" : "text-muted-foreground"}`} />
+                    <div>
+                      {affOwner ? (
+                        <>Convite de <span className="font-medium">{affOwner.name || "um parceiro"}</span> — código <span className="font-mono font-medium">{aff}</span>.</>
+                      ) : (
+                        <>Código de indicação <span className="font-mono">{aff}</span> não encontrado. Você pode continuar sem ele.</>
+                      )}
+                    </div>
+                  </div>
+                )}
+
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5">
                     <Label className="text-[11px] uppercase tracking-[0.12em] text-muted-foreground">Nome</Label>
@@ -278,6 +431,33 @@ function SignupPage() {
                 </div>
 
                 <div className="space-y-1.5">
+                  <Label className="text-[11px] uppercase tracking-[0.12em] text-muted-foreground">WhatsApp</Label>
+                  <div className="relative">
+                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                    <Input
+                      required
+                      inputMode="tel"
+                      autoComplete="tel-national"
+                      value={whatsapp}
+                      onChange={(e) => setWhatsapp(maskWhatsBR(e.target.value))}
+                      placeholder="(11) 91234-5678"
+                      maxLength={16}
+                      className={`h-10 pl-9 pr-10 text-sm ${waStatus === "invalid" || waStatus === "taken" ? "border-destructive/60" : ""}`}
+                    />
+                    <div className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center">
+                      {waStatus === "checking" && <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />}
+                      {waStatus === "ok" && <Check className="h-3.5 w-3.5 text-success" />}
+                    </div>
+                  </div>
+                  {waStatus === "invalid" && (
+                    <p className="text-[11px] text-destructive">Número inválido. Use o formato brasileiro com DDD.</p>
+                  )}
+                  {waStatus === "taken" && (
+                    <p className="text-[11px] text-destructive">Este WhatsApp já está cadastrado.</p>
+                  )}
+                </div>
+
+                <div className="space-y-1.5">
                   <Label className="text-[11px] uppercase tracking-[0.12em] text-muted-foreground">Senha</Label>
                   <div className="relative">
                     <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
@@ -301,7 +481,16 @@ function SignupPage() {
                     className="h-10 text-sm" />
                 </div>
 
-                <Button type="submit" disabled={submitting} className="w-full h-11 gap-2 mt-2">
+                <label className="flex items-center gap-2 text-[12.5px] text-muted-foreground select-none cursor-pointer pt-1">
+                  <Checkbox checked={remember} onCheckedChange={(v) => setRemember(!!v)} />
+                  Lembrar meu e-mail neste dispositivo
+                </label>
+
+                <Button
+                  type="submit"
+                  disabled={submitting || waStatus === "invalid" || waStatus === "taken" || waStatus === "checking"}
+                  className="w-full h-11 gap-2 mt-1"
+                >
                   {submitting ? <><Loader2 className="h-4 w-4 animate-spin" /> Criando…</> : <>Criar conta <ArrowRight className="h-3.5 w-3.5" /></>}
                 </Button>
 
