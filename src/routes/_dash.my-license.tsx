@@ -15,6 +15,7 @@ import { RenewLicenseDialog } from "@/components/renew-license-dialog";
 import { VexoPayCheckoutDialog } from "@/components/vexopay-checkout-dialog";
 import { MonthlyCheckoutDialog } from "@/components/monthly-checkout-dialog";
 import { Link2, Trophy } from "lucide-react";
+import { getPublicOrigin } from "@/lib/public-origin";
 
 export const Route = createFileRoute("/_dash/my-license")({
   component: MyLicensePage,
@@ -550,7 +551,7 @@ function ClientAffiliateCard({
   const progress = Math.min(100, (paidCount / goal) * 100);
   const remaining = Math.max(0, goal - paidCount);
 
-  const origin = typeof window !== "undefined" ? window.location.origin : "";
+  const origin = getPublicOrigin();
   const link = affiliateCode ? `${origin}/a/${affiliateCode}` : "";
   const copyLink = async () => {
     if (!link) return;
