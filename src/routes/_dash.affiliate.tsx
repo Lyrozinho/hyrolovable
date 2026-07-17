@@ -154,6 +154,7 @@ function AffiliatePage() {
   const pageSize = 10;
   const paged = (sales ?? []).slice(page * pageSize, page * pageSize + pageSize);
   const totalPages = Math.max(1, Math.ceil((sales?.length ?? 0) / pageSize));
+  const [howOpen, setHowOpen] = useState(false);
 
   if (authReady && role && !isEligible) {
     return (
