@@ -15,6 +15,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as DashRouteImport } from './routes/_dash'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as RSlugRouteImport } from './routes/r.$slug'
+import { Route as ACodeRouteImport } from './routes/a.$code'
 import { Route as DashUpgradeAdminRouteImport } from './routes/_dash.upgrade-admin'
 import { Route as DashTutorialsRouteImport } from './routes/_dash.tutorials'
 import { Route as DashTelegramBotRouteImport } from './routes/_dash.telegram-bot'
@@ -55,6 +56,11 @@ const IndexRoute = IndexRouteImport.update({
 const RSlugRoute = RSlugRouteImport.update({
   id: '/r/$slug',
   path: '/r/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ACodeRoute = ACodeRouteImport.update({
+  id: '/a/$code',
+  path: '/a/$code',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DashUpgradeAdminRoute = DashUpgradeAdminRouteImport.update({
@@ -133,6 +139,7 @@ export interface FileRoutesByFullPath {
   '/telegram-bot': typeof DashTelegramBotRoute
   '/tutorials': typeof DashTutorialsRoute
   '/upgrade-admin': typeof DashUpgradeAdminRoute
+  '/a/$code': typeof ACodeRoute
   '/r/$slug': typeof RSlugRoute
   '/api/public/upgrade-meta': typeof ApiPublicUpgradeMetaRoute
   '/api/public/upgrade-zip': typeof ApiPublicUpgradeZipRoute
@@ -152,6 +159,7 @@ export interface FileRoutesByTo {
   '/telegram-bot': typeof DashTelegramBotRoute
   '/tutorials': typeof DashTutorialsRoute
   '/upgrade-admin': typeof DashUpgradeAdminRoute
+  '/a/$code': typeof ACodeRoute
   '/r/$slug': typeof RSlugRoute
   '/api/public/upgrade-meta': typeof ApiPublicUpgradeMetaRoute
   '/api/public/upgrade-zip': typeof ApiPublicUpgradeZipRoute
@@ -173,6 +181,7 @@ export interface FileRoutesById {
   '/_dash/telegram-bot': typeof DashTelegramBotRoute
   '/_dash/tutorials': typeof DashTutorialsRoute
   '/_dash/upgrade-admin': typeof DashUpgradeAdminRoute
+  '/a/$code': typeof ACodeRoute
   '/r/$slug': typeof RSlugRoute
   '/api/public/upgrade-meta': typeof ApiPublicUpgradeMetaRoute
   '/api/public/upgrade-zip': typeof ApiPublicUpgradeZipRoute
@@ -194,6 +203,7 @@ export interface FileRouteTypes {
     | '/telegram-bot'
     | '/tutorials'
     | '/upgrade-admin'
+    | '/a/$code'
     | '/r/$slug'
     | '/api/public/upgrade-meta'
     | '/api/public/upgrade-zip'
@@ -213,6 +223,7 @@ export interface FileRouteTypes {
     | '/telegram-bot'
     | '/tutorials'
     | '/upgrade-admin'
+    | '/a/$code'
     | '/r/$slug'
     | '/api/public/upgrade-meta'
     | '/api/public/upgrade-zip'
@@ -233,6 +244,7 @@ export interface FileRouteTypes {
     | '/_dash/telegram-bot'
     | '/_dash/tutorials'
     | '/_dash/upgrade-admin'
+    | '/a/$code'
     | '/r/$slug'
     | '/api/public/upgrade-meta'
     | '/api/public/upgrade-zip'
@@ -246,6 +258,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   SignupRoute: typeof SignupRoute
   UpgradeRoute: typeof UpgradeRoute
+  ACodeRoute: typeof ACodeRoute
   RSlugRoute: typeof RSlugRoute
   ApiPublicUpgradeMetaRoute: typeof ApiPublicUpgradeMetaRoute
   ApiPublicUpgradeZipRoute: typeof ApiPublicUpgradeZipRoute
@@ -295,6 +308,13 @@ declare module '@tanstack/react-router' {
       path: '/r/$slug'
       fullPath: '/r/$slug'
       preLoaderRoute: typeof RSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/a/$code': {
+      id: '/a/$code'
+      path: '/a/$code'
+      fullPath: '/a/$code'
+      preLoaderRoute: typeof ACodeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_dash/upgrade-admin': {
@@ -414,6 +434,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   SignupRoute: SignupRoute,
   UpgradeRoute: UpgradeRoute,
+  ACodeRoute: ACodeRoute,
   RSlugRoute: RSlugRoute,
   ApiPublicUpgradeMetaRoute: ApiPublicUpgradeMetaRoute,
   ApiPublicUpgradeZipRoute: ApiPublicUpgradeZipRoute,
@@ -423,13 +444,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
