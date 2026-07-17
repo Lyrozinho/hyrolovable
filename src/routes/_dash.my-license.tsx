@@ -428,10 +428,10 @@ function MyLicensePage() {
                   </div>
 
                   {!life && (
-                    <div className="pt-3 mt-auto border-t border-border mt-3">
+                    <div className="pt-3 mt-3 border-t border-border">
                       <Button
                         size="sm"
-                        variant={tone === "danger" || tone === "warn" ? "default" : "secondary"}
+                        variant="secondary"
                         className="w-full"
                         onClick={() => setRenewTarget({ id: l.id, expires_at: l.expires_at })}
                       >
@@ -440,6 +440,7 @@ function MyLicensePage() {
                       </Button>
                     </div>
                   )}
+
                 </div>
               );
             })}
