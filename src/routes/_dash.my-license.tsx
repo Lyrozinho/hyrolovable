@@ -550,7 +550,7 @@ function ClientAffiliateCard({
   const progress = Math.min(100, (paidCount / goal) * 100);
   const remaining = Math.max(0, goal - paidCount);
 
-  const origin = typeof window !== "undefined" ? window.location.origin : "";
+  const origin = getPublicOrigin();
   const link = affiliateCode ? `${origin}/a/${affiliateCode}` : "";
   const copyLink = async () => {
     if (!link) return;
