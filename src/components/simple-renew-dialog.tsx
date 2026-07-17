@@ -10,10 +10,10 @@ type LicenseLike = {
   expires_at: string;
 };
 
-const OPTIONS = [
+const OPTIONS: Array<{ days: number; price: number; label: string; tag: string; featured?: boolean }> = [
   { days: 7, price: 59, label: "7 dias", tag: "Rápido" },
   { days: 30, price: 89, label: "30 dias", tag: "Melhor valor", featured: true },
-] as const;
+];
 
 function fmtDate(d: Date) {
   return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" });
