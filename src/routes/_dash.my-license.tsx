@@ -15,6 +15,7 @@ import { RenewLicenseDialog } from "@/components/renew-license-dialog";
 import { VexoPayCheckoutDialog } from "@/components/vexopay-checkout-dialog";
 import { MonthlyCheckoutDialog } from "@/components/monthly-checkout-dialog";
 import { Link2, Trophy } from "lucide-react";
+import { getPublicOrigin } from "@/lib/public-origin";
 
 export const Route = createFileRoute("/_dash/my-license")({
   component: MyLicensePage,
