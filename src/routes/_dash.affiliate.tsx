@@ -13,10 +13,11 @@ import { supabase as ext } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { getPublicOrigin } from "@/lib/public-origin";
 
 export const Route = createFileRoute("/_dash/affiliate")({
   ssr: false,
-  component: FinancePage,
+  component: AffiliatePage,
 });
 
 type Sale = {
