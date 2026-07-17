@@ -146,6 +146,8 @@ function MyLicensePage() {
   const userId = session?.user.id ?? null;
   const qc = useQueryClient();
   const [renewTarget, setRenewTarget] = useState<string | null>(null);
+  const [monthlyOpen, setMonthlyOpen] = useState(false);
+  const [affCopied, setAffCopied] = useState(false);
 
   const { data: roleData } = useQuery({
     queryKey: ["my-role", sessionKey, userId],
