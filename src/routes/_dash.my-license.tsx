@@ -4,16 +4,17 @@ import { useMemo, useState } from "react";
 import {
   KeyRound, CalendarClock, ShieldCheck, AlertTriangle,
   CheckCircle2, XCircle, Infinity as InfinityIcon, Clock, Copy, RefreshCw,
-  Check, ArrowRight, MessageCircle, Sparkles, Zap, Minus, Plus, Settings2,
+  Check, ArrowRight, MessageCircle, Sparkles, Zap, Minus, Plus, Settings2, Users,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { supabase as cloud } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { RenewLicenseDialog } from "@/components/renew-license-dialog";
 import { VexoPayCheckoutDialog } from "@/components/vexopay-checkout-dialog";
 import { MonthlyCheckoutDialog } from "@/components/monthly-checkout-dialog";
+import { SimpleRenewDialog } from "@/components/simple-renew-dialog";
+import { AffiliateInfoDialog } from "@/components/affiliate-info-dialog";
 import { Link2, Trophy } from "lucide-react";
 import { getPublicOrigin } from "@/lib/public-origin";
 
