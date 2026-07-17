@@ -13,6 +13,8 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { RenewLicenseDialog } from "@/components/renew-license-dialog";
 import { VexoPayCheckoutDialog } from "@/components/vexopay-checkout-dialog";
+import { MonthlyCheckoutDialog } from "@/components/monthly-checkout-dialog";
+import { Link2, Trophy } from "lucide-react";
 
 export const Route = createFileRoute("/_dash/my-license")({
   component: MyLicensePage,
