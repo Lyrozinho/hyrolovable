@@ -2,8 +2,9 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import {
-  TrendingUp, DollarSign, ShoppingBag, Users, Copy, Check, Link2, BarChart3, Loader2, ArrowUpRight,
+  TrendingUp, DollarSign, ShoppingBag, Users, Copy, Check, Link2, BarChart3, Loader2, ArrowUpRight, HelpCircle,
 } from "lucide-react";
+import { AffiliateHowToDialog } from "@/components/affiliate-howto-dialog";
 import {
   ResponsiveContainer,
   LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid,
