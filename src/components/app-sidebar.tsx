@@ -1,5 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { LayoutDashboard, KeyRound, Users, LogOut, ChevronsLeft, ChevronsRight, GraduationCap, Rocket, Bot, Plug, Download, Loader2 } from "lucide-react";
+import { LayoutDashboard, KeyRound, Users, LogOut, ChevronsLeft, ChevronsRight, GraduationCap, Rocket, Bot, Plug, Download, Loader2, TrendingUp } from "lucide-react";
 import { useExtensionEntitlement, useUpgradeVersion, useExtensionDownload } from "@/lib/extension-download";
 import { useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -34,6 +34,7 @@ const items: NavItem[] = [
   { title: "Minhas licenças", url: "/my-license", icon: KeyRound, roles: ["client"], resellerTitle: "Dashboard", resellerIcon: LayoutDashboard },
   { title: "Licenças", url: "/licenses", icon: KeyRound, roles: ["admin", "client"], permKey: "licenses" },
   { title: "Planos revenda", url: "/resellers", icon: Users, roles: ["admin", "client"], permKey: "resellers" },
+  { title: "Financeiro", url: "/finance", icon: TrendingUp, roles: ["admin", "client"], resellerOrAdminOnly: true },
   { title: "Integrações", url: "/integrations", icon: Plug, roles: ["admin", "client"], resellerOrAdminOnly: true },
   { title: "Tutoriais", url: "/tutorials", icon: GraduationCap, roles: ["admin", "client"], permKey: "tutorials" },
   { title: "Atualização", url: "/upgrade-admin", icon: Rocket, roles: ["admin"] },
