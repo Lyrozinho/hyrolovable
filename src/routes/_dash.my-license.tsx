@@ -151,32 +151,48 @@ function MyLicensePage() {
   const [monthlyOpen, setMonthlyOpen] = useState(false);
   const [affOpen, setAffOpen] = useState(false);
 
-  const { data: roleData } = useQuery({
-    queryKey: ["my-role", sessionKey, userId],
+  const { data: accountData } = useQuery({
+    queryKey: ["my-extension-account", sessionKey, userId, session?.user.email],
     enabled: authReady && !!userId,
     staleTime: 60_000,
     queryFn: async () => {
-      const { data: u } = await supabase
+      const { data: byId, error: byIdError } = await supabase
         .from("hyro_extension_users")
-        .select("role")
+        .select("id, email, role, active")
         .eq("id", userId!)
         .maybeSingle();
-      return (u as any)?.role ?? null;
+      if (byIdError) throw byIdError;
+      if (byId) return byId as { id: string; email: string | null; role: string | null; active: boolean | null };
+
+      const email = session?.user.email?.trim().toLowerCase();
+      if (email) {
+        const { data: byEmail, error: byEmailError } = await supabase
+          .from("hyro_extension_users")
+          .select("id, email, role, active")
+          .eq("email", email)
+          .maybeSingle();
+        if (byEmailError) throw byEmailError;
+        if (byEmail) return byEmail as { id: string; email: string | null; role: string | null; active: boolean | null };
+      }
+
+      return { id: userId!, email: session?.user.email ?? null, role: session?.user.role ?? null, active: true };
     },
   });
+  const accountId = accountData?.id ?? userId;
+  const roleData = accountData === undefined ? undefined : (accountData.role ?? session?.user.role ?? null);
   const isReseller = roleData === "reseller";
   const isRegularUser = authReady && !!userId && roleData !== undefined && roleData !== "reseller";
 
   // Cliente comum: código próprio de afiliado
   const { data: myAff } = useQuery({
-    queryKey: ["my-affiliate-code", sessionKey, userId],
-    enabled: isRegularUser,
+    queryKey: ["my-affiliate-code", sessionKey, accountId],
+    enabled: isRegularUser && !!accountId,
     staleTime: 60_000,
     queryFn: async () => {
       const { data } = await supabase
         .from("hyro_extension_users")
         .select("affiliate_code")
-        .eq("id", userId!)
+        .eq("id", accountId!)
         .maybeSingle();
       return ((data as any)?.affiliate_code as string | null) ?? null;
     },
@@ -184,14 +200,14 @@ function MyLicensePage() {
 
   // Indicações do cliente
   const { data: referrals } = useQuery({
-    queryKey: ["my-referrals", sessionKey, userId],
-    enabled: isRegularUser,
+    queryKey: ["my-referrals", sessionKey, accountId],
+    enabled: isRegularUser && !!accountId,
     staleTime: 20_000,
     queryFn: async () => {
       const { data } = await (supabase as any)
         .from("hyro_affiliate_referrals")
         .select("id, referred_email, status, created_at, paid_at")
-        .eq("affiliate_user_id", userId!)
+        .eq("affiliate_user_id", accountId!)
         .order("created_at", { ascending: false })
         .limit(50);
       return (data ?? []) as Array<{ id: string; referred_email: string | null; status: string; created_at: string; paid_at: string | null }>;
@@ -200,14 +216,14 @@ function MyLicensePage() {
 
   // Flag vitalícia
   const { data: lifetimeFlag } = useQuery({
-    queryKey: ["my-lifetime-flag", sessionKey, userId],
-    enabled: isRegularUser,
+    queryKey: ["my-lifetime-flag", sessionKey, accountId],
+    enabled: isRegularUser && !!accountId,
     staleTime: 60_000,
     queryFn: async () => {
       const { data } = await supabase
         .from("hyro_extension_users")
         .select("lifetime_bonus_granted")
-        .eq("id", userId!)
+        .eq("id", accountId!)
         .maybeSingle();
       return !!(data as any)?.lifetime_bonus_granted;
     },
@@ -228,8 +244,8 @@ function MyLicensePage() {
   });
 
   const { data, isLoading } = useQuery({
-    queryKey: ["my-licenses", sessionKey, userId, roleData],
-    enabled: authReady && !!userId && roleData !== undefined,
+    queryKey: ["my-licenses", sessionKey, accountId, roleData],
+    enabled: authReady && !!accountId && roleData !== undefined,
     queryFn: async () => {
       const baseQuery = supabase
         .from("hyro_extension_licenses")
@@ -238,8 +254,8 @@ function MyLicensePage() {
 
       // Revendedor vê as licenças que criou. Cliente vê a licença vinculada à própria conta.
       const query = isReseller
-        ? baseQuery.or(`created_by.eq.${userId},reseller_id.eq.${userId}`)
-        : baseQuery.eq("user_id", userId!);
+        ? baseQuery.or(`created_by.eq.${accountId},reseller_id.eq.${accountId}`)
+        : baseQuery.eq("user_id", accountId!);
 
       const { data, error } = await query;
       if (error) throw error;
