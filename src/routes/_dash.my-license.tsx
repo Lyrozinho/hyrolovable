@@ -320,6 +320,22 @@ function MyLicensePage() {
         </div>
       </section>
 
+      {/* Cliente comum: compra mensal + indicações */}
+      {!isReseller && authReady && userId && (
+        <ClientAffiliateCard
+          userId={userId}
+          userEmail={session?.user.email ?? ""}
+          userName={session?.user.name ?? null}
+          hasActiveLicense={stats.active > 0}
+          affiliateCode={myAff ?? null}
+          referrals={referrals ?? []}
+          lifetimeGranted={!!lifetimeFlag}
+          onOpenCheckout={() => setMonthlyOpen(true)}
+          affCopied={affCopied}
+          setAffCopied={setAffCopied}
+        />
+      )}
+
       {/* Oferta destaque: Chave Vitalícia (apenas revendedores) */}
       {isReseller && <LifetimeKeyBanner userId={userId} defaultEmail={session?.user.email ?? null} />}
 
