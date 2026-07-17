@@ -23,6 +23,7 @@ import { Route as DashResellersRouteImport } from './routes/_dash.resellers'
 import { Route as DashMyLicenseRouteImport } from './routes/_dash.my-license'
 import { Route as DashLicensesRouteImport } from './routes/_dash.licenses'
 import { Route as DashIntegrationsRouteImport } from './routes/_dash.integrations'
+import { Route as DashFinanceRouteImport } from './routes/_dash.finance'
 import { Route as DashDashboardRouteImport } from './routes/_dash.dashboard'
 import { Route as ApiPublicUpgradeZipRouteImport } from './routes/api/public/upgrade-zip'
 import { Route as ApiPublicUpgradeMetaRouteImport } from './routes/api/public/upgrade-meta'
@@ -98,6 +99,11 @@ const DashIntegrationsRoute = DashIntegrationsRouteImport.update({
   path: '/integrations',
   getParentRoute: () => DashRoute,
 } as any)
+const DashFinanceRoute = DashFinanceRouteImport.update({
+  id: '/finance',
+  path: '/finance',
+  getParentRoute: () => DashRoute,
+} as any)
 const DashDashboardRoute = DashDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
@@ -132,6 +138,7 @@ export interface FileRoutesByFullPath {
   '/signup': typeof SignupRoute
   '/upgrade': typeof UpgradeRoute
   '/dashboard': typeof DashDashboardRoute
+  '/finance': typeof DashFinanceRoute
   '/integrations': typeof DashIntegrationsRoute
   '/licenses': typeof DashLicensesRoute
   '/my-license': typeof DashMyLicenseRoute
@@ -152,6 +159,7 @@ export interface FileRoutesByTo {
   '/signup': typeof SignupRoute
   '/upgrade': typeof UpgradeRoute
   '/dashboard': typeof DashDashboardRoute
+  '/finance': typeof DashFinanceRoute
   '/integrations': typeof DashIntegrationsRoute
   '/licenses': typeof DashLicensesRoute
   '/my-license': typeof DashMyLicenseRoute
@@ -174,6 +182,7 @@ export interface FileRoutesById {
   '/signup': typeof SignupRoute
   '/upgrade': typeof UpgradeRoute
   '/_dash/dashboard': typeof DashDashboardRoute
+  '/_dash/finance': typeof DashFinanceRoute
   '/_dash/integrations': typeof DashIntegrationsRoute
   '/_dash/licenses': typeof DashLicensesRoute
   '/_dash/my-license': typeof DashMyLicenseRoute
@@ -196,6 +205,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/upgrade'
     | '/dashboard'
+    | '/finance'
     | '/integrations'
     | '/licenses'
     | '/my-license'
@@ -216,6 +226,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/upgrade'
     | '/dashboard'
+    | '/finance'
     | '/integrations'
     | '/licenses'
     | '/my-license'
@@ -237,6 +248,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/upgrade'
     | '/_dash/dashboard'
+    | '/_dash/finance'
     | '/_dash/integrations'
     | '/_dash/licenses'
     | '/_dash/my-license'
@@ -366,6 +378,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashIntegrationsRouteImport
       parentRoute: typeof DashRoute
     }
+    '/_dash/finance': {
+      id: '/_dash/finance'
+      path: '/finance'
+      fullPath: '/finance'
+      preLoaderRoute: typeof DashFinanceRouteImport
+      parentRoute: typeof DashRoute
+    }
     '/_dash/dashboard': {
       id: '/_dash/dashboard'
       path: '/dashboard'
@@ -406,6 +425,7 @@ declare module '@tanstack/react-router' {
 
 interface DashRouteChildren {
   DashDashboardRoute: typeof DashDashboardRoute
+  DashFinanceRoute: typeof DashFinanceRoute
   DashIntegrationsRoute: typeof DashIntegrationsRoute
   DashLicensesRoute: typeof DashLicensesRoute
   DashMyLicenseRoute: typeof DashMyLicenseRoute
@@ -417,6 +437,7 @@ interface DashRouteChildren {
 
 const DashRouteChildren: DashRouteChildren = {
   DashDashboardRoute: DashDashboardRoute,
+  DashFinanceRoute: DashFinanceRoute,
   DashIntegrationsRoute: DashIntegrationsRoute,
   DashLicensesRoute: DashLicensesRoute,
   DashMyLicenseRoute: DashMyLicenseRoute,
