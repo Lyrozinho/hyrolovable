@@ -194,9 +194,6 @@ function LoginPage() {
                     {submitting ? <><Loader2 className="h-4 w-4 animate-spin" /> Autenticando…</> : <>Entrar no painel <ArrowRight className="h-3.5 w-3.5" /></>}
                   </Button>
 
-                  <div className="text-center text-[12px] text-muted-foreground pt-2">
-                    Não tem conta? <a href="/signup" className="text-primary hover:underline">Criar conta</a>
-                  </div>
                 </form>
               </>
 
