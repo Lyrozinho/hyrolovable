@@ -29,7 +29,7 @@ export function RedemptionLinkDialog({
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
 
-  const origin = "https://hyrolovable.lovable.app";
+  const origin = getPublicOrigin();
 
   const reload = async () => {
     if (!licenseId) return;

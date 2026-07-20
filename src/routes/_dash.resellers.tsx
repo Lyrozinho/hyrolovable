@@ -151,8 +151,7 @@ function normEmail(v?: string | null) {
 }
 
 function inviteUrl(slug: string) {
-  const origin = typeof window !== "undefined" ? window.location.origin : "https://hyrolovable.lovable.app";
-  return `${origin}/r/${slug}`;
+  return `${getPublicOrigin()}/r/${slug}`;
 }
 
 function inviteBelongsToSession(invite: ResellerInvite, userId?: string, email?: string | null) {
