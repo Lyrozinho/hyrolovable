@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { getPublicOrigin } from "@/lib/public-origin";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
