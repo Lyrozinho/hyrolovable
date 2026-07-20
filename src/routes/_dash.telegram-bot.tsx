@@ -66,7 +66,7 @@ function TelegramBotPage() {
   // O webhook precisa apontar para o domínio publicado (Telegram exige HTTPS público
   // sem redirecionamento). O domínio de preview (`lovableproject.com`) redireciona
   // para o auth-bridge (302) e o Telegram rejeita com "Wrong response from webhook: 302 Found".
-  const PUBLISHED_HOST = "hyrolovable.lovable.app";
+  const PUBLISHED_HOST = "painel.lovehyro.store";
   const suggestedUrl = useMemo(() => {
     return `https://${PUBLISHED_HOST}/api/public/telegram/webhook`;
   }, []);

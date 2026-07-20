@@ -328,7 +328,7 @@ export const createRenewalOrder = createServerFn({ method: "POST" })
     if (orderErr || !order) throw new Error(orderErr?.message ?? "Falha ao criar pedido");
 
     const orderId = (order as any).id as string;
-    const notificationUrl = `https://hyrolovable.lovable.app/api/public/mercadopago/webhook?r=${encodeURIComponent(resellerId)}`;
+    const notificationUrl = `https://painel.lovehyro.store/api/public/mercadopago/webhook?r=${encodeURIComponent(resellerId)}`;
 
     const { mpCreatePixPayment } = await import("./mp.server");
     const created = await mpCreatePixPayment({
