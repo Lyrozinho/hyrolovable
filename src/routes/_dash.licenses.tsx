@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { getPublicOrigin } from "@/lib/public-origin";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { maskEmail } from "@/lib/mask-email";
@@ -855,7 +856,7 @@ function CreateLicenseDialog({
           target_email: emailNorm,
           created_by: session?.user.email ?? OWNER_EMAIL,
         });
-        const url = `https://hyrolovable.lovable.app/r/${link.slug}`;
+        const url = `${getPublicOrigin()}/r/${link.slug}`;
 
         toast.success("Licença + link personalizado criados");
         qc.invalidateQueries({ queryKey: ["licenses"] });
@@ -1166,7 +1167,7 @@ function LicenseCreatedSuccess({
 }) {
   const [copied, setCopied] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
-  const panelUrl = "https://hyrolovable.lovable.app";
+  const panelUrl = getPublicOrigin();
   const isPerso = !!data.redemptionUrl;
   const validity = data.lifetime
     ? "Vitalícia (nunca expira)"

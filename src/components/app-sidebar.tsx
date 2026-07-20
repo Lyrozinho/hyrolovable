@@ -162,15 +162,20 @@ export function AppSidebar() {
       <div
         className={[
           "flex items-center py-5 shrink-0",
-          isCollapsed ? "px-0 justify-center" : "px-5 gap-3",
+          isCollapsed ? "px-0 justify-center" : "px-4 gap-3",
         ].join(" ")}
       >
-        <div className="h-10 w-10 rounded-lg flex items-center justify-center shrink-0">
+        <div
+          className={[
+            "rounded-xl overflow-hidden shrink-0 ring-1 ring-white/10 shadow-[0_8px_24px_-8px_rgba(139,92,246,0.55)]",
+            isCollapsed ? "h-11 w-11" : "h-12 w-12",
+          ].join(" ")}
+        >
           <img
             src={hyroLogo}
             alt="Hyro"
             draggable={false}
-            className="h-10 w-10 object-contain select-none pointer-events-none"
+            className="h-full w-full object-cover select-none pointer-events-none"
           />
         </div>
         {!isCollapsed && (

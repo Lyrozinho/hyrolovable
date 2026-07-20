@@ -14,7 +14,7 @@ function ext() {
   });
 }
 
-const PANEL_URL = "https://hyrolovable.lovable.app";
+const PANEL_URL = "https://painel.lovehyro.store";
 const EXTENSION_URL = PANEL_URL + "/upgrade";
 
 // ---------- Telegram API ----------

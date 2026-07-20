@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { getPublicOrigin } from "@/lib/public-origin";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -151,8 +152,7 @@ function normEmail(v?: string | null) {
 }
 
 function inviteUrl(slug: string) {
-  const origin = typeof window !== "undefined" ? window.location.origin : "https://hyrolovable.lovable.app";
-  return `${origin}/r/${slug}`;
+  return `${getPublicOrigin()}/r/${slug}`;
 }
 
 function inviteBelongsToSession(invite: ResellerInvite, userId?: string, email?: string | null) {

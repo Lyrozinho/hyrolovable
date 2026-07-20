@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { getPublicOrigin } from "@/lib/public-origin";
 import { Link2, Copy, Check, Trash2, Loader2, Mail, UserRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,7 +30,7 @@ export function RedemptionLinkDialog({
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
 
-  const origin = "https://hyrolovable.lovable.app";
+  const origin = getPublicOrigin();
 
   const reload = async () => {
     if (!licenseId) return;

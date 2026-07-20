@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { getPublicOrigin } from "@/lib/public-origin";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Loader2, CheckCircle2, XCircle, Copy, ShieldCheck, ExternalLink } from "lucide-react";
@@ -48,7 +49,7 @@ export function MpIntegrationDialog({ open, onOpenChange, userId }: Props) {
     }
   }, [open, statusQ.data]);
 
-  const webhookUrl = `https://hyrolovable.lovable.app/api/public/mercadopago/webhook?r=${encodeURIComponent(userId)}`;
+  const webhookUrl = `${getPublicOrigin()}/api/public/mercadopago/webhook?r=${encodeURIComponent(userId)}`;
 
   const saveMut = useMutation({
     mutationFn: () => saveFn({ data: { userId, mode, accessToken, publicKey, webhookSecret, active } }),
